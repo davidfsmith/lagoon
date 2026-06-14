@@ -21,3 +21,24 @@ export function runsToSlots(runs, courseId, label, now, horizonDays = 21) {
   }
   return out;
 }
+
+const isActiveBooking = (b) => {
+  const s = (b.status || "").toLowerCase();
+  return s !== "cancelled" && s !== "expired";
+};
+
+export function bookingKeys(meBookings) {
+  const set = new Set();
+  for (const b of meBookings || []) {
+    if (!isActiveBooking(b)) continue;
+    const cr = b.courseRun || {};
+    const cid = cr.course && cr.course.id;
+    if (cid != null && cr.startDate) set.add(slotKey(cid, cr.startDate));
+  }
+  return set;
+}
+
+export function markBooked(slots, keys) {
+  for (const s of slots) s.booked = keys.has(s.key);
+  return slots;
+}
