@@ -15,6 +15,8 @@ that come up at the last minute (cancellations / released places).
 | `lagoon_client.py` | Reusable API client — search courses, fetch openings. **Pure Python, no deps** (portable to Lambda). |
 | `check.py` | CLI: print current openings on demand. |
 | `watch.py` | Diffs against last run's state and reports only **new** openings. |
+| `analyze.py` | Reads `state/history.jsonl` → churn / lead-time / heatmap report. |
+| `schedule_policy.py` | When a firing should run (build vs production cadence). |
 | `courses.json` | Which courses to monitor (resolved to live IDs by name at runtime). |
 | `run_watch.sh` | Wrapper run by the scheduler; raises a macOS notification on new slots. |
 | `launchd/` | Local macOS schedule (LaunchAgent) + install/uninstall scripts. |
@@ -85,6 +87,25 @@ when slots are found), `launchd.*.log`.
 
 To change cadence, edit the `StartCalendarInterval` entries in
 `launchd/uk.co.lagoon.wakewatch.plist` and re-run `install.sh`.
+
+## Analysing the data
+
+Once the watcher has run for a while:
+
+```sh
+python3 analyze.py            # weekend churn, lead times, availability heatmap
+python3 analyze.py --all      # include weekdays (scope=all records)
+python3 analyze.py --events   # raw appearance/booking events
+python3 analyze.py --json
+```
+
+Key outputs and why they matter for the AWS build:
+- **Appearances by lead time** — how far ahead short-notice spots show up → how
+  often the schedule actually needs to fire (and the 10th-percentile hint).
+- **Bookings by lead time** — how fast released spots get taken → how stale an
+  alert can be before it's useless.
+- **Weekday × hour heatmap** — when availability exists at all → confirms (or
+  refutes) "weekday hourly is enough".
 
 ## Roadmap
 
