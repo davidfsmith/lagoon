@@ -12,7 +12,16 @@ PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$PROJECT_DIR"
 
 PYTHON="${LAGOON_PYTHON:-/opt/homebrew/bin/python3}"
-MODE="${LAGOON_MODE:-build}"   # build = every firing; production = weekday-hourly + weekend-10min
+# Mode precedence: LAGOON_MODE env > state/mode file > "build" default.
+# build = every firing; production = weekday-hourly + weekend-10min 08:00-16:00.
+MODE_FILE="$PROJECT_DIR/state/mode"
+if [ -n "${LAGOON_MODE:-}" ]; then
+  MODE="$LAGOON_MODE"
+elif [ -f "$MODE_FILE" ]; then
+  MODE="$(tr -d '[:space:]' < "$MODE_FILE")"
+else
+  MODE="build"
+fi
 mkdir -p state
 
 # Policy gate: launchd fires every 10 min, but only some firings do real work.
