@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import json as _json
+import pathlib as _pl
 import urllib.parse as _url
 import urllib.request as _req
 from dataclasses import dataclass
@@ -57,6 +58,17 @@ def _norm(s: str) -> str:
     so we never compare raw strings.
     """
     return " ".join(s.split()).lower()
+
+
+def load_monitor(config_path) -> list[dict]:
+    """Read courses.json and return only the *enabled* monitor specs.
+
+    A spec with "enabled": false is kept in the file but skipped here, so
+    collecting/alerting on a session type is an opt-in toggle (defaults to true
+    when the key is absent).
+    """
+    data = _json.loads(_pl.Path(config_path).read_text())
+    return [c for c in data.get("monitor", []) if c.get("enabled", True)]
 
 
 def search_courses(name: str) -> list[dict]:

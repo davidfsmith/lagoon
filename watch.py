@@ -29,10 +29,6 @@ STATE = pathlib.Path(__file__).with_name("state") / "seen.json"
 HISTORY = pathlib.Path(__file__).with_name("state") / "history.jsonl"
 
 
-def load_monitor() -> list[dict]:
-    return json.loads(CONFIG.read_text())["monitor"]
-
-
 def load_state() -> dict:
     if STATE.exists():
         return json.loads(STATE.read_text())
@@ -74,7 +70,12 @@ def main(argv: list[str] | None = None) -> int:
         print("State cleared.")
         return 0
 
-    courses = lc.resolve_courses(load_monitor())
+    monitor = lc.load_monitor(CONFIG)
+    if not monitor:
+        print("NONE")
+        print("(no enabled sessions in courses.json)")
+        return 0
+    courses = lc.resolve_courses(monitor)
     # Always fetch everything (weekday + weekend) so history is comprehensive for
     # analysis; the weekend filter only narrows what we *alert* on.
     all_slots = lc.find_openings(courses, days_ahead=args.days, weekend_only=False)

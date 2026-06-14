@@ -19,10 +19,6 @@ import lagoon_client as lc
 CONFIG = pathlib.Path(__file__).with_name("courses.json")
 
 
-def load_monitor() -> list[dict]:
-    return json.loads(CONFIG.read_text())["monitor"]
-
-
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--days", type=int, default=21, help="days ahead to scan (default 21)")
@@ -30,7 +26,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--json", action="store_true", help="emit JSON instead of text")
     args = ap.parse_args(argv)
 
-    courses = lc.resolve_courses(load_monitor())
+    monitor = lc.load_monitor(CONFIG)
+    if not monitor:
+        print("No enabled sessions in courses.json — nothing to check.")
+        return 0
+    courses = lc.resolve_courses(monitor)
     slots = lc.find_openings(courses, days_ahead=args.days, weekend_only=args.weekend)
 
     if args.json:

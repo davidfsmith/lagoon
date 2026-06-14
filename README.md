@@ -41,7 +41,10 @@ Gotchas (handled in `lagoon_client.py`):
   `DO NOT USE`/`test`/`closed` decoys) so a renumber fails loudly, not silently.
 - It's an internal API and may change without notice.
 
-The monitored "Ride the Cables" courses: Tech 30, Air 30, Tech 15, Air 15.
+The "Ride the Cables" courses are Tech 30, Air 30, Tech 15, Air 15. Each is a
+`monitor` entry in `courses.json` with an `enabled` flag (defaults to true), so a
+session type can be switched off without deleting it. Currently enabled: **Tech 30,
+Air 30** (15-min sessions off).
 
 ## Usage
 
