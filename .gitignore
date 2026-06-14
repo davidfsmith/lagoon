@@ -4,3 +4,6 @@ state/*
 __pycache__/
 *.pyc
 .DS_Store
+
+# brainstorming visual-companion working files
+.superpowers/
