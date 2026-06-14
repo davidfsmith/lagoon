@@ -1,5 +1,6 @@
-const CACHE = "lagoon-v1";
-const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg",
+const CACHE = "lagoon-v2";
+const ASSETS = ["./", "./index.html", "./manifest.json",
+  "./icon.svg", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./js/app.js", "./js/config.js", "./js/api.js", "./js/weather.js", "./js/model.js",
   "./js/agendaModel.js", "./js/store.js", "./js/data.js",
   "./js/views/login.js", "./js/views/agenda.js", "./js/views/day.js", "./js/views/account.js", "./js/views/format.js"];

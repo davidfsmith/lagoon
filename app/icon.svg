@@ -1,5 +1,61 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#0d0d0d"/>
-  <path d="M64 340c40 0 40 28 80 28s40-28 80-28 40 28 80 28 40-28 80-28 40 28 64 28" fill="none" stroke="#2dd4bf" stroke-width="22" stroke-linecap="round"/>
-  <rect x="150" y="150" width="212" height="54" rx="27" transform="rotate(28 256 177)" fill="#2dd4bf"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Hove Lagoon wakeboarding">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f3f3b"/>
+      <stop offset=".5" stop-color="#0b2228"/>
+      <stop offset="1" stop-color="#08090b"/>
+    </linearGradient>
+    <linearGradient id="wake" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2dd4bf"/>
+      <stop offset="1" stop-color="#7ef0ff"/>
+    </linearGradient>
+    <linearGradient id="board" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f3fbf9"/>
+      <stop offset="1" stop-color="#bdeee4"/>
+    </linearGradient>
+    <radialGradient id="sun" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#aef6ff" stop-opacity=".6"/>
+      <stop offset=".55" stop-color="#2dd4bf" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- tile -->
+  <rect width="512" height="512" rx="116" fill="url(#tile)"/>
+
+  <!-- soft sun glow, top-right -->
+  <circle cx="388" cy="140" r="92" fill="url(#sun)"/>
+
+  <!-- spray off the board tail (streaks + droplets) -->
+  <g stroke="#7ef0ff" stroke-width="8" stroke-linecap="round" fill="none" opacity=".9">
+    <path d="M182 292 C152 268 130 242 114 210"/>
+    <path d="M188 302 C164 288 142 270 124 246"/>
+    <path d="M176 282 C158 258 146 232 142 206"/>
+  </g>
+  <g fill="#aef3ea">
+    <circle cx="150" cy="256" r="8"/>
+    <circle cx="126" cy="230" r="6"/>
+    <circle cx="106" cy="206" r="5"/>
+    <circle cx="92" cy="186" r="4"/>
+    <circle cx="138" cy="200" r="4"/>
+    <circle cx="120" cy="276" r="5"/>
+    <circle cx="168" cy="232" r="4"/>
+  </g>
+
+  <!-- lagoon wave -->
+  <path d="M36 340 C140 314 196 358 256 340 C334 316 372 358 476 334 L476 406
+           C372 430 326 390 256 406 C188 422 150 382 36 406 Z" fill="url(#wake)"/>
+  <!-- crest highlight -->
+  <path d="M36 340 C140 314 196 358 256 340 C334 316 372 358 476 334"
+        fill="none" stroke="#d6fbf4" stroke-width="6" stroke-linecap="round" opacity=".5"/>
+  <!-- ripple -->
+  <path d="M76 442 C150 426 184 456 256 442 C328 428 362 458 436 442"
+        fill="none" stroke="#2dd4bf" stroke-width="9" stroke-linecap="round" opacity=".4"/>
+
+  <!-- wakeboard, carving across the crest -->
+  <g transform="rotate(-24 256 257)">
+    <rect x="140" y="232" width="232" height="50" rx="25" fill="url(#board)"/>
+    <rect x="190" y="238" width="34" height="38" rx="10" fill="#0b2228"/>
+    <rect x="288" y="238" width="34" height="38" rx="10" fill="#0b2228"/>
+  </g>
 </svg>
