@@ -1,0 +1,9 @@
+{
+  "_comment": "Courses to monitor. 'search' is a distinctive substring matched (whitespace-insensitive) against the live Lagoon catalogue at runtime, so course renumbering fails loudly instead of silently. Add other activities (SUP, kids clinics, etc.) as new entries.",
+  "monitor": [
+    { "search": "Wakeboard -Tech - Ride Session 30", "label": "Tech 30" },
+    { "search": "Wakeboard -Air - Ride Session 30", "label": "Air 30" },
+    { "search": "Wakeboard -Tech - Ride Session 15", "label": "Tech 15" },
+    { "search": "Wakeboard -Air - Ride Session 15", "label": "Air 15" }
+  ]
+}
