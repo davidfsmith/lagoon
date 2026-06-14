@@ -18,7 +18,8 @@ launchctl enable "gui/$(id -u)/$LABEL"
 
 echo "Installed $LABEL"
 echo "  plist:   $DEST"
-echo "  runs:    08,10,12,14,16,18,20 UK time (daytime, every 2h)"
+echo "  fires:   every 10 min; run_watch.sh applies LAGOON_MODE policy"
+echo "           (build = every firing; production = weekday-hourly + weekend-10min 08-16)"
 echo "  logs:    $PROJECT_DIR/state/"
 echo
 echo "Prime the state now so the first scheduled run only reports NEW slots:"

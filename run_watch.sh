@@ -12,7 +12,13 @@ PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$PROJECT_DIR"
 
 PYTHON="${LAGOON_PYTHON:-/opt/homebrew/bin/python3}"
+MODE="${LAGOON_MODE:-build}"   # build = every firing; production = weekday-hourly + weekend-10min
 mkdir -p state
+
+# Policy gate: launchd fires every 10 min, but only some firings do real work.
+if ! "$PYTHON" -c "import sys,datetime,schedule_policy as p; sys.exit(0 if p.should_check(datetime.datetime.now(), '$MODE') else 9)"; then
+  exit 0   # this firing is skipped by the schedule policy
+fi
 
 # Args after the script name are passed through to watch.py
 OUT="$("$PYTHON" watch.py "$@" 2>>state/watch.err)"

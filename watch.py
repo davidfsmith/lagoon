@@ -75,9 +75,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     courses = lc.resolve_courses(load_monitor())
-    slots = lc.find_openings(
-        courses, days_ahead=args.days, weekend_only=not args.all
-    )
+    # Always fetch everything (weekday + weekend) so history is comprehensive for
+    # analysis; the weekend filter only narrows what we *alert* on.
+    all_slots = lc.find_openings(courses, days_ahead=args.days, weekend_only=False)
+    append_history(all_slots, weekend_only=False, days=args.days)
+
+    slots = all_slots if args.all else [s for s in all_slots if s.is_weekend]
 
     # Current openings keyed by stable id → free count (so a spot freeing up
     # *more* on an already-seen session also counts as news).
@@ -88,7 +91,6 @@ def main(argv: list[str] | None = None) -> int:
 
     # State reflects what's currently open, so vanished slots can re-trigger later.
     save_state(current)
-    append_history(slots, weekend_only=not args.all, days=args.days)
 
     if not new:
         print("NONE")

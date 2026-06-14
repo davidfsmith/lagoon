@@ -60,8 +60,18 @@ key off it.
 
 ## Local schedule (current setup)
 
-Runs on this Mac via launchd, daytime hours every 2h, notifying via macOS
-notifications when new weekend slots appear.
+Runs on this Mac via launchd. The agent **fires every 10 minutes**; `run_watch.sh`
+then applies a schedule policy (`schedule_policy.py`) so only the right firings do
+real work:
+
+- `LAGOON_MODE=build` (default, while building) — every firing runs (~every 10 min,
+  24/7) for dense test data.
+- `LAGOON_MODE=production` — weekdays hourly; weekends every 10 min 08:00–16:00
+  (the short-notice window). Switch by changing the default in `run_watch.sh` or
+  setting the env var.
+
+History (`state/history.jsonl`) always records **all** openings (weekday + weekend);
+notifications are weekend-only by default. macOS notifications fire on new slots.
 
 ```sh
 launchd/install.sh        # render plist + load the LaunchAgent
