@@ -26,6 +26,7 @@ import lagoon_client as lc
 
 CONFIG = pathlib.Path(__file__).with_name("courses.json")
 STATE = pathlib.Path(__file__).with_name("state") / "seen.json"
+HISTORY = pathlib.Path(__file__).with_name("state") / "history.jsonl"
 
 
 def load_monitor() -> list[dict]:
@@ -41,6 +42,24 @@ def load_state() -> dict:
 def save_state(seen: dict) -> None:
     STATE.parent.mkdir(exist_ok=True)
     STATE.write_text(json.dumps(seen, indent=2))
+
+
+def append_history(slots: list, weekend_only: bool, days: int) -> None:
+    """Append a compact snapshot of current openings, one JSON line per run.
+
+    Lets us reconstruct churn (when slots appear/vanish/change) for the AWS
+    design — `watch.log` only records NEW/NONE counts, which is too thin.
+    """
+    import datetime as _dt
+    record = {
+        "t": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
+        "scope": "weekend" if weekend_only else "all",
+        "days": days,
+        "open": {s.key: s.free for s in slots},
+    }
+    HISTORY.parent.mkdir(exist_ok=True)
+    with HISTORY.open("a") as f:
+        f.write(json.dumps(record) + "\n")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -69,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # State reflects what's currently open, so vanished slots can re-trigger later.
     save_state(current)
+    append_history(slots, weekend_only=not args.all, days=args.days)
 
     if not new:
         print("NONE")
