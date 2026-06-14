@@ -122,11 +122,11 @@ def main(argv: list[str] | None = None) -> int:
           f"(within {args.urgent_hours:.0f}h):\n")
     last_day = None
     for s in sorted(new_urgent, key=lambda x: (x.start, x.label)):
-        day = s.start.strftime("%a %d %b")
+        day = s.local.strftime("%a %d %b")
         if day != last_day:
             print(day)
             last_day = day
-        print(f"   {s.start:%H:%M}  {s.label:8} {s.free}/{s.capacity} free  ({fmt_lead(lead(s))})")
+        print(f"   {s.local:%H:%M}  {s.label:8} {s.free}/{s.capacity} free  ({fmt_lead(lead(s))})")
     print("\nBook: https://booking.lagoon.co.uk")
     return 0
 
