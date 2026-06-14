@@ -34,3 +34,15 @@ export function attachWeather(slots, hourly) {
   for (const s of slots) s.weather = weatherAt(hourly, s.start);
   return slots;
 }
+
+export async function fetchForecast(lat, lon, fetchImpl = fetch) {
+  const params = new URLSearchParams({
+    latitude: lat, longitude: lon, timezone: "Europe/London", forecast_days: "16",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,sunrise,sunset",
+    hourly: "temperature_2m,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,precipitation_probability",
+  });
+  const res = await fetchImpl(`${WX_URL}?${params}`);
+  if (!res.ok) throw new Error("weather " + res.status);
+  const json = await res.json();
+  return { daily: parseDaily(json), hourly: parseHourly(json) };
+}

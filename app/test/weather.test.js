@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseDaily, parseHourly, weatherAt, attachWeather } from "../js/weather.js";
+import { parseDaily, parseHourly, weatherAt, attachWeather, fetchForecast } from "../js/weather.js";
 
 const sample = {
   daily: {
@@ -36,4 +36,17 @@ test("attachWeather sets slot.weather", () => {
   const slots = [{ start: "2026-06-20T16:00:00+00:00", weather: null }];
   attachWeather(slots, hourly);
   assert.equal(slots[0].weather.temp, 19);
+});
+
+test("fetchForecast requests Hove daily+hourly and returns parsed shape", async () => {
+  let calledUrl = "";
+  const stubFetch = async (url) => {
+    calledUrl = url;
+    return { ok: true, json: async () => sample };
+  };
+  const out = await fetchForecast(50.827, -0.171, stubFetch);
+  assert.match(calledUrl, /latitude=50.827/);
+  assert.match(calledUrl, /hourly=/);
+  assert.equal(out.daily["2026-06-20"].tMax, 20);
+  assert.equal(out.hourly[1].temp, 20);
 });
