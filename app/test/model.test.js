@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runsToSlots, slotKey, bookingKeys, markBooked } from "../js/model.js";
+import { runsToSlots, slotKey, bookingKeys, markBooked, membershipFreeCourseIds, applyMembershipFree } from "../js/model.js";
 
 const now = new Date("2026-06-14T12:00:00+00:00");
 
@@ -38,4 +38,21 @@ test("markBooked flags slots whose key is in the booking set", () => {
   markBooked(slots, new Set(["50@2026-06-21T15:30:00+00:00"]));
   assert.equal(slots[0].booked, true);
   assert.equal(slots[1].booked, false);
+});
+
+test("membershipFreeCourseIds collects freeCourses ids from active memberships", () => {
+  const meMemberships = [
+    { status: "active", membershipType: { freeCourses: [{ id: 50 }, { id: 51 }, { id: 66 }] } },
+    { status: "expired", membershipType: { freeCourses: [{ id: 99 }] } },
+  ];
+  const ids = membershipFreeCourseIds(meMemberships);
+  assert.ok(ids.has(50) && ids.has(51));
+  assert.equal(ids.has(99), false);
+});
+
+test("applyMembershipFree flags slots whose course is free", () => {
+  const slots = [{ courseId: 50, freeWithMembership: false }, { courseId: 99, freeWithMembership: false }];
+  applyMembershipFree(slots, new Set([50]));
+  assert.equal(slots[0].freeWithMembership, true);
+  assert.equal(slots[1].freeWithMembership, false);
 });

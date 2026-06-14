@@ -42,3 +42,18 @@ export function markBooked(slots, keys) {
   for (const s of slots) s.booked = keys.has(s.key);
   return slots;
 }
+
+export function membershipFreeCourseIds(meMemberships) {
+  const ids = new Set();
+  for (const m of meMemberships || []) {
+    if ((m.status || "").toLowerCase() !== "active") continue;
+    const fc = (m.membershipType && m.membershipType.freeCourses) || [];
+    for (const c of fc) if (c && c.id != null) ids.add(c.id);
+  }
+  return ids;
+}
+
+export function applyMembershipFree(slots, freeIds) {
+  for (const s of slots) s.freeWithMembership = freeIds.has(s.courseId);
+  return slots;
+}
