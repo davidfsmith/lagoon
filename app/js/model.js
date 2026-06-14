@@ -57,3 +57,19 @@ export function applyMembershipFree(slots, freeIds) {
   for (const s of slots) s.freeWithMembership = freeIds.has(s.courseId);
   return slots;
 }
+
+export function groupByDay(slots, daily = {}) {
+  const byDate = new Map();
+  for (const s of slots) {
+    const date = s.start.slice(0, 10);
+    if (!byDate.has(date)) byDate.set(date, []);
+    byDate.get(date).push(s);
+  }
+  return [...byDate.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([date, daySlots]) => {
+      daySlots.sort((a, b) => (a.start < b.start ? -1 : 1));
+      const dow = new Date(date + "T12:00:00").getDay(); // noon avoids tz date-shift
+      return { date, weekend: dow === 0 || dow === 6, summary: daily[date] || null, slots: daySlots };
+    });
+}

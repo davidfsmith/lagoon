@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runsToSlots, slotKey, bookingKeys, markBooked, membershipFreeCourseIds, applyMembershipFree } from "../js/model.js";
+import { runsToSlots, slotKey, bookingKeys, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay } from "../js/model.js";
 
 const now = new Date("2026-06-14T12:00:00+00:00");
 
@@ -55,4 +55,19 @@ test("applyMembershipFree flags slots whose course is free", () => {
   applyMembershipFree(slots, new Set([50]));
   assert.equal(slots[0].freeWithMembership, true);
   assert.equal(slots[1].freeWithMembership, false);
+});
+
+test("groupByDay groups slots by date, sorts, flags weekends, attaches summary", () => {
+  const slots = [
+    { start: "2026-06-21T15:30:00+00:00", key: "a" }, // Sunday
+    { start: "2026-06-20T13:00:00+00:00", key: "b" }, // Saturday
+    { start: "2026-06-20T11:00:00+00:00", key: "c" }, // Saturday earlier
+  ];
+  const daily = { "2026-06-20": { tMax: 20 } };
+  const days = groupByDay(slots, daily);
+  assert.deepEqual(days.map(d => d.date), ["2026-06-20", "2026-06-21"]);
+  assert.equal(days[0].weekend, true);
+  assert.deepEqual(days[0].slots.map(s => s.key), ["c", "b"]); // sorted by time
+  assert.deepEqual(days[0].summary, { tMax: 20 });
+  assert.equal(days[1].summary, null);
 });
