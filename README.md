@@ -14,11 +14,11 @@ that come up at the last minute (cancellations / released places).
 |------|---------|
 | `lagoon_client.py` | Reusable API client — search courses, fetch openings. **Pure Python, no deps** (portable to Lambda). |
 | `check.py` | CLI: print current openings on demand. |
-| `watch.py` | Diffs against last run's state and reports only **new** openings. |
+| `watch.py` | Logs all openings; alerts (`URGENT`) only on **short-notice** ones (within a lead-time window). |
 | `analyze.py` | Reads `state/history.jsonl` → churn / lead-time / heatmap report. |
 | `schedule_policy.py` | When a firing should run (build vs production cadence). |
 | `courses.json` | Which courses to monitor (resolved to live IDs by name at runtime). |
-| `run_watch.sh` | Wrapper run by the scheduler; raises a macOS notification on new slots. |
+| `run_watch.sh` | Wrapper run by the scheduler; raises a macOS notification only on short-notice (`URGENT`) slots. |
 | `launchd/` | Local macOS schedule (LaunchAgent) + install/uninstall scripts. |
 | `state/` | Runtime state & logs (git-ignored). |
 
@@ -54,14 +54,17 @@ python3 check.py                 # all openings, next 21 days
 python3 check.py --weekend       # weekends only
 python3 check.py --days 14 --json
 
-# Watcher (only reports what's newly appeared since last run)
+# Watcher (alerts only on short-notice openings, default within 48h lead)
 python3 watch.py                 # weekend slots, next 14 days
 python3 watch.py --all --days 21 # include weekdays
-python3 watch.py --reset         # forget state
+python3 watch.py --urgent-hours 24  # tighten the short-notice window
+python3 watch.py --reset         # forget alert state
 ```
 
-`watch.py` prints a marker first line — `NEW: <n>` or `NONE` — so a scheduler can
-key off it.
+`watch.py` prints a marker first line — `URGENT: <n>` (imminent openings not yet
+alerted) or `NONE` — so a scheduler can key off it. Far-future openings are logged
+to `history.jsonl` but never alerted. A slot alerts once when it enters the window
+while free; it can re-alert if booked then freed again.
 
 ## Local schedule (current setup)
 
@@ -76,11 +79,12 @@ real work:
   setting the env var.
 
 History (`state/history.jsonl`) always records **all** openings (weekday + weekend);
-notifications are weekend-only by default. macOS notifications fire on new slots.
+notifications are weekend-only by default and fire only for short-notice (`URGENT`)
+slots — far-future availability is logged but stays quiet.
 
 ```sh
 launchd/install.sh        # render plist + load the LaunchAgent
-python3 watch.py >/dev/null   # prime state so the first run only shows NEW
+python3 watch.py >/dev/null   # prime alert state (so the first run only shows genuinely new urgent slots)
 launchctl kickstart -k gui/$(id -u)/uk.co.lagoon.wakewatch   # test run now
 launchd/uninstall.sh      # remove the schedule
 ```

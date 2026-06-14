@@ -1,6 +1,6 @@
 #!/bin/bash
 # Wrapper invoked by the launchd LaunchAgent (and runnable by hand).
-# Runs the watcher and raises a macOS notification when NEW openings appear.
+# Runs the watcher and raises a macOS notification only for short-notice (URGENT) openings.
 #
 # Why a wrapper: launchd runs with a minimal environment, so we pin an absolute
 # python and cd into the project. Keep this script's logic thin — the real work
@@ -35,9 +35,9 @@ FIRST="${OUT%%$'\n'*}"
 
 printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M')" "$FIRST" >>state/watch.log
 
-if [[ "$FIRST" == NEW:* ]]; then
-  COUNT="${FIRST#NEW: }"
+if [[ "$FIRST" == URGENT:* ]]; then
+  COUNT="${FIRST#URGENT: }"
   printf '\n===== %s =====\n%s\n' "$(date '+%Y-%m-%d %H:%M')" "$OUT" >>state/notified.log
   # osascript is built in — no extra install needed.
-  osascript -e "display notification \"${COUNT} new weekend slot(s) — see notified.log\" with title \"🏄 Hove Lagoon availability\" sound name \"Glass\"" || true
+  osascript -e "display notification \"${COUNT} short-notice slot(s) — book soon, see notified.log\" with title \"🏄 Hove Lagoon — spot free\" sound name \"Glass\"" || true
 fi
