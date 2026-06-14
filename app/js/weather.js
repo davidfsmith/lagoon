@@ -35,6 +35,7 @@ export function attachWeather(slots, hourly) {
   return slots;
 }
 
+// Open-Meteo free tier caps at 16 forecast days; sessions beyond that show with weather:null (handled in the views).
 export async function fetchForecast(lat, lon, fetchImpl = fetch) {
   const params = new URLSearchParams({
     latitude: lat, longitude: lon, timezone: "Europe/London", forecast_days: "16",

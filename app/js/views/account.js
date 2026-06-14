@@ -1,7 +1,7 @@
 import { fmtDate } from "./format.js";
 import { logout } from "../app.js";
 
-export function renderAccount(view, state) {
+export function renderAccount(view, state, go) {
   const m = (state.memberships || [])[0];
   const memHtml = m
     ? `<div class="card"><div class="t">Membership</div>
@@ -16,7 +16,7 @@ export function renderAccount(view, state) {
     : `<div class="card muted">No ride-pass tokens remaining.</div>`;
 
   const upcoming = (state.meBookings || [])
-    .filter(b => (b.status || "").toLowerCase() === "confirmed" && b.courseRun && b.courseRun.startDate >= new Date().toISOString())
+    .filter(b => (b.status || "").toLowerCase() === "confirmed" && b.courseRun && new Date(b.courseRun.startDate) >= new Date())
     .sort((a, b) => a.courseRun.startDate < b.courseRun.startDate ? -1 : 1);
   const bkHtml = `<div class="card"><div class="t">Your upcoming bookings</div>` + (upcoming.length
     ? upcoming.map(b => `<div>${fmtDate(b.courseRun.startDate.slice(0,10))} ${b.courseRun.startDate.slice(11,16)} — ${(b.courseRun.course && b.courseRun.course.name) || ""}</div>`).join("")
