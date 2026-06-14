@@ -1,4 +1,5 @@
 import { wcEmoji, fmtDate } from "./format.js";
+import { londonParts } from "../tz.js";
 import { BOOKING_SITE } from "../config.js";
 
 export function renderDay(view, state, date, go) {
@@ -15,7 +16,7 @@ export function renderDay(view, state, date, go) {
       ? `<span class="tag">✓ You're booked</span>`
       : `<span class="free">${s.free} free</span>${s.freeWithMembership ? '<span class="mem">free w/ membership</span>' : ''}<a class="bk" target="_blank" rel="noopener" href="${BOOKING_SITE}">Book ↗</a>`;
     return `<div class="srow${s.booked ? " booked" : ""}">
-      <div><div class="tm">${s.start.slice(11, 16)} <b>${s.label}</b></div><div class="muted small">${wx}</div></div>
+      <div><div class="tm">${londonParts(s.start).time} <b>${s.label}</b></div><div class="muted small">${wx}</div></div>
       <div class="r">${right}</div></div>`;
   }).join("");
 

@@ -1,4 +1,5 @@
 import { wcEmoji, fmtDate } from "./format.js";
+import { londonParts } from "../tz.js";
 
 export function renderAgenda(view, state, go) {
   const days = state.agenda || [];
@@ -12,7 +13,7 @@ export function renderAgenda(view, state, go) {
     const w = d.summary;
     const wx = w ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · ☔${w.precipProb}% · 🌬${Math.round(w.windMax)}(${Math.round(w.gustMax)})` : "";
     const chips = d.slots.map(s =>
-      `<span class="chip${s.booked ? " booked" : ""}">${s.start.slice(11, 16)} ${s.label}${s.booked ? " ✓" : ` <b>${s.free}</b>`}</span>`
+      `<span class="chip${s.booked ? " booked" : ""}">${londonParts(s.start).time} ${s.label}${s.booked ? " ✓" : ` <b>${s.free}</b>`}</span>`
     ).join("");
     return `<button class="day" data-date="${d.date}">
       <div class="day-hd"><span>${fmtDate(d.date)}${d.weekend ? ' <em>WKND</em>' : ''}</span><span class="muted">${wx}</span></div>

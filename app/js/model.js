@@ -1,3 +1,5 @@
+import { londonParts } from "./tz.js";
+
 export function slotKey(courseId, startISO) {
   return `${courseId}@${startISO}`;
 }
@@ -61,7 +63,7 @@ export function applyMembershipFree(slots, freeIds) {
 export function groupByDay(slots, daily = {}) {
   const byDate = new Map();
   for (const s of slots) {
-    const date = s.start.slice(0, 10);
+    const date = londonParts(s.start).date; // group by Europe/London date
     if (!byDate.has(date)) byDate.set(date, []);
     byDate.get(date).push(s);
   }

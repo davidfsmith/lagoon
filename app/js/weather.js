@@ -1,4 +1,5 @@
 import { WX_URL } from "./config.js";
+import { londonParts } from "./tz.js";
 
 export function parseDaily(json) {
   const d = json.daily, out = {};
@@ -26,7 +27,9 @@ export function parseHourly(json) {
 
 // Match on literal "YYYY-MM-DDTHH" — never Date parsing (BST drift). 15:30 -> 15.
 export function weatherAt(hourly, iso) {
-  const key = iso.slice(0, 13);
+  // Open-Meteo hours are Europe/London local; match the session's *London* hour
+  // (the raw ISO is UTC and would land 1h early in BST).
+  const key = londonParts(iso).hourKey;
   return hourly.find(h => h.time.slice(0, 13) === key) || null;
 }
 

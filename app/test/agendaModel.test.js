@@ -12,8 +12,8 @@ const meMemberships = [{ status: "active", membershipType: { freeCourses: [{ id:
 const weather = {
   daily: { "2026-06-20": { tMax: 20, tMin: 15 } },
   hourly: [
-    { time: "2026-06-20T13:00", temp: 18 },
-    { time: "2026-06-20T15:00", temp: 20 },
+    { time: "2026-06-20T14:00", temp: 18 }, // London hour for the 13:00 UTC tech slot (BST +1)
+    { time: "2026-06-20T16:00", temp: 20 }, // London hour for the 15:00 UTC air slot
   ],
 };
 

@@ -1,4 +1,5 @@
 import { fmtDate } from "./format.js";
+import { londonParts } from "../tz.js";
 import { logout } from "../app.js";
 
 export function renderAccount(view, state, go) {
@@ -19,7 +20,7 @@ export function renderAccount(view, state, go) {
     .filter(b => (b.status || "").toLowerCase() === "confirmed" && b.courseRun && new Date(b.courseRun.startDate) >= new Date())
     .sort((a, b) => a.courseRun.startDate < b.courseRun.startDate ? -1 : 1);
   const bkHtml = `<div class="card"><div class="t">Your upcoming bookings</div>` + (upcoming.length
-    ? upcoming.map(b => `<div>${fmtDate(b.courseRun.startDate.slice(0,10))} ${b.courseRun.startDate.slice(11,16)} — ${(b.courseRun.course && b.courseRun.course.name) || ""}</div>`).join("")
+    ? upcoming.map(b => `<div>${fmtDate(londonParts(b.courseRun.startDate).date)} ${londonParts(b.courseRun.startDate).time} — ${(b.courseRun.course && b.courseRun.course.name) || ""}</div>`).join("")
     : `<div class="muted">None.</div>`) + `</div>`;
 
   view.innerHTML = `<h2>Account</h2>${memHtml}${passHtml}${bkHtml}
