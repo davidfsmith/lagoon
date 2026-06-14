@@ -1,0 +1,39 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { parseDaily, parseHourly, weatherAt, attachWeather } from "../js/weather.js";
+
+const sample = {
+  daily: {
+    time: ["2026-06-20"], weather_code: [3],
+    temperature_2m_max: [20], temperature_2m_min: [15],
+    precipitation_probability_max: [10], precipitation_sum: [0],
+    wind_speed_10m_max: [20], wind_gusts_10m_max: [40], wind_direction_10m_dominant: [225],
+    sunrise: ["2026-06-20T04:50"], sunset: ["2026-06-20T21:18"],
+  },
+  hourly: {
+    time: ["2026-06-20T14:00", "2026-06-20T15:00", "2026-06-20T16:00"],
+    temperature_2m: [19, 20, 19], weather_code: [3, 1, 3],
+    wind_speed_10m: [24, 21, 19], wind_gusts_10m: [44, 41, 39],
+    wind_direction_10m: [270, 270, 260], precipitation_probability: [12, 6, 8],
+  },
+};
+
+test("parseDaily keys by date", () => {
+  const d = parseDaily(sample);
+  assert.equal(d["2026-06-20"].tMax, 20);
+  assert.equal(d["2026-06-20"].gustMax, 40);
+});
+
+test("weatherAt matches by literal YYYY-MM-DDTHH (15:30 -> 15:00 hour)", () => {
+  const hourly = parseHourly(sample);
+  const wx = weatherAt(hourly, "2026-06-20T15:30:00+00:00");
+  assert.equal(wx.temp, 20);
+  assert.equal(wx.windSpeed, 21);
+});
+
+test("attachWeather sets slot.weather", () => {
+  const hourly = parseHourly(sample);
+  const slots = [{ start: "2026-06-20T16:00:00+00:00", weather: null }];
+  attachWeather(slots, hourly);
+  assert.equal(slots[0].weather.temp, 19);
+});
