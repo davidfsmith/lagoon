@@ -32,6 +32,11 @@ import pathlib as _pl
 import urllib.parse as _url
 import urllib.request as _req
 from dataclasses import dataclass
+from zoneinfo import ZoneInfo
+
+# The API serialises session times as UTC (+00:00 even in summer). Sessions are
+# displayed/grouped in UK local time (what the booking site shows), so convert.
+LONDON = ZoneInfo("Europe/London")
 
 API_BASE = "https://api.lagoon.co.uk"
 USER_AGENT = "lagoon-availability/0.1 (personal availability checker)"
@@ -128,12 +133,17 @@ class Slot:
     capacity: int
 
     @property
+    def local(self) -> _dt.datetime:
+        """Session start in Europe/London (for display and weekday checks)."""
+        return self.start.astimezone(LONDON)
+
+    @property
     def is_weekend(self) -> bool:
-        return self.start.weekday() >= 5  # Sat=5, Sun=6
+        return self.local.weekday() >= 5  # Sat=5, Sun=6 (London)
 
     @property
     def key(self) -> str:
-        """Stable identity for diffing across runs."""
+        """Stable identity for diffing across runs (kept in the API's UTC form)."""
         return f"{self.course_id}@{self.start.isoformat()}"
 
     def as_dict(self) -> dict:

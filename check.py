@@ -46,12 +46,12 @@ def main(argv: list[str] | None = None) -> int:
 
     last_day = None
     for s in slots:
-        day = s.start.strftime("%a %d %b")
+        day = s.local.strftime("%a %d %b")
         if day != last_day:
             tag = "   <-- WEEKEND" if s.is_weekend else ""
             print(f"\n{day}{tag}")
             last_day = day
-        print(f"   {s.start:%H:%M}  {s.label:8} {s.free}/{s.capacity} free")
+        print(f"   {s.local:%H:%M}  {s.label:8} {s.free}/{s.capacity} free")
     print(f"\n{len(slots)} open slot(s). Book: https://booking.lagoon.co.uk")
     return 0
 
