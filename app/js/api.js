@@ -1,4 +1,4 @@
-import { API_BASE } from "./config.js";
+import { API_BASE, API2_BASE } from "./config.js";
 
 export async function login(email, password, fetchImpl = fetch) {
   const res = await fetchImpl(`${API_BASE}/login`, {
@@ -19,6 +19,17 @@ export async function authedGet(path, token, fetchImpl = fetch) {
   if (res.status === 401) { const e = new Error("unauthorized"); e.code = 401; throw e; }
   if (!res.ok) throw new Error(`${path} ${res.status}`);
   return res.json();
+}
+
+// Cancel one rider's place on a booking (WRITE — real cancellation).
+export async function cancelParticipant(participantId, token, fetchImpl = fetch) {
+  const res = await fetchImpl(`${API2_BASE}/booking-order/cancelParticipant/${participantId}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) { const e = new Error("unauthorized"); e.code = 401; throw e; }
+  if (!res.ok) throw new Error(`cancel ${res.status}`);
+  return true;
 }
 
 // Paginate ascending runs until we pass horizonISO or exhaust results.

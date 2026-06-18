@@ -1,6 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { login, authedGet, getCourseRuns } from "../js/api.js";
+import { login, authedGet, getCourseRuns, cancelParticipant } from "../js/api.js";
+
+test("cancelParticipant POSTs to the api2 endpoint with bearer; 401 throws coded", async () => {
+  let url, opts;
+  const ok = async (u, o) => { url = u; opts = o; return { ok: true, status: 200 }; };
+  const r = await cancelParticipant(137840, "JWT", ok);
+  assert.equal(r, true);
+  assert.match(url, /\/booking-order\/cancelParticipant\/137840$/);
+  assert.equal(opts.method, "POST");
+  assert.equal(opts.headers.Authorization, "Bearer JWT");
+  const unauth = async () => ({ ok: false, status: 401 });
+  await assert.rejects(() => cancelParticipant(1, "JWT", unauth), (e) => e.code === 401);
+});
 
 test("login posts {email,password} and returns token", async () => {
   let body, url;
