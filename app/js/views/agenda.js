@@ -13,7 +13,7 @@ export function renderAgenda(view, state, go) {
     const w = d.summary;
     const wx = w ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · ☔${w.precipProb}% · 🌬${Math.round(w.windMax)}(${Math.round(w.gustMax)})` : "";
     const chips = d.slots.map(s =>
-      `<span class="chip${s.booked ? " booked" : ""}">${londonParts(s.start).time} ${s.label}${s.booked ? " ✓" : ` <b>${s.free}</b>`}</span>`
+      `<span class="chip${s.booked ? " booked" : ""}" data-key="${s.key}">${londonParts(s.start).time} ${s.label}${s.booked ? " ✓" : ` <b>${s.free}</b>`}</span>`
     ).join("");
     return `<button class="day" data-date="${d.date}">
       <div class="day-hd"><span>${fmtDate(d.date)}${d.weekend ? ' <em>WKND</em>' : ''}</span><span class="muted">${wx}</span></div>
@@ -22,7 +22,10 @@ export function renderAgenda(view, state, go) {
     </button>`;
   }).join("");
   for (const el of view.querySelectorAll(".day")) {
-    el.addEventListener("click", () => go("day", el.dataset.date));
+    el.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      go("day", { date: el.dataset.date, key: chip ? chip.dataset.key : null });
+    });
   }
   injectAgendaStyles();
 }

@@ -2,7 +2,11 @@ import { wcEmoji, fmtDate } from "./format.js";
 import { londonParts } from "../tz.js";
 import { BOOKING_SITE } from "../config.js";
 
-export function renderDay(view, state, date, go) {
+export function renderDay(view, state, arg, go) {
+  // arg is either a date string (e.g. nav within the app) or { date, key }
+  // where key identifies the session tapped on the agenda, to jump to.
+  const date = typeof arg === "string" ? arg : arg.date;
+  const targetKey = (arg && typeof arg === "object") ? arg.key : null;
   const day = (state.agenda || []).find(d => d.date === date);
   if (!day) { go("agenda"); return; }
   const w = day.summary;
@@ -15,7 +19,7 @@ export function renderDay(view, state, date, go) {
     const right = s.booked
       ? `<span class="tag">✓ You're booked</span>`
       : `<span class="free">${s.free} free</span>${s.freeWithMembership ? '<span class="mem">free w/ membership</span>' : ''}<a class="bk" target="_blank" rel="noopener" href="${BOOKING_SITE}">Book ↗</a>`;
-    return `<div class="srow${s.booked ? " booked" : ""}">
+    return `<div class="srow${s.booked ? " booked" : ""}" data-key="${s.key}">
       <div><div class="tm">${londonParts(s.start).time} <b>${s.label}</b></div><div class="muted small">${wx}</div></div>
       <div class="r">${right}</div></div>`;
   }).join("");
@@ -27,6 +31,16 @@ export function renderDay(view, state, date, go) {
     <div class="lbl">Sessions</div>${rows}`;
   view.querySelector("#back").addEventListener("click", () => go("agenda"));
   injectDayStyles();
+
+  // Jump to the session tapped on the agenda, if any.
+  if (targetKey) {
+    const row = [...view.querySelectorAll(".srow")].find(r => r.dataset.key === targetKey);
+    if (row) {
+      row.scrollIntoView({ behavior: "smooth", block: "center" });
+      row.classList.add("flash");
+      setTimeout(() => row.classList.remove("flash"), 1600);
+    }
+  }
 }
 
 function injectDayStyles() {
@@ -40,6 +54,8 @@ function injectDayStyles() {
     .r{text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
     .free{color:#34d399;font-size:12px}.mem{color:#9aa0a6;font-size:10px}.tag{color:#fbbf24;font-size:12px}
     .bk{background:#2dd4bf;color:#06251f;border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none}
-    .small{font-size:11px}`;
+    .small{font-size:11px}
+    .srow.flash{outline:2px solid #2dd4bf;animation:flashbg 1.6s ease-out}
+    @keyframes flashbg{0%{background:#1c3a35}100%{background:#16181c}}`;
   document.head.appendChild(s);
 }
