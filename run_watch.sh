@@ -39,5 +39,5 @@ if [[ "$FIRST" == URGENT:* ]]; then
   COUNT="${FIRST#URGENT: }"
   printf '\n===== %s =====\n%s\n' "$(date '+%Y-%m-%d %H:%M')" "$OUT" >>state/notified.log
   # osascript is built in — no extra install needed.
-  osascript -e "display notification \"${COUNT} short-notice slot(s) — book soon, see notified.log\" with title \"🏄 Hove Lagoon — spot free\" sound name \"Glass\"" || true
+  osascript -e "display notification \"${COUNT} spot(s) just freed up — book soon, see notified.log\" with title \"🏄 Hove Lagoon — spot released\" sound name \"Glass\"" || true
 fi
