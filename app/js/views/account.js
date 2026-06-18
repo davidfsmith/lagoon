@@ -6,7 +6,7 @@ import { bookingKeys } from "../model.js";
 import { logout } from "../app.js";
 
 const riderName = (p, me) =>
-  (p.contact || {}).id === (me || {}).id ? "you" : ((p.contact || {}).firstName || "rider");
+  (p.contact || {}).id === (me || {}).id ? "You" : ((p.contact || {}).firstName || "Rider");
 
 export function renderAccount(view, state, go) {
   const me = state.me || {};
