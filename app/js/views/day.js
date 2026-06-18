@@ -18,7 +18,7 @@ export function renderDay(view, state, arg, go) {
     const wx = s.weather ? `${wcEmoji(s.weather.code)} ${Math.round(s.weather.temp)}° · wind ${Math.round(s.weather.windSpeed)} · rain ${s.weather.precipProb}%` : "";
     const right = s.booked
       ? `<span class="tag">✓ You're booked</span>`
-      : `<span class="free">${s.free} free</span>${s.freeWithMembership ? '<span class="mem">free w/ membership</span>' : ''}<a class="bk" target="_blank" rel="noopener" href="${BOOKING_SITE}">Book ↗</a>`;
+      : `<span class="free">${s.free} free</span>${s.freeWithMembership ? '<span class="mem">free w/ membership</span>' : ''}<a class="bk" target="_blank" rel="noopener" href="${s.runId ? `${BOOKING_SITE}/book?courseRunId=${s.runId}` : BOOKING_SITE}">Book ↗</a>`;
     return `<div class="srow${s.booked ? " booked" : ""}" data-key="${s.key}">
       <div><div class="tm">${londonParts(s.start).time} <b>${s.label}</b></div><div class="muted small">${wx}</div></div>
       <div class="r">${right}</div></div>`;
@@ -26,7 +26,7 @@ export function renderDay(view, state, arg, go) {
 
   view.innerHTML = `
     <button class="link" id="back">‹ Back</button>
-    <h2>${fmtDate(date)}${day.weekend ? ' · weekend' : ''}</h2>
+    <h2>${fmtDate(date)}${day.weekend ? ' <span class="wknd-tag">WEEKEND</span>' : ''}</h2>
     <p class="muted small">${head}</p>
     <div class="lbl">Sessions</div>${rows}`;
   view.querySelector("#back").addEventListener("click", () => go("agenda"));
@@ -54,6 +54,7 @@ function injectDayStyles() {
     .free{color:#34d399;font-size:12px}.mem{color:#9aa0a6;font-size:10px}.tag{color:#fbbf24;font-size:12px}
     .bk{background:#2dd4bf;color:#06251f;border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none}
     .small{font-size:11px}
-    .srow.selected{outline:2px solid #2dd4bf;background:#16302b}`;
+    .srow.selected{outline:2px solid #2dd4bf;background:#16302b}
+    .wknd-tag{background:#2dd4bf;color:#06251f;font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:6px;vertical-align:middle;margin-left:8px}`;
   document.head.appendChild(s);
 }

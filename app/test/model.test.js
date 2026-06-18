@@ -7,7 +7,7 @@ const now = new Date("2026-06-14T12:00:00+00:00");
 test("runsToSlots keeps upcoming runs with free space inside horizon", () => {
   const runs = [
     { startDate: "2026-06-10T15:00:00+00:00", endDate: "2026-06-10T15:30:00+00:00", maxNumbers: 2, participantsCount: 0 }, // past
-    { startDate: "2026-06-14T15:30:00+00:00", endDate: "2026-06-14T16:00:00+00:00", maxNumbers: 2, participantsCount: 1 }, // free 1
+    { id: 98612, startDate: "2026-06-14T15:30:00+00:00", endDate: "2026-06-14T16:00:00+00:00", maxNumbers: 2, participantsCount: 1 }, // free 1
     { startDate: "2026-06-15T17:00:00+00:00", endDate: "2026-06-15T17:30:00+00:00", maxNumbers: 2, participantsCount: 2 }, // full
     { startDate: "2026-09-01T10:00:00+00:00", endDate: "2026-09-01T10:30:00+00:00", maxNumbers: 2, participantsCount: 0 }, // beyond horizon
   ];
@@ -17,6 +17,7 @@ test("runsToSlots keeps upcoming runs with free space inside horizon", () => {
   assert.equal(slots[0].free, 1);
   assert.equal(slots[0].capacity, 2);
   assert.equal(slots[0].label, "Tech 30");
+  assert.equal(slots[0].runId, 98612);
   assert.equal(slots[0].booked, false);
 });
 

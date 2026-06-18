@@ -14,7 +14,7 @@ export function runsToSlots(runs, courseId, label, now, horizonDays = 21) {
     const free = r.maxNumbers - r.participantsCount;
     if (free <= 0) continue;
     out.push({
-      courseId, label,
+      courseId, label, runId: r.id,
       start: r.startDate, end: r.endDate,
       free, capacity: r.maxNumbers,
       key: slotKey(courseId, r.startDate),
