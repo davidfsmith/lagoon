@@ -37,8 +37,7 @@ export function renderDay(view, state, arg, go) {
     const row = [...view.querySelectorAll(".srow")].find(r => r.dataset.key === targetKey);
     if (row) {
       row.scrollIntoView({ behavior: "smooth", block: "center" });
-      row.classList.add("flash");
-      setTimeout(() => row.classList.remove("flash"), 1600);
+      row.classList.add("selected"); // persistent highlight while on this page
     }
   }
 }
@@ -55,7 +54,6 @@ function injectDayStyles() {
     .free{color:#34d399;font-size:12px}.mem{color:#9aa0a6;font-size:10px}.tag{color:#fbbf24;font-size:12px}
     .bk{background:#2dd4bf;color:#06251f;border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none}
     .small{font-size:11px}
-    .srow.flash{outline:2px solid #2dd4bf;animation:flashbg 1.6s ease-out}
-    @keyframes flashbg{0%{background:#1c3a35}100%{background:#16181c}}`;
+    .srow.selected{outline:2px solid #2dd4bf;background:#16302b}`;
   document.head.appendChild(s);
 }
