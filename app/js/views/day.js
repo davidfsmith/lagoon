@@ -46,7 +46,10 @@ function injectDayStyles() {
   if (document.getElementById("day-css")) return;
   const s = document.createElement("style"); s.id = "day-css";
   s.textContent = `
-    .link{background:none;border:none;color:#2dd4bf;padding:0;margin-bottom:4px;font-size:14px}
+    .link{position:sticky;top:50px;z-index:5;display:inline-flex;align-items:center;
+      background:#16181c;border:1px solid #2a2d33;color:#2dd4bf;font-size:14px;
+      padding:6px 14px;border-radius:20px;margin-bottom:10px;cursor:pointer;
+      box-shadow:0 2px 8px rgba(0,0,0,.35)}
     .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;margin:14px 0 8px}
     .srow{display:flex;justify-content:space-between;align-items:center;background:#16181c;border-radius:12px;padding:11px 12px;margin-bottom:8px}
     .srow.booked{opacity:.7}.tm{font-weight:600}.tm b{color:#2dd4bf}
