@@ -12,3 +12,12 @@ export function wcEmoji(code) {
   if (code <= 82) return "🌧";
   return "⛈";
 }
+
+// Shorten a raw Lagoon course name for display.
+// "2026 Wakeboard -Tech - Ride Session 30" -> "Tech 30";
+// "2026 Wakeboard - Skills Clinic" -> "Skills Clinic".
+export function prettyCourse(name) {
+  let n = (name || "").trim().replace(/^\d{4}\s+/, "").replace(/^Wakeboard\s*-\s*/i, "");
+  const m = n.match(/^(Tech|Air)\s*-\s*Ride Session\s*(\d+)/i);
+  return m ? `${m[1]} ${m[2]}` : n;
+}
