@@ -1,0 +1,9 @@
+# runtime state & logs (last-seen slots, watcher logs) — keep the dir, ignore contents
+state/*
+!state/.gitkeep
+__pycache__/
+*.pyc
+.DS_Store
+
+# brainstorming visual-companion working files
+.superpowers/

@@ -1,0 +1,9 @@
+{
+  "_comment": "Courses to monitor. 'search' is a distinctive substring matched (whitespace-insensitive) against the live Lagoon catalogue at runtime, so course renumbering fails loudly. Set 'enabled': false to stop collecting/alerting on a session type without deleting it (defaults to true if omitted). Add other activities (SUP, kids clinics, etc.) as new entries.",
+  "monitor": [
+    { "search": "Wakeboard -Tech - Ride Session 30", "label": "Tech 30", "enabled": true },
+    { "search": "Wakeboard -Air - Ride Session 30", "label": "Air 30", "enabled": true },
+    { "search": "Wakeboard -Tech - Ride Session 15", "label": "Tech 15", "enabled": false },
+    { "search": "Wakeboard -Air - Ride Session 15", "label": "Air 15", "enabled": false }
+  ]
+}
