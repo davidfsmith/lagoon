@@ -14,7 +14,7 @@ that come up at the last minute (cancellations / released places).
 |------|---------|
 | `lagoon_client.py` | Reusable API client — search courses, fetch openings. **Pure Python, no deps** (portable to Lambda). |
 | `check.py` | CLI: print current openings on demand. |
-| `watch.py` | Logs all openings; alerts (`URGENT`) only on **short-notice** ones (within a lead-time window). |
+| `watch.py` | Logs all openings; alerts (`URGENT`) only on **releases** — a slot's free count rising — within a short-notice window. |
 | `analyze.py` | Reads `state/history.jsonl` → churn / lead-time / heatmap report. |
 | `schedule_policy.py` | When a firing should run (build vs production cadence). |
 | `courses.json` | Which courses to monitor (resolved to live IDs by name at runtime). |
@@ -54,17 +54,19 @@ python3 check.py                 # all openings, next 21 days
 python3 check.py --weekend       # weekends only
 python3 check.py --days 14 --json
 
-# Watcher (alerts only on short-notice openings, default within 48h lead)
+# Watcher (alerts only on releases within the short-notice window, default 48h)
 python3 watch.py                 # weekend slots, next 14 days
 python3 watch.py --all --days 21 # include weekdays
 python3 watch.py --urgent-hours 24  # tighten the short-notice window
-python3 watch.py --reset         # forget alert state
+python3 watch.py --reset         # forget free-count state
 ```
 
-`watch.py` prints a marker first line — `URGENT: <n>` (imminent openings not yet
-alerted) or `NONE` — so a scheduler can key off it. Far-future openings are logged
-to `history.jsonl` but never alerted. A slot alerts once when it enters the window
-while free; it can re-alert if booked then freed again.
+`watch.py` prints a marker first line — `URGENT: <n>` (places **released** within
+the window — a slot's free count rose since last run) or `NONE` — so a scheduler
+can key off it. Standing availability never alerts (browse it in the app); only
+genuine releases do. Tracking free counts per slot (`state/free.json`) dedupes
+naturally: a release pings once; a spot booked then freed again pings again.
+First run records a baseline and never alerts.
 
 ## Local schedule (current setup)
 

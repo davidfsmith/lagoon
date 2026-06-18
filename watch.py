@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
-"""Watch for openings and alert only on imminent (short-notice) ones.
+"""Watch for short-notice releases (cancellations) and alert only on those.
 
 Runs repeatedly (via the scheduler). Every run it logs a full snapshot to
-history.jsonl for analysis, and raises an alert (URGENT marker) only for open
-slots within the short-notice window (default 48h lead) that it hasn't already
-alerted on. Far-future openings are logged but never trigger a notification —
-the Sunday churn data showed most weekend appearances were >7 days out, i.e.
-not "grab it now" material.
+history.jsonl, then alerts (URGENT marker) when a session's free count has
+*increased* since the last run — a place was released — for a slot within the
+short-notice window (default 48h lead). Standing availability never alerts (use
+the app to browse); only genuine releases do. (The Sunday→Thursday data showed
+the old "open within window" model fired ~hourly for slots that were already
+free as the weekend crossed the 48h line — noise, not cancellations.)
 
-Alert semantics: a slot alerts once when it enters the urgent window while open.
-A slot first seen days out still alerts when it becomes imminent and is *still*
-free. If a slot is booked and later frees again, it can alert again.
+Tracking free counts per slot gives natural dedup: a release pings once; a spot
+booked then released again pings again. A brand-new opening inside the window
+(was full → now free) counts as a release.
 
 Usage:
     python3 watch.py                       # weekend slots, next 14 days
     python3 watch.py --all --days 21       # include weekdays, custom horizon
     python3 watch.py --urgent-hours 24     # tighten the short-notice window
-    python3 watch.py --reset               # forget alert state
+    python3 watch.py --reset               # forget free-count state
 
 First stdout line is a marker the scheduler keys on:
-    URGENT: <n>   one or more imminent openings not yet alerted (details follow)
-    NONE          nothing new to alert
+    URGENT: <n>   one or more places released within the window (details follow)
+    NONE          no new releases
 """
 from __future__ import annotations
 
@@ -34,20 +35,22 @@ import lagoon_client as lc
 
 CONFIG = pathlib.Path(__file__).with_name("courses.json")
 STATE_DIR = pathlib.Path(__file__).with_name("state")
-ALERTED = STATE_DIR / "alerted.json"
+FREE = STATE_DIR / "free.json"
+LEGACY_ALERTED = STATE_DIR / "alerted.json"
 HISTORY = STATE_DIR / "history.jsonl"
 URGENT_HOURS_DEFAULT = 48
 
 
-def load_alerted() -> set:
-    if ALERTED.exists():
-        return set(json.loads(ALERTED.read_text()))
-    return set()
+def load_free() -> dict | None:
+    """Previous run's {slot key: free count}, or None if there is no prior run."""
+    if FREE.exists():
+        return json.loads(FREE.read_text())
+    return None
 
 
-def save_alerted(keys) -> None:
+def save_free(free: dict) -> None:
     STATE_DIR.mkdir(exist_ok=True)
-    ALERTED.write_text(json.dumps(sorted(keys), indent=2))
+    FREE.write_text(json.dumps(free, indent=2, sort_keys=True))
 
 
 def append_history(slots, days: int) -> None:
@@ -71,18 +74,37 @@ def fmt_lead(hours: float) -> str:
     return f"in {hours / 24:.1f}d"
 
 
+def released_within_window(slots, prev_free, now, urgent_hours):
+    """Slots whose free count increased since prev_free, within the lead window.
+
+    prev_free is the previous {key: free} map, or None on the very first run
+    (in which case nothing is a release yet — we only record a baseline). A slot
+    with no prior entry is treated as having had 0 free, so a full→free flip
+    counts as a release.
+    """
+    if prev_free is None:
+        return []
+    out = []
+    for s in slots:
+        lead = (s.start - now).total_seconds() / 3600
+        if 0 <= lead <= urgent_hours and s.free > prev_free.get(s.key, 0):
+            out.append(s)
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--days", type=int, default=14, help="days ahead to scan (default 14)")
     ap.add_argument("--all", action="store_true", help="include weekdays (default weekend only)")
     ap.add_argument("--urgent-hours", type=float, default=URGENT_HOURS_DEFAULT,
-                    help=f"alert only on slots within this lead time (default {URGENT_HOURS_DEFAULT})")
-    ap.add_argument("--reset", action="store_true", help="clear alert state and exit")
+                    help=f"alert only on releases within this lead time (default {URGENT_HOURS_DEFAULT})")
+    ap.add_argument("--reset", action="store_true", help="clear free-count state and exit")
     args = ap.parse_args(argv)
 
     if args.reset:
-        ALERTED.unlink(missing_ok=True)
-        print("Alert state cleared.")
+        FREE.unlink(missing_ok=True)
+        LEGACY_ALERTED.unlink(missing_ok=True)
+        print("Free-count state cleared.")
         return 0
 
     monitor = lc.load_monitor(CONFIG)
@@ -92,41 +114,38 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     courses = lc.resolve_courses(monitor)
 
-    # Fetch everything for comprehensive history; the alert scope narrows to
-    # weekend unless --all.
+    # Fetch everything for comprehensive history and free-count tracking; the
+    # alert scope narrows to weekend unless --all.
     all_slots = lc.find_openings(courses, days_ahead=args.days, weekend_only=False)
     append_history(all_slots, days=args.days)
-    slots = all_slots if args.all else [s for s in all_slots if s.is_weekend]
+    scoped = all_slots if args.all else [s for s in all_slots if s.is_weekend]
 
     now = dt.datetime.now(dt.timezone.utc)
-    def lead(s):  # hours until session start
-        return (s.start - now).total_seconds() / 3600
+    prev_free = load_free()
+    released = released_within_window(scoped, prev_free, now, args.urgent_hours)
 
-    urgent = [s for s in slots if 0 <= lead(s) <= args.urgent_hours]
-    alerted = load_alerted()
-    new_urgent = [s for s in urgent if s.key not in alerted]
+    # Track free counts for ALL open slots (independent of --all) so release
+    # detection is consistent and standing availability never re-alerts.
+    save_free({s.key: s.free for s in all_slots})
 
-    # Persist exactly the currently-urgent keys: stops still-open ones from
-    # re-alerting, and drops booked/elapsed ones so they can re-alert if they
-    # come back.
-    save_alerted(s.key for s in urgent)
-
-    if not new_urgent:
+    if not released:
+        why = "first run, baseline recorded" if prev_free is None else "no new releases"
         print("NONE")
-        print(f"({len(slots)} open, {len(urgent)} within {args.urgent_hours:.0f}h, none new to alert)")
+        print(f"({len(scoped)} open in scope; {why})")
         return 0
 
-    print(f"URGENT: {len(new_urgent)}")
+    print(f"URGENT: {len(released)}")
     scope = "weekend " if not args.all else ""
-    print(f"Short-notice {scope}wakeboarding openings at Hove Lagoon "
+    print(f"Short-notice {scope}spots just released at Hove Lagoon "
           f"(within {args.urgent_hours:.0f}h):\n")
     last_day = None
-    for s in sorted(new_urgent, key=lambda x: (x.start, x.label)):
+    for s in sorted(released, key=lambda x: (x.start, x.label)):
         day = s.local.strftime("%a %d %b")
         if day != last_day:
             print(day)
             last_day = day
-        print(f"   {s.local:%H:%M}  {s.label:8} {s.free}/{s.capacity} free  ({fmt_lead(lead(s))})")
+        lead = (s.start - now).total_seconds() / 3600
+        print(f"   {s.local:%H:%M}  {s.label:8} {s.free}/{s.capacity} free  ({fmt_lead(lead)})")
     print("\nBook: https://booking.lagoon.co.uk")
     return 0
 
