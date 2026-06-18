@@ -14,17 +14,22 @@ function riders(b, me) {
 
 export function renderAccount(view, state, go) {
   const m = (state.memberships || [])[0];
-  const memHtml = m
-    ? `<div class="card"><div class="t">Membership</div>
-        <div>${(m.membershipType && m.membershipType.name) || "Member"} · <b>${m.status}</b></div>
-        <div class="muted small">expires ${m.expiryDate ? fmtDate(m.expiryDate.slice(0,10)) : "—"}</div></div>`
-    : `<div class="card muted">No membership found.</div>`;
+  const memHtml = `<div class="t">Membership</div>` + (m
+    ? `<div class="bkrow">
+        <div><div class="bktm">${(m.membershipType && m.membershipType.name) || "Member"}</div>
+          <div class="bksub">${m.expiryDate ? "expires " + fmtDate(m.expiryDate.slice(0, 10)) : "no expiry"}</div></div>
+        <span class="bktag">${m.status || ""}</span></div>`
+    : `<div class="bkrow muted">No membership found.</div>`);
 
   const passes = (state.packages || []).filter(p => (p.remainTokens || 0) > 0);
-  const passHtml = passes.length
-    ? `<div class="card"><div class="t">Ride passes</div>` + passes.map(p =>
-        `<div>${(p.package && p.package.title) || "Pass"} — <b>${p.remainTokens}</b>/${p.totalTokens} left</div>`).join("") + `</div>`
-    : `<div class="card muted">No ride-pass tokens remaining.</div>`;
+  const passHtml = `<div class="t" style="margin-top:16px">Ride passes</div>` + (passes.length
+    ? passes.map(p => {
+        const title = ((p.package && p.package.title) || "Pass").replace(/^Package\s*-\s*/i, "");
+        return `<div class="bkrow">
+          <div><div class="bktm">${title}</div><div class="bksub">ride pass</div></div>
+          <span class="bktag">${p.remainTokens}/${p.totalTokens} left</span></div>`;
+      }).join("")
+    : `<div class="bkrow muted">No ride-pass tokens remaining.</div>`);
 
   const upcoming = (state.meBookings || [])
     .filter(b => (b.status || "").toLowerCase() === "confirmed" && b.courseRun && new Date(b.courseRun.startDate) >= new Date())
@@ -38,7 +43,7 @@ export function renderAccount(view, state, go) {
           <div><div class="bktm">${fmtDate(lp.date)} · <b>${lp.time}</b></div><div class="bksub">${sub}</div></div>
           <span class="bktag">✓ Booked</span></div>`;
       }).join("")
-    : `<div class="card muted">None.</div>`);
+    : `<div class="bkrow muted">None.</div>`);
 
   view.innerHTML = `<h2>Account</h2>${memHtml}${passHtml}${bkHtml}
     <button class="primary" id="logout" style="margin-top:14px">Log out</button>`;
