@@ -9,7 +9,7 @@ export function parseDaily(json) {
       tMin: d.temperature_2m_min[i], tMax: d.temperature_2m_max[i],
       precipProb: d.precipitation_probability_max[i], precipSum: d.precipitation_sum[i],
       windMax: d.wind_speed_10m_max[i], gustMax: d.wind_gusts_10m_max[i],
-      windDir: d.wind_direction_10m_dominant[i],
+      windDir: d.wind_direction_10m_dominant[i], uvMax: d.uv_index_max[i],
       sunrise: d.sunrise[i], sunset: d.sunset[i],
     };
   });
@@ -22,6 +22,7 @@ export function parseHourly(json) {
     time: t, temp: h.temperature_2m[i], code: h.weather_code[i],
     windSpeed: h.wind_speed_10m[i], gust: h.wind_gusts_10m[i],
     windDir: h.wind_direction_10m[i], precipProb: h.precipitation_probability[i],
+    uv: h.uv_index[i],
   }));
 }
 
@@ -42,8 +43,8 @@ export function attachWeather(slots, hourly) {
 export async function fetchForecast(lat, lon, fetchImpl = fetch) {
   const params = new URLSearchParams({
     latitude: lat, longitude: lon, timezone: "Europe/London", forecast_days: "16",
-    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,sunrise,sunset",
-    hourly: "temperature_2m,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,precipitation_probability",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,uv_index_max,sunrise,sunset",
+    hourly: "temperature_2m,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,precipitation_probability,uv_index",
   });
   const res = await fetchImpl(`${WX_URL}?${params}`);
   if (!res.ok) throw new Error("weather " + res.status);

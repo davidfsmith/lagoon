@@ -11,11 +11,11 @@ export function renderDay(view, state, arg, go) {
   if (!day) { go("agenda"); return; }
   const w = day.summary;
   const head = w
-    ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · rain ${w.precipProb}% · wind ${Math.round(w.windMax)} (gust ${Math.round(w.gustMax)}) km/h · sunset ${(w.sunset || "").slice(11, 16)}`
+    ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · rain ${w.precipProb}% · wind ${Math.round(w.windMax)} (gust ${Math.round(w.gustMax)}) km/h${w.uvMax != null ? ` · UV ${Math.round(w.uvMax)}` : ""} · sunset ${(w.sunset || "").slice(11, 16)}`
     : "weather unavailable";
 
   const rows = day.slots.map(s => {
-    const wx = s.weather ? `${wcEmoji(s.weather.code)} ${Math.round(s.weather.temp)}° · wind ${Math.round(s.weather.windSpeed)} · rain ${s.weather.precipProb}%` : "";
+    const wx = s.weather ? `${wcEmoji(s.weather.code)} ${Math.round(s.weather.temp)}° · wind ${Math.round(s.weather.windSpeed)} · rain ${s.weather.precipProb}%${s.weather.uv != null ? ` · UV ${Math.round(s.weather.uv)}` : ""}` : "";
     const right = s.booked
       ? `<span class="tag">✓ You're booked</span>`
       : `<span class="free">${s.free} free</span>${s.freeWithMembership ? '<span class="mem">free w/ membership</span>' : ''}<a class="bk" target="_blank" rel="noopener" href="${s.runId ? `${BOOKING_SITE}/book?courseRunId=${s.runId}` : BOOKING_SITE}">Book ↗</a>`;

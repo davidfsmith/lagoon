@@ -10,7 +10,7 @@ const riderName = (p, me) =>
   (p.contact || {}).id === (me || {}).id ? "You" : ((p.contact || {}).firstName || "Rider");
 
 const wxLine = (w) =>
-  w ? `${wcEmoji(w.code)} ${Math.round(w.temp)}° · wind ${Math.round(w.windSpeed)} · rain ${w.precipProb}%` : "";
+  w ? `${wcEmoji(w.code)} ${Math.round(w.temp)}° · wind ${Math.round(w.windSpeed)} · rain ${w.precipProb}%${w.uv != null ? ` · UV ${Math.round(w.uv)}` : ""}` : "";
 
 export function renderAccount(view, state, go) {
   const me = state.me || {};
