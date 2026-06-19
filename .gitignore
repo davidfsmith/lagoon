@@ -7,3 +7,8 @@ __pycache__/
 
 # brainstorming visual-companion working files
 .superpowers/
+
+# AWS watcher build/CDK artifacts
+aws/lambda/build/
+aws/cdk/node_modules/
+aws/cdk/cdk.out/
