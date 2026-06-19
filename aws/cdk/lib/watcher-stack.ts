@@ -36,7 +36,9 @@ export class WatcherStack extends Stack {
         HORIZON_DAYS: "14",
       },
     });
-    stateBucket.grantReadWrite(fn);
+    // Least-privilege: the handler only GETs and PUTs the one object (no delete).
+    stateBucket.grantRead(fn);
+    stateBucket.grantPut(fn);
 
     // Every 10 min, 06:00–23:50 UTC, daily. EventBridge cron is UTC (no DST).
     new events.Rule(this, "Schedule", {

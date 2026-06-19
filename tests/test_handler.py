@@ -72,6 +72,16 @@ class Run(unittest.TestCase):
                         urgent_hours=48, horizon_days=14, find_openings=boom)
         self.assertEqual(self.written, {})
 
+    def test_read_state_error_writes_no_state(self):
+        def boom():
+            raise RuntimeError("S3 read failed")
+        with self.assertRaises(RuntimeError):
+            handler.run(read_state=boom, write_state=lambda f: self.written.update(f),
+                        courses=[{"id": 51, "label": "Air 30"}], now=self.now,
+                        urgent_hours=48, horizon_days=14,
+                        find_openings=lambda courses, days_ahead, weekend_only, now: [self.s])
+        self.assertEqual(self.written, {})
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
