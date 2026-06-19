@@ -36,7 +36,8 @@ export function renderAgenda(view, state, go) {
           `<span class="chip${s.booked ? " booked" : ""}" data-key="${s.key}">${londonParts(s.start).time} ${s.label}${s.booked ? " ✓" : ` <b>${s.free}</b>`}</span>`
         ).join("");
         return `<button class="day" data-date="${d.date}">
-          <div class="day-hd"><span>${fmtDate(d.date)}${d.weekend ? ' <span class="wknd-tag">WEEKEND</span>' : ''}</span><span class="muted">${wx}</span></div>
+          <div class="day-hd"><span>${fmtDate(d.date)}</span>${d.weekend ? '<span class="wknd-tag">WEEKEND</span>' : ''}</div>
+          ${wx ? `<div class="day-wx muted">${wx}</div>` : ""}
           <div class="chips">${chips}</div>
           ${bookable.length ? "" : '<div class="muted small">all booked / full</div>'}
         </button>`;
@@ -65,8 +66,9 @@ function injectAgendaStyles() {
     .filterbtn{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:18px;padding:5px 15px;font-size:13px;cursor:pointer}
     .filterbtn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
     .day{display:block;width:100%;text-align:left;background:var(--surface);border:none;border-radius:14px;padding:12px;margin-bottom:10px;color:inherit}
-    .day-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:600}
-    .wknd-tag{background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:6px;margin-left:8px}
+    .day-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-weight:600}
+    .day-wx{font-size:12px;font-weight:400;margin:-2px 0 8px}
+    .wknd-tag{background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:6px}
     .chips{display:flex;flex-wrap:wrap;gap:6px}
     .chip{background:var(--chip-bg);border:1px solid var(--chip-border);color:var(--chip-text);border-radius:8px;padding:4px 8px;font-size:12px}
     .chip b{color:var(--text)}.chip.booked{background:var(--surface-2);border-color:var(--border);color:var(--muted)}
