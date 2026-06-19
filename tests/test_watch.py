@@ -9,7 +9,7 @@ import types
 import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-from watch import released_within_window  # noqa: E402
+from lagoon_client import released_within_window  # noqa: E402
 
 NOW = dt.datetime(2026, 6, 18, 20, 0, tzinfo=dt.timezone.utc)
 

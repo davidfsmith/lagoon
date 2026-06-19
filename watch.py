@@ -74,24 +74,6 @@ def fmt_lead(hours: float) -> str:
     return f"in {hours / 24:.1f}d"
 
 
-def released_within_window(slots, prev_free, now, urgent_hours):
-    """Slots whose free count increased since prev_free, within the lead window.
-
-    prev_free is the previous {key: free} map, or None on the very first run
-    (in which case nothing is a release yet — we only record a baseline). A slot
-    with no prior entry is treated as having had 0 free, so a full→free flip
-    counts as a release.
-    """
-    if prev_free is None:
-        return []
-    out = []
-    for s in slots:
-        lead = (s.start - now).total_seconds() / 3600
-        if 0 <= lead <= urgent_hours and s.free > prev_free.get(s.key, 0):
-            out.append(s)
-    return out
-
-
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--days", type=int, default=14, help="days ahead to scan (default 14)")
@@ -122,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
 
     now = dt.datetime.now(dt.timezone.utc)
     prev_free = load_free()
-    released = released_within_window(scoped, prev_free, now, args.urgent_hours)
+    released = lc.released_within_window(scoped, prev_free, now, args.urgent_hours)
 
     # Track free counts for ALL open slots (independent of --all) so release
     # detection is consistent and standing availability never re-alerts.

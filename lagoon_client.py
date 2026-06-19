@@ -210,3 +210,21 @@ def find_openings(
         slots = [s for s in slots if s.is_weekend]
     slots.sort(key=lambda s: (s.start, s.label))
     return slots
+
+
+def released_within_window(slots, prev_free, now, urgent_hours):
+    """Slots whose free count increased since prev_free, within the lead window.
+
+    prev_free is the previous {key: free} map, or None on the very first run
+    (in which case nothing is a release yet — we only record a baseline). A slot
+    with no prior entry is treated as having had 0 free, so a full→free flip
+    counts as a release.
+    """
+    if prev_free is None:
+        return []
+    out = []
+    for s in slots:
+        lead = (s.start - now).total_seconds() / 3600
+        if 0 <= lead <= urgent_hours and s.free > prev_free.get(s.key, 0):
+            out.append(s)
+    return out
