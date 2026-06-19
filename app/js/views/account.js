@@ -1,5 +1,6 @@
-import { fmtDate, prettyCourse } from "./format.js";
+import { fmtDate, prettyCourse, wcEmoji } from "./format.js";
 import { londonParts } from "../tz.js";
+import { weatherAt } from "../weather.js";
 import { getToken } from "../store.js";
 import { cancelParticipant } from "../api.js";
 import { bookingKeys } from "../model.js";
@@ -7,6 +8,9 @@ import { logout } from "../app.js";
 
 const riderName = (p, me) =>
   (p.contact || {}).id === (me || {}).id ? "You" : ((p.contact || {}).firstName || "Rider");
+
+const wxLine = (w) =>
+  w ? `${wcEmoji(w.code)} ${Math.round(w.temp)}° · wind ${Math.round(w.windSpeed)} · rain ${w.precipProb}%${w.uv != null ? ` · UV ${Math.round(w.uv)}` : ""}` : "";
 
 export function renderAccount(view, state, go) {
   const me = state.me || {};
@@ -32,10 +36,12 @@ export function renderAccount(view, state, go) {
   const upcoming = (state.meBookings || [])
     .filter(b => (b.status || "").toLowerCase() === "confirmed" && b.courseRun && new Date(b.courseRun.startDate) >= new Date())
     .sort((a, b) => a.courseRun.startDate < b.courseRun.startDate ? -1 : 1);
+  const hourly = (state.weather && state.weather.hourly) || [];
   const bkHtml = `<div class="t" style="margin-top:16px">Your upcoming bookings</div>` + (upcoming.length
     ? upcoming.map(b => {
         const lp = londonParts(b.courseRun.startDate);
         const name = prettyCourse((b.courseRun.course || {}).name);
+        const wx = wxLine(weatherAt(hourly, b.courseRun.startDate));
         const riderRows = (b.participants || []).map(p =>
           `<div class="rider"><span>${riderName(p, me)}</span>
              <button class="bkcancel" data-pid="${p.id}">Cancel</button></div>`).join("")
@@ -43,6 +49,7 @@ export function renderAccount(view, state, go) {
         return `<div class="bkcard">
           <div class="bktm">${fmtDate(lp.date)} · <b>${lp.time}</b></div>
           <div class="bksub">${name}</div>
+          ${wx ? `<div class="bksub">${wx}</div>` : ""}
           <div class="riders">${riderRows}</div></div>`;
       }).join("")
     : `<div class="bkrow muted">None.</div>`);
@@ -95,17 +102,17 @@ async function onCancel(btn, view, state, go) {
 function injectAccountStyles() {
   if (document.getElementById("acct-css")) return;
   const s = document.createElement("style"); s.id = "acct-css";
-  s.textContent = `.card{background:#16181c;border-radius:14px;padding:12px;margin-bottom:10px}
-    .t{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;margin-bottom:8px}
+  s.textContent = `.card{background:var(--surface);border-radius:14px;padding:12px;margin-bottom:10px}
+    .t{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
     .small{font-size:11px}
-    .bkrow{display:flex;justify-content:space-between;align-items:center;background:#16181c;border-radius:12px;padding:11px 12px;margin-bottom:8px}
-    .bktm{font-weight:600;font-size:14px}.bktm b{color:#2dd4bf}
-    .bksub{font-size:11px;color:#9aa0a6;margin-top:3px}
-    .bktag{background:#13241f;border:1px solid #2dd4bf55;color:#2dd4bf;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;white-space:nowrap}
-    .bkcard{background:#16181c;border-radius:12px;padding:11px 12px;margin-bottom:8px}
+    .bkrow{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-radius:12px;padding:11px 12px;margin-bottom:8px}
+    .bktm{font-weight:600;font-size:14px}.bktm b{color:var(--accent)}
+    .bksub{font-size:11px;color:var(--muted);margin-top:3px}
+    .bktag{background:var(--chip-bg);border:1px solid var(--chip-border);color:var(--accent);font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;white-space:nowrap}
+    .bkcard{background:var(--surface);border-radius:12px;padding:11px 12px;margin-bottom:8px}
     .bkcard .bksub{margin:3px 0 4px}
-    .rider{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid #23262c;font-size:13px}
-    .bkcancel{background:none;border:1px solid #5a2f2f;color:#f87171;font-size:11px;font-weight:600;padding:3px 11px;border-radius:7px;cursor:pointer}
+    .rider{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--border);font-size:13px}
+    .bkcancel{background:none;border:1px solid var(--danger-border);color:var(--danger);font-size:11px;font-weight:600;padding:3px 11px;border-radius:7px;cursor:pointer}
     .bkcancel:disabled{opacity:.5}`;
   document.head.appendChild(s);
 }

@@ -30,7 +30,7 @@ export function renderAgenda(view, state, go) {
   const body = shownDays.length
     ? shownDays.map(d => {
         const w = d.summary;
-        const wx = w ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · ☔${w.precipProb}% · 🌬${Math.round(w.windMax)}(${Math.round(w.gustMax)})` : "";
+        const wx = w ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · ☔${w.precipProb}% · 🌬${Math.round(w.windMax)}(${Math.round(w.gustMax)})${w.uvMax != null ? ` · UV ${Math.round(w.uvMax)}` : ""}` : "";
         const bookable = d.slots.filter(s => !s.booked);
         const chips = d.slots.map(s =>
           `<span class="chip${s.booked ? " booked" : ""}" data-key="${s.key}">${londonParts(s.start).time} ${s.label}${s.booked ? " ✓" : ` <b>${s.free}</b>`}</span>`
@@ -62,14 +62,14 @@ function injectAgendaStyles() {
   const s = document.createElement("style"); s.id = "agenda-css";
   s.textContent = `
     .filterbar{display:flex;gap:8px;margin-bottom:12px}
-    .filterbtn{background:#16181c;border:1px solid #2a2d33;color:#9aa0a6;border-radius:18px;padding:5px 15px;font-size:13px;cursor:pointer}
-    .filterbtn.active{background:#2dd4bf;color:#06251f;border-color:#2dd4bf;font-weight:600}
-    .day{display:block;width:100%;text-align:left;background:#16181c;border:none;border-radius:14px;padding:12px;margin-bottom:10px;color:inherit}
+    .filterbtn{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:18px;padding:5px 15px;font-size:13px;cursor:pointer}
+    .filterbtn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+    .day{display:block;width:100%;text-align:left;background:var(--surface);border:none;border-radius:14px;padding:12px;margin-bottom:10px;color:inherit}
     .day-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:600}
-    .wknd-tag{background:#2dd4bf;color:#06251f;font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:6px;margin-left:8px}
+    .wknd-tag{background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:6px;margin-left:8px}
     .chips{display:flex;flex-wrap:wrap;gap:6px}
-    .chip{background:#13241f;border:1px solid #2dd4bf44;color:#cfeee7;border-radius:8px;padding:4px 8px;font-size:12px}
-    .chip b{color:#fff}.chip.booked{background:#1a1d22;border-color:#333;color:#9aa0a6}
+    .chip{background:var(--chip-bg);border:1px solid var(--chip-border);color:var(--chip-text);border-radius:8px;padding:4px 8px;font-size:12px}
+    .chip b{color:var(--text)}.chip.booked{background:var(--surface-2);border-color:var(--border);color:var(--muted)}
     .small{font-size:11px;margin-top:6px}`;
   document.head.appendChild(s);
 }

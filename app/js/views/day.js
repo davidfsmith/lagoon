@@ -11,11 +11,11 @@ export function renderDay(view, state, arg, go) {
   if (!day) { go("agenda"); return; }
   const w = day.summary;
   const head = w
-    ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · rain ${w.precipProb}% · wind ${Math.round(w.windMax)} (gust ${Math.round(w.gustMax)}) km/h · sunset ${(w.sunset || "").slice(11, 16)}`
+    ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · rain ${w.precipProb}% · wind ${Math.round(w.windMax)} (gust ${Math.round(w.gustMax)}) km/h${w.uvMax != null ? ` · UV ${Math.round(w.uvMax)}` : ""} · sunset ${(w.sunset || "").slice(11, 16)}`
     : "weather unavailable";
 
   const rows = day.slots.map(s => {
-    const wx = s.weather ? `${wcEmoji(s.weather.code)} ${Math.round(s.weather.temp)}° · wind ${Math.round(s.weather.windSpeed)} · rain ${s.weather.precipProb}%` : "";
+    const wx = s.weather ? `${wcEmoji(s.weather.code)} ${Math.round(s.weather.temp)}° · wind ${Math.round(s.weather.windSpeed)} · rain ${s.weather.precipProb}%${s.weather.uv != null ? ` · UV ${Math.round(s.weather.uv)}` : ""}` : "";
     const right = s.booked
       ? `<span class="tag">✓ You're booked</span>`
       : `<span class="free">${s.free} free</span>${s.freeWithMembership ? '<span class="mem">free w/ membership</span>' : ''}<a class="bk" target="_blank" rel="noopener" href="${s.runId ? `${BOOKING_SITE}/book?courseRunId=${s.runId}` : BOOKING_SITE}">Book ↗</a>`;
@@ -47,17 +47,17 @@ function injectDayStyles() {
   const s = document.createElement("style"); s.id = "day-css";
   s.textContent = `
     .link{position:sticky;top:50px;z-index:5;display:inline-flex;align-items:center;
-      background:#16181c;border:1px solid #2a2d33;color:#2dd4bf;font-size:14px;
+      background:var(--surface);border:1px solid var(--border);color:var(--accent);font-size:14px;
       padding:6px 14px;border-radius:20px;margin-bottom:10px;cursor:pointer;
-      box-shadow:0 2px 8px rgba(0,0,0,.35)}
-    .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;margin:14px 0 8px}
-    .srow{display:flex;justify-content:space-between;align-items:center;background:#16181c;border-radius:12px;padding:11px 12px;margin-bottom:8px}
-    .srow.booked{opacity:.7}.tm{font-weight:600}.tm b{color:#2dd4bf}
+      box-shadow:0 2px 8px var(--shadow)}
+    .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:14px 0 8px}
+    .srow{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-radius:12px;padding:11px 12px;margin-bottom:8px}
+    .srow.booked{opacity:.7}.tm{font-weight:600}.tm b{color:var(--accent)}
     .r{text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
-    .free{color:#34d399;font-size:12px}.mem{color:#9aa0a6;font-size:10px}.tag{color:#fbbf24;font-size:12px}
-    .bk{background:#2dd4bf;color:#06251f;border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none}
+    .free{color:var(--good);font-size:12px}.mem{color:var(--muted);font-size:10px}.tag{color:var(--warn);font-size:12px}
+    .bk{background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none}
     .small{font-size:11px}
-    .srow.selected{outline:2px solid #2dd4bf;background:#16302b}
-    .wknd-tag{background:#2dd4bf;color:#06251f;font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:6px;vertical-align:middle;margin-left:8px}`;
+    .srow.selected{outline:2px solid var(--accent);background:var(--selected-bg)}
+    .wknd-tag{background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:6px;vertical-align:middle;margin-left:8px}`;
   document.head.appendChild(s);
 }

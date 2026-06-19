@@ -15,3 +15,29 @@ See ../docs/superpowers/specs/2026-06-14-lagoon-pwa-design.md
 
 Booking is deep-linked to booking.lagoon.co.uk in v1; in-app (no-payment) booking is a
 later phase. No card payments, ever.
+
+## Deployment
+
+The app's **single source is this repo** (`davidfsmith/lagoon`, `app/`). It is served at
+**https://www.dave-smith.co.uk/lagoon/** by the **`davidfsmith/daves-adventures`** site:
+its deploy workflow clones lagoon `main`, copies `app/` → `site/static/lagoon/`, stamps
+`APP_VERSION` from the lagoon short-SHA + date, builds Hugo, and ships to S3/CloudFront.
+
+To ship an app change: **push to lagoon `main`, then run the daves-adventures deploy**
+(`gh workflow run deploy.yml -R davidfsmith/daves-adventures`). A lagoon push alone does
+not auto-deploy. The service worker is network-first, so clients pick up changes on next
+load (bump `CACHE` in `sw.js` when adding files).
+
+### Deploy cache-control — `/lagoon/*` must not be immutable
+The site is served from AWS S3/CloudFront (cutover June 2026). The AWS deploy's
+"immutable, 1 year" S3 sync (`--include "*.js"`) is right for Hugo's content-hashed
+assets, but this app's files are **fixed-name** (`/lagoon/js/*.js`, `/lagoon/sw.js`) —
+immutable caching would freeze returning browsers on a stale build and break the
+network-first auto-update. So `/lagoon/*` is synced as a **dedicated
+`max-age=300, must-revalidate` disjoint set**, carved out of the immutable rule.
+
+**Resolved + verified** in the daves-adventures `deploy.yml` (commit `7a70063`):
+immutable applies only to Hugo's hashed assets. If you ever touch that workflow, keep
+the carve-out. Verify: `curl -sI https://www.dave-smith.co.uk/lagoon/js/app.js | grep -i
+cache-control` → `max-age=300, must-revalidate` (NOT `immutable`). This lives in the
+daves-adventures repo, not here.
