@@ -16,5 +16,5 @@ export async function loadEverything(token, now = new Date()) {
   const runsByCourse = {};
   await Promise.all(COURSES.map(async (c) => { runsByCourse[c.id] = await getCourseRuns(c.id, horizonISO); }));
   const agenda = buildAgenda({ runsByCourse, courses: COURSES, meBookings, meMemberships: memberships, weather, now, horizonDays: HORIZON_DAYS });
-  return { me, meBookings, memberships, packages, agenda };
+  return { me, meBookings, memberships, packages, agenda, weather };
 }

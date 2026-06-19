@@ -1,5 +1,6 @@
-import { fmtDate, prettyCourse } from "./format.js";
+import { fmtDate, prettyCourse, wcEmoji } from "./format.js";
 import { londonParts } from "../tz.js";
+import { weatherAt } from "../weather.js";
 import { getToken } from "../store.js";
 import { cancelParticipant } from "../api.js";
 import { bookingKeys } from "../model.js";
@@ -7,6 +8,9 @@ import { logout } from "../app.js";
 
 const riderName = (p, me) =>
   (p.contact || {}).id === (me || {}).id ? "You" : ((p.contact || {}).firstName || "Rider");
+
+const wxLine = (w) =>
+  w ? `${wcEmoji(w.code)} ${Math.round(w.temp)}° · wind ${Math.round(w.windSpeed)} · rain ${w.precipProb}%` : "";
 
 export function renderAccount(view, state, go) {
   const me = state.me || {};
@@ -32,10 +36,12 @@ export function renderAccount(view, state, go) {
   const upcoming = (state.meBookings || [])
     .filter(b => (b.status || "").toLowerCase() === "confirmed" && b.courseRun && new Date(b.courseRun.startDate) >= new Date())
     .sort((a, b) => a.courseRun.startDate < b.courseRun.startDate ? -1 : 1);
+  const hourly = (state.weather && state.weather.hourly) || [];
   const bkHtml = `<div class="t" style="margin-top:16px">Your upcoming bookings</div>` + (upcoming.length
     ? upcoming.map(b => {
         const lp = londonParts(b.courseRun.startDate);
         const name = prettyCourse((b.courseRun.course || {}).name);
+        const wx = wxLine(weatherAt(hourly, b.courseRun.startDate));
         const riderRows = (b.participants || []).map(p =>
           `<div class="rider"><span>${riderName(p, me)}</span>
              <button class="bkcancel" data-pid="${p.id}">Cancel</button></div>`).join("")
@@ -43,6 +49,7 @@ export function renderAccount(view, state, go) {
         return `<div class="bkcard">
           <div class="bktm">${fmtDate(lp.date)} · <b>${lp.time}</b></div>
           <div class="bksub">${name}</div>
+          ${wx ? `<div class="bksub">${wx}</div>` : ""}
           <div class="riders">${riderRows}</div></div>`;
       }).join("")
     : `<div class="bkrow muted">None.</div>`);

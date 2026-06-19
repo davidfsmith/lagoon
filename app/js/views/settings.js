@@ -14,7 +14,7 @@ export function renderSettings(view, state, go) {
     <div class="segbar">${seg("system", "System")}${seg("light", "Light")}${seg("dark", "Dark")}</div>
 
     <div class="t" style="margin-top:18px">About</div>
-    <div class="set-row"><span>Hove Lagoon</span><span class="muted">v${APP_VERSION}</span></div>`;
+    <div class="set-row"><span>Hove Lagoon</span><span class="muted">${APP_VERSION}</span></div>`;
 
   view.querySelector("#back").addEventListener("click", () => go(state ? "agenda" : "login"));
   for (const b of view.querySelectorAll(".seg")) {
