@@ -56,5 +56,23 @@ class ReleaseDetection(unittest.TestCase):
         self.assertEqual(released_within_window(slots, {"a": 2}, NOW, 48), [])
 
 
+def _slot(**kw):
+    import datetime as _d
+    from lagoon_client import Slot
+    base = dict(course_id=50, label="Tech 30", run_id=98610,
+                start=_d.datetime(2026, 6, 20, 13, 0, tzinfo=_d.timezone.utc),
+                end=_d.datetime(2026, 6, 20, 13, 30, tzinfo=_d.timezone.utc),
+                free=1, capacity=2)
+    base.update(kw)
+    return Slot(**base)
+
+
+class SlotRunId(unittest.TestCase):
+    def test_slot_carries_run_id(self):
+        s = _slot(run_id=12345)
+        self.assertEqual(s.run_id, 12345)
+        self.assertEqual(s.as_dict()["run_id"], 12345)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

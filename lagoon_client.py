@@ -131,6 +131,7 @@ class Slot:
     end: _dt.datetime
     free: int
     capacity: int
+    run_id: int = 0  # courseRun id (for the booking deep-link)
 
     @property
     def local(self) -> _dt.datetime:
@@ -154,6 +155,7 @@ class Slot:
             "end": self.end.isoformat(),
             "free": self.free,
             "capacity": self.capacity,
+            "run_id": self.run_id,
             "weekend": self.is_weekend,
             "key": self.key,
         }
@@ -189,6 +191,7 @@ def fetch_openings(
                     end=_dt.datetime.fromisoformat(run["endDate"]),
                     free=free,
                     capacity=run["maxNumbers"],
+                    run_id=run["id"],
                 ))
         if not runs or page * meta.get("itemsPerPage", 10) >= meta.get("filteredCount", 0):
             break
