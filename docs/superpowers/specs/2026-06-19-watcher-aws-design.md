@@ -37,9 +37,8 @@ browser and needs no backend. This spec is only the watcher.
 ## 3. Architecture
 
 ```
-EventBridge Scheduler  (2 schedules, cron in Europe/London — BST-safe)
-   ├── weekday: hourly
-   └── weekend: every 10 min, 08:00–16:00
+EventBridge Scheduler  (one schedule, cron in UTC)
+   └── every 10 min, 06:00–00:00 UTC, daily
             │ invokes
             ▼
       Lambda (Python)
@@ -56,8 +55,9 @@ EventBridge Scheduler  (2 schedules, cron in Europe/London — BST-safe)
 ```
 
 ### Components (each one job)
-- **Scheduler** — two EventBridge Scheduler schedules encode the cadence directly in
-  Europe/London, so the Lambda needs **no `schedule_policy` gate**.
+- **Scheduler** — one EventBridge Scheduler schedule (every 10 min, 06:00–00:00 UTC,
+  daily). The Lambda needs **no `schedule_policy` gate**; alert scope stays
+  weekend-only inside the handler, so midweek runs are harmless no-ops.
 - **Lambda** — the existing release-detection logic; thin handler over the shared
   client. Python runtime; 256 MB; ~30 s timeout.
 - **State store (S3)** — one private bucket, key `state/free.json`. GET at start, PUT
@@ -106,14 +106,20 @@ Config via env vars: `STATE_BUCKET`, `STATE_KEY=state/free.json`, `TOPIC_ARN`,
 `URGENT_HOURS=48`, `HORIZON_DAYS=14`. Monitored courses from the bundled
 `courses.json` (only `enabled` entries).
 
-## 6. Scheduling (EventBridge Scheduler, Europe/London)
+## 6. Scheduling (EventBridge Scheduler, UTC)
 
-- Weekday hourly: `cron(0 * ? * MON-FRI *)`
-- Weekend window: `cron(0/10 8-15 ? * SAT-SUN *)` — 08:00–15:50 every 10 min, matching
-  the local policy's `8 ≤ hour < 16`.
+Single schedule, every 10 minutes, 06:00–00:00 UTC, daily:
 
-Both target the same Lambda. Timezone set to `Europe/London` on each schedule (BST/GMT
-handled by EventBridge).
+- `cron(0/10 6-23 ? * * *)` — 06:00–23:50 every 10 min (UTC; EventBridge default
+  timezone, so no DST handling). This UTC window = 07:00–01:00 BST in summer /
+  06:00–00:00 GMT in winter, comfortably covering session hours (~08:00–20:00 London)
+  year-round.
+
+Rationale: at this cadence the cost is still ≈ $0 (see §10), so a single uniform
+schedule is simpler than a weekday/weekend split. The handler keeps the **alert scope
+weekend-only** (§5), so midweek runs — when no weekend session is within the 48 h
+window — simply find nothing and are no-ops. **Only the trigger window is UTC**; the
+release logic and event still interpret session times in Europe/London (§5, §8).
 
 ## 7. State (S3)
 
