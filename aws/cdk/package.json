@@ -1,0 +1,20 @@
+{
+  "name": "lagoon-watcher-cdk",
+  "version": "0.1.0",
+  "private": true,
+  "bin": { "watcher": "bin/watcher.ts" },
+  "scripts": {
+    "synth": "../lambda/build-lambda.sh && cdk synth",
+    "deploy": "../lambda/build-lambda.sh && cdk deploy"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "aws-cdk": "^2.150.0",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.5.4"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.150.0",
+    "constructs": "^10.3.0"
+  }
+}
