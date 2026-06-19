@@ -16,6 +16,11 @@ See ../docs/superpowers/specs/2026-06-14-lagoon-pwa-design.md
 Booking is deep-linked to booking.lagoon.co.uk in v1; in-app (no-payment) booking is a
 later phase. No card payments, ever.
 
+**Booking limit:** an account can hold at most ~4 booked (upcoming) sessions at once —
+new bookings are refused past that until a session is ridden or cancelled. (Number is
+from memory, not yet confirmed against the API.) This caps the per-rider cancel
+live-test: a throwaway test booking needs a free slot under the limit first.
+
 ## Deployment
 
 The app's **single source is this repo** (`davidfsmith/lagoon`, `app/`). It is served at
