@@ -35,5 +35,43 @@ class ReleaseRecord(unittest.TestCase):
         self.assertAlmostEqual(rec["leadHours"], (s.start - now).total_seconds() / 3600, places=1)
 
 
+class Run(unittest.TestCase):
+    def setUp(self):
+        self.now = dt.datetime(2026, 6, 19, 23, 30, tzinfo=UTC)
+        self.s = slot(51, "Air 30", 98652, dt.datetime(2026, 6, 21, 15, 30, tzinfo=UTC), 1)
+        self.written = {}
+
+    def _run(self, prev):
+        return handler.run(
+            read_state=lambda: prev,
+            write_state=lambda free: self.written.update(free),
+            courses=[{"id": 51, "label": "Air 30"}],
+            now=self.now, urgent_hours=48, horizon_days=14,
+            find_openings=lambda courses, days_ahead, weekend_only, now: [self.s],
+        )
+
+    def test_first_run_baselines_silently(self):
+        records = self._run(prev=None)
+        self.assertEqual(records, [])
+        self.assertEqual(self.written, {self.s.key: 1})
+
+    def test_no_change_no_release(self):
+        self.assertEqual(self._run(prev={self.s.key: 1}), [])
+
+    def test_free_increase_is_a_release(self):
+        records = self._run(prev={self.s.key: 0})
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["runId"], 98652)
+
+    def test_fetch_error_writes_no_state(self):
+        def boom(courses, days_ahead, weekend_only, now):
+            raise RuntimeError("Lagoon down")
+        with self.assertRaises(RuntimeError):
+            handler.run(read_state=lambda: {}, write_state=lambda f: self.written.update(f),
+                        courses=[{"id": 51, "label": "Air 30"}], now=self.now,
+                        urgent_hours=48, horizon_days=14, find_openings=boom)
+        self.assertEqual(self.written, {})
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

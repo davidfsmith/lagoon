@@ -29,3 +29,53 @@ def release_record(slot, now: dt.datetime) -> dict:
         "leadHours": round(lead, 1),
         "book": f"{BOOKING_SITE}/book?courseRunId={slot.run_id}",
     }
+
+
+def run(read_state, write_state, courses, now, urgent_hours, horizon_days,
+        find_openings=lc.find_openings):
+    """Detect weekend releases and record state. AWS-agnostic — state IO and the
+    fetch are injected so this is unit-testable. Fetches first, so any fetch/read
+    error aborts BEFORE state is written (never baseline-wipe on a transient error).
+    """
+    slots = find_openings(courses, days_ahead=horizon_days, weekend_only=True, now=now)
+    prev = read_state()
+    releases = lc.released_within_window(slots, prev, now, urgent_hours)
+    write_state({s.key: s.free for s in slots})
+    records = [release_record(s, now) for s in releases]
+    for r in records:
+        print(json.dumps({"release": r}))
+    print(json.dumps({"summary": {"released": len(records), "open": len(slots)}}))
+    return records
+
+
+def lambda_handler(event, context):
+    import os
+    import boto3
+    from botocore.exceptions import ClientError
+
+    s3 = boto3.client("s3")
+    bucket = os.environ["STATE_BUCKET"]
+    key = os.environ.get("STATE_KEY", "state/free.json")
+
+    def read_state():
+        try:
+            body = s3.get_object(Bucket=bucket, Key=key)["Body"].read()
+            return json.loads(body)
+        except ClientError as e:
+            if e.response["Error"]["Code"] in ("NoSuchKey", "404"):
+                return None
+            raise
+
+    def write_state(free):
+        s3.put_object(Bucket=bucket, Key=key,
+                      Body=json.dumps(free, sort_keys=True).encode(),
+                      ContentType="application/json")
+
+    courses = lc.resolve_courses(lc.load_monitor(CONFIG_PATH))
+    records = run(
+        read_state, write_state, courses,
+        now=dt.datetime.now(dt.timezone.utc),
+        urgent_hours=float(os.environ.get("URGENT_HOURS", "48")),
+        horizon_days=int(os.environ.get("HORIZON_DAYS", "14")),
+    )
+    return {"released": len(records)}
