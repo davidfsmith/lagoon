@@ -4,6 +4,8 @@ import { renderLogin } from "./views/login.js";
 import { renderAgenda } from "./views/agenda.js";
 import { renderDay } from "./views/day.js";
 import { renderAccount } from "./views/account.js";
+import { renderSettings } from "./views/settings.js";
+import { apply as applyTheme } from "./theme.js";
 
 const view = document.getElementById("view");
 const nav = document.getElementById("nav");
@@ -16,6 +18,7 @@ function setActiveNav(route) {
 
 export function go(route, arg) {
   if (route === "login") { nav.hidden = true; renderLogin(view, onLoggedIn); return; }
+  if (route === "settings") { renderSettings(view, state, go); return; } // works pre/post login
   if (!state) return;
   if (route === "agenda") { setActiveNav("agenda"); renderAgenda(view, state, go); }
   else if (route === "day") { setActiveNav("agenda"); renderDay(view, state, arg, go); }
@@ -23,6 +26,7 @@ export function go(route, arg) {
 }
 
 nav.addEventListener("click", (e) => { const r = e.target.dataset.route; if (r) go(r); });
+document.getElementById("btn-settings").addEventListener("click", () => go("settings"));
 
 async function onLoggedIn() { await loadAndRender(); }
 
@@ -45,4 +49,5 @@ async function loadAndRender() {
 }
 
 // boot
+applyTheme();
 if (getToken()) loadAndRender(); else go("login");

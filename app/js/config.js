@@ -8,3 +8,4 @@ export const COURSES = [
   { id: 51, label: "Air 30" },
 ];
 export const BOOKING_SITE = "https://booking.lagoon.co.uk";
+export const APP_VERSION = "1.0.0";

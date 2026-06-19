@@ -95,17 +95,17 @@ async function onCancel(btn, view, state, go) {
 function injectAccountStyles() {
   if (document.getElementById("acct-css")) return;
   const s = document.createElement("style"); s.id = "acct-css";
-  s.textContent = `.card{background:#16181c;border-radius:14px;padding:12px;margin-bottom:10px}
-    .t{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;margin-bottom:8px}
+  s.textContent = `.card{background:var(--surface);border-radius:14px;padding:12px;margin-bottom:10px}
+    .t{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
     .small{font-size:11px}
-    .bkrow{display:flex;justify-content:space-between;align-items:center;background:#16181c;border-radius:12px;padding:11px 12px;margin-bottom:8px}
-    .bktm{font-weight:600;font-size:14px}.bktm b{color:#2dd4bf}
-    .bksub{font-size:11px;color:#9aa0a6;margin-top:3px}
-    .bktag{background:#13241f;border:1px solid #2dd4bf55;color:#2dd4bf;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;white-space:nowrap}
-    .bkcard{background:#16181c;border-radius:12px;padding:11px 12px;margin-bottom:8px}
+    .bkrow{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-radius:12px;padding:11px 12px;margin-bottom:8px}
+    .bktm{font-weight:600;font-size:14px}.bktm b{color:var(--accent)}
+    .bksub{font-size:11px;color:var(--muted);margin-top:3px}
+    .bktag{background:var(--chip-bg);border:1px solid var(--chip-border);color:var(--accent);font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;white-space:nowrap}
+    .bkcard{background:var(--surface);border-radius:12px;padding:11px 12px;margin-bottom:8px}
     .bkcard .bksub{margin:3px 0 4px}
-    .rider{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid #23262c;font-size:13px}
-    .bkcancel{background:none;border:1px solid #5a2f2f;color:#f87171;font-size:11px;font-weight:600;padding:3px 11px;border-radius:7px;cursor:pointer}
+    .rider{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--border);font-size:13px}
+    .bkcancel{background:none;border:1px solid var(--danger-border);color:var(--danger);font-size:11px;font-weight:600;padding:3px 11px;border-radius:7px;cursor:pointer}
     .bkcancel:disabled{opacity:.5}`;
   document.head.appendChild(s);
 }
