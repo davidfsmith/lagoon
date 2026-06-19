@@ -24,9 +24,11 @@ browser and needs no backend. This spec is only the watcher.
 - **State in S3** — a single JSON object (the free-count map), the 1:1 cloud
   equivalent of the local `state/free.json`. (DynamoDB considered and rejected: it
   buys nothing at this single-blob, single-writer access pattern.)
-- **Notifications are PARKED.** The watcher publishes each release to an **SNS topic**
-  (the decoupling seam); no subscribers yet. Channels + per-user preferences are a
-  future sub-system (see §13) — especially as the app may gain other users.
+- **All alerting is PARKED — including any event publishing.** v1 detects releases and
+  **logs them to CloudWatch only**: no SNS, no event bus, no delivery. With multiple
+  users likely, the entire alerting path (event mechanism, channels, per-user
+  preferences) is a larger future design (§13); committing to an event shape now would
+  risk baking in single-tenant assumptions.
 - The watcher only ever reads **public availability** (identical for everyone), so
   release-detection is inherently shared / multi-user-ready; only *delivery* is
   per-user. The watcher design does not change for multi-user.
@@ -47,9 +49,8 @@ EventBridge Scheduler  (one schedule, cron in UTC)
         3. GET previous free-counts from S3   (NoSuchKey → first run → baseline)
         4. released_within_window(slots, prev, now, 48h)   [reused unchanged]
         5. PUT current free-counts to S3
-        6. each release → SNS publish; log a one-line summary
+        6. log each detected release + a run summary  (CloudWatch)
             │
-            ├──▶ SNS topic  "lagoon-releases"   (no subscribers yet — parked)
             ├──▶ S3 object  state/free.json     (the free-count map)
             └──▶ CloudWatch Logs                (every run + each release)
 ```
@@ -62,8 +63,8 @@ EventBridge Scheduler  (one schedule, cron in UTC)
   client. Python runtime; 256 MB; ~30 s timeout.
 - **State store (S3)** — one private bucket, key `state/free.json`. GET at start, PUT
   at end. Single scheduled writer → no concurrency concerns.
-- **SNS topic** — `lagoon-releases`; the seam for parked notifications.
-- **CloudWatch Logs** — visibility + a hook for a future metric/alarm.
+- **CloudWatch Logs** — every run + each detected release (structured). This is the
+  **only** output of a release in v1, plus a hook for a future metric/alarm.
 
 ## 4. Repo layout & packaging
 
@@ -100,11 +101,12 @@ Per invocation:
 4. `released = released_within_window(slots, prev_free, now_utc, URGENT_HOURS)` —
    reused unchanged.
 5. `s3.put_object` current `{slot.key: free}` map.
-6. For each release: `sns.publish` (§8). Log `released=<n>, open=<m>`.
+6. Log each release as a structured record (§8) to CloudWatch, plus a one-line run
+   summary (`released=<n>, open=<m>`). **No publishing/notification in v1.**
 
-Config via env vars: `STATE_BUCKET`, `STATE_KEY=state/free.json`, `TOPIC_ARN`,
-`URGENT_HOURS=48`, `HORIZON_DAYS=14`. Monitored courses from the bundled
-`courses.json` (only `enabled` entries).
+Config via env vars: `STATE_BUCKET`, `STATE_KEY=state/free.json`, `URGENT_HOURS=48`,
+`HORIZON_DAYS=14`. Monitored courses from the bundled `courses.json` (only `enabled`
+entries).
 
 ## 6. Scheduling (EventBridge Scheduler, UTC)
 
@@ -119,7 +121,8 @@ Rationale: at this cadence the cost is still ≈ $0 (see §10), so a single unif
 schedule is simpler than a weekday/weekend split. The handler keeps the **alert scope
 weekend-only** (§5), so midweek runs — when no weekend session is within the 48 h
 window — simply find nothing and are no-ops. **Only the trigger window is UTC**; the
-release logic and event still interpret session times in Europe/London (§5, §8).
+release logic and the logged record still interpret session times in Europe/London
+(§5, §8).
 
 ## 7. State (S3)
 
@@ -131,7 +134,10 @@ release logic and event still interpret session times in Europe/London (§5, §8
 - `PutObject` at end (overwrite). Bucket versioning **on** (cheap safety net).
 - Lifecycle rule: expire non-current versions after 30 days.
 
-## 8. Release event (SNS message)
+## 8. Release record (CloudWatch log)
+
+Each detected release is logged as a structured JSON line (not published anywhere in
+v1):
 
 ```json
 { "label": "Air 30", "courseId": 51, "runId": 98652,
@@ -139,9 +145,10 @@ release logic and event still interpret session times in Europe/London (§5, §8
   "book": "https://booking.lagoon.co.uk/book?courseRunId=98652" }
 ```
 
-Subject e.g. `Hove Lagoon: Air 30 freed — Sat 21 Jun 16:30`. Carries everything a
-future subscriber (email / push / per-user filter) needs, including the booking
-deep-link.
+It deliberately carries everything a future notification subscriber would need
+(per-user filter, channel formatting, the booking deep-link), so when the alerting
+sub-system is designed (§13) it can attach an event sink/publish step here without
+changing the watcher's detection or state.
 
 ## 9. Error handling
 
@@ -149,27 +156,27 @@ deep-link.
   false releases; the next scheduled run retries). Key safety rule.
 - **S3 read error other than `NoSuchKey`** → abort the run (never baseline-wipe on a
   transient error).
-- **SNS publish fails for one release** → log and continue the others.
 - EventBridge Scheduler retry policy: small (a failed run just waits for the next
   tick). No DLQ in v1.
 
 ## 10. Cost
 
-Lambda, EventBridge Scheduler, S3, and SNS all sit within AWS's perpetual free tiers
-at this cadence → **≈ $0/month** (pennies worst-case), even at every-5-minutes. See
-the cost breakdown discussed in design.
+Lambda, EventBridge Scheduler, and S3 all sit within AWS's perpetual free tiers at
+this cadence (~3,300 runs/month for every-10-min 06:00–00:00 UTC) → **≈ $0/month**
+(S3 PUTs are pennies; everything else free). See the cost breakdown discussed in
+design.
 
 ## 11. Testing
 
 - **Unit:** carry the existing `released_within_window` tests. Add a handler test with
-  injected/mocked S3 + SNS clients (or `moto`): first run baselines silently; a
-  free-count increase publishes exactly one event; no change publishes none; a fetch
-  error writes no state.
+  an injected/mocked S3 client (or `moto`): first run baselines silently; a free-count
+  increase logs exactly one release record; no change logs none; a fetch error writes
+  no state.
 - **Infra:** `cdk synth` snapshot + `cdk diff`.
-- **Acceptance:** deploy to eu-west-1, invoke the Lambda manually, confirm CloudWatch
-  logs + the S3 `free.json` object appears; simulate a release (edit the S3 object's
-  counts down) and confirm an SNS publish — temporarily subscribe an email to the
-  topic to eyeball it.
+- **Acceptance:** deploy to eu-west-1, invoke the Lambda manually, confirm the S3
+  `free.json` object appears and the run is logged; simulate a release (edit the S3
+  object's counts down) and confirm the structured release record appears in
+  CloudWatch logs.
 
 ## 12. Deploy & decommission
 
@@ -181,22 +188,23 @@ the cost breakdown discussed in design.
 
 ## 13. Deferred — notifications (future sub-system)
 
-Parked by decision. Options recorded:
-- **Phone push** — ntfy / Pushover / Telegram (instant, cheap, trivial HTTP from a
-  subscriber Lambda).
-- **Email** — SES from the dave-smith.co.uk domain.
-- **SMS** — SNS (instant, ~£0.04/msg, UK sender registration).
-- **Web push** — to the installed PWA via its service worker (VAPID + subscription
-  store).
+Parked **entirely** by decision — channels *and* the event mechanism. The whole
+alerting path is a future design, made larger by likely multi-user. Recorded:
+- **Event mechanism** — how releases fan out (SNS topic, EventBridge bus, a queue, or
+  per-user routing). Deliberately **not** pre-committed in v1 (v1 only logs).
+- **Channels** — phone push (ntfy / Pushover / Telegram), email (SES from
+  dave-smith.co.uk), SMS (SNS; ~£0.04/msg, UK sender reg), web push to the PWA
+  (VAPID + subscription store).
 - **Multi-user concerns** — per-user channel + preferences (which cables/sessions,
   quiet hours), opt-in/unsubscribe, subscription storage. A design in its own right.
 
-Delivery attaches as **subscribers to the SNS topic** (or a router Lambda reading it),
-with no change to the watcher.
+When built, it reads the watcher's release output (the logged record §8, or an event
+sink added then) — the watcher's detection and state don't change.
 
 ## 14. Out of scope (v1)
 
-- Any notification delivery / user preferences (§13).
+- **All alerting** — event publishing (SNS/EventBridge/queue), notification delivery,
+  user preferences (§13). v1 logs releases to CloudWatch only.
 - Multi-user accounts / per-user filtering.
 - Replicating the full `history.jsonl` analytics in the cloud (CloudWatch logs suffice;
   the cadence is already data-validated). Can add an S3 history sink later if wanted.
