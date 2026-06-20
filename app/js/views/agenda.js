@@ -1,29 +1,42 @@
 import { wcEmoji, fmtDate } from "./format.js";
 import { londonParts } from "../tz.js";
+import { COURSES } from "../config.js";
 
-const FILTER_KEY = "lagoon.cable";
-const cableOf = (s) => (s.label || "").split(" ")[0]; // "Tech 30" -> "Tech"
-const getFilter = () => localStorage.getItem(FILTER_KEY) || "all";
-const setFilter = (v) => localStorage.setItem(FILTER_KEY, v);
+// Per-type filter: one toggle chip per session type. Core types are on by default;
+// `extra` types (Taster, Jam, Drop-in) are hidden until the user taps their chip.
+const TYPES_KEY = "lagoon.types";
+const ALL_LABELS = COURSES.map(c => c.label);
+const DEFAULT_LABELS = COURSES.filter(c => !c.extra).map(c => c.label);
+
+function getActiveTypes(present) {
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem(TYPES_KEY) || "null"); } catch { stored = null; }
+  const base = Array.isArray(stored) ? stored.filter(l => ALL_LABELS.includes(l)) : DEFAULT_LABELS;
+  const active = new Set(base.filter(l => present.includes(l)));
+  if (!active.size && !Array.isArray(stored)) {            // first run → core defaults
+    for (const l of DEFAULT_LABELS) if (present.includes(l)) active.add(l);
+  }
+  return active;
+}
+const setActiveTypes = (set) => localStorage.setItem(TYPES_KEY, JSON.stringify([...set]));
 
 export function renderAgenda(view, state, go) {
   const days = state.agenda || [];
   const stale = state.stale ? `<div class="stale">Showing saved data — couldn't refresh.</div>` : "";
 
-  // Cables present in the data (e.g. Tech, Air) drive the filter, so enabling
-  // more courses later extends it automatically.
-  const cables = [...new Set(days.flatMap(d => d.slots.map(cableOf)))].sort();
-  let filter = getFilter();
-  if (filter !== "all" && !cables.includes(filter)) filter = "all";
+  // Types present in the data, in config order (core first, then extras).
+  const presentSet = new Set(days.flatMap(d => d.slots.map(s => s.label)));
+  const present = ALL_LABELS.filter(l => presentSet.has(l));
+  const active = getActiveTypes(present);
 
-  const match = (s) => filter === "all" || cableOf(s) === filter;
+  const match = (s) => active.has(s.label);
   const shownDays = days
     .map(d => ({ ...d, slots: d.slots.filter(match) }))
     .filter(d => d.slots.length);
 
-  const filterBar = cables.length > 1
-    ? `<div class="filterbar">` + ["all", ...cables].map(c =>
-        `<button class="filterbtn${c === filter ? " active" : ""}" data-cable="${c}">${c === "all" ? "All" : c}</button>`
+  const filterBar = present.length > 1
+    ? `<div class="filterbar">` + present.map(l =>
+        `<button class="filterbtn${active.has(l) ? " active" : ""}" data-type="${l}">${l}</button>`
       ).join("") + `</div>`
     : "";
 
@@ -42,12 +55,17 @@ export function renderAgenda(view, state, go) {
           ${bookable.length ? "" : '<div class="muted small">all booked / full</div>'}
         </button>`;
       }).join("")
-    : `<p class="muted">No ${filter === "all" ? "" : filter + " "}free sessions in the next 21 days.</p>`;
+    : `<p class="muted">${active.size ? "No free sessions in the selected types in the next 21 days." : "Tap a session type above to show sessions."}</p>`;
 
   view.innerHTML = `${stale}<h2>Free sessions</h2>${filterBar}${body}`;
 
   for (const btn of view.querySelectorAll(".filterbtn")) {
-    btn.addEventListener("click", () => { setFilter(btn.dataset.cable); renderAgenda(view, state, go); });
+    btn.addEventListener("click", () => {
+      const l = btn.dataset.type;
+      if (active.has(l)) active.delete(l); else active.add(l);
+      setActiveTypes(active);
+      renderAgenda(view, state, go);
+    });
   }
   for (const el of view.querySelectorAll(".day")) {
     el.addEventListener("click", (e) => {
