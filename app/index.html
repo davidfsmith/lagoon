@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <!-- App is served from /lagoon/. Anchor every relative URL (manifest, js, sw,
+       icons) here so it works even when loaded as /lagoon without a trailing
+       slash (CloudFront doesn't redirect to add it). JS module imports resolve
+       against the module URL, not <base>, so they're unaffected. -->
+  <base href="/lagoon/">
   <title>Hove Lagoon</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0d0d0d">
