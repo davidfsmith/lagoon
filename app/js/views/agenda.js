@@ -1,4 +1,4 @@
-import { wcEmoji, fmtDate } from "./format.js";
+import { wcEmoji, fmtDate, fmtWhen } from "./format.js";
 import { londonParts } from "../tz.js";
 import { COURSES, FILTER_GROUPS } from "../config.js";
 
@@ -22,7 +22,9 @@ const setActiveTypes = (set) => localStorage.setItem(TYPES_KEY, JSON.stringify([
 
 export function renderAgenda(view, state, go) {
   const days = state.agenda || [];
-  const stale = state.stale ? `<div class="stale">Showing saved data — couldn't refresh.</div>` : "";
+  const stale = state.stale
+    ? `<div class="stale">Showing saved data from ${fmtWhen(state.refreshedAt)} — couldn't refresh.</div>`
+    : "";
 
   // Types present in the data, in config order (core first, then extras).
   const presentSet = new Set(days.flatMap(d => d.slots.map(s => s.label)));

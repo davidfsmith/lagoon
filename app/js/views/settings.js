@@ -1,6 +1,7 @@
 import { getTheme, setTheme } from "../theme.js";
 import { APP_VERSION, APP_RELEASE } from "../config.js";
 import { logout } from "../app.js";
+import { fmtWhen } from "./format.js";
 
 // APP_VERSION is stamped at deploy as "build <sha> · <date>" (just "dev" locally).
 // Split it back into the build SHA and date for the stacked About display.
@@ -28,6 +29,9 @@ export function renderSettings(view, state, go) {
       <span>${APP_RELEASE}</span>
       ${date ? `<span>${date}</span>` : ""}
     </span></div>
+
+    ${state ? `<div class="t" style="margin-top:16px">Data</div>
+    <div class="set-row"><span>Last refreshed</span><span class="muted">${fmtWhen(state.refreshedAt)}${state.stale ? " (saved)" : ""}</span></div>` : ""}
 
     <div class="t" style="margin-top:16px">Support</div>
     <a class="set-row support" href="mailto:dave@dave-smith.co.uk?subject=Lagoon%20App%20Support">

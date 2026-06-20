@@ -42,13 +42,13 @@ async function reload(target, showLoading) {
   const token = getToken();
   try {
     const data = await loadEverything(token);
-    state = { ...data, stale: false };
+    state = { ...data, stale: false, refreshedAt: Date.now() };
     saveCache(data);
     go(target);
   } catch (e) {
     if (e.code === 401) { logout(); return; }
     const cached = loadCache();
-    if (cached) { state = { ...cached.data, stale: true }; go(target); }
+    if (cached) { state = { ...cached.data, stale: true, refreshedAt: cached.at }; go(target); }
     else if (showLoading) view.innerHTML = `<p class="err">Couldn't load: ${e.message}</p>`;
     // on a pull-to-refresh failure with existing state, keep what's on screen
   }
