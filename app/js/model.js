@@ -29,10 +29,31 @@ const isActiveBooking = (b) => {
   return s !== "cancelled" && s !== "expired";
 };
 
+const isActiveParticipant = (p) => {
+  const s = (p.status || "").toLowerCase();
+  return s !== "cancelled" && s !== "expired";
+};
+
+// Participants still on a booking after cancellations. Cancelling a participant
+// can either drop them from the list or mark their status "cancelled"; both leave
+// a booking that's still "confirmed" at the top level, so we must look per-rider.
+export function activeParticipants(b) {
+  return (b.participants || []).filter(isActiveParticipant);
+}
+
+// True if a booking should be treated as a real, held place: top-level active AND
+// (when participants are listed) at least one still active. A booking cancelled
+// down to zero riders is no longer a booking.
+export function bookingIsHeld(b) {
+  if (!isActiveBooking(b)) return false;
+  if (Array.isArray(b.participants) && activeParticipants(b).length === 0) return false;
+  return true;
+}
+
 export function bookingKeys(meBookings) {
   const set = new Set();
   for (const b of meBookings || []) {
-    if (!isActiveBooking(b)) continue;
+    if (!bookingIsHeld(b)) continue;
     const cr = b.courseRun || {};
     const cid = cr.course && cr.course.id;
     if (cid != null && cr.startDate) set.add(slotKey(cid, cr.startDate));

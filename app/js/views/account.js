@@ -1,9 +1,9 @@
 import { fmtDate, prettyCourse, wcEmoji } from "./format.js";
 import { londonParts } from "../tz.js";
 import { weatherAt } from "../weather.js";
-import { getToken } from "../store.js";
+import { getToken, saveCache } from "../store.js";
 import { cancelParticipant } from "../api.js";
-import { bookingKeys } from "../model.js";
+import { bookingKeys, activeParticipants } from "../model.js";
 import { logout } from "../app.js";
 
 const riderName = (p, me) =>
@@ -34,7 +34,8 @@ export function renderAccount(view, state, go) {
     : `<div class="bkrow muted">No ride-pass tokens remaining.</div>`);
 
   const upcoming = (state.meBookings || [])
-    .filter(b => (b.status || "").toLowerCase() === "confirmed" && b.courseRun && new Date(b.courseRun.startDate) >= new Date())
+    .filter(b => (b.status || "").toLowerCase() === "confirmed" && b.courseRun && new Date(b.courseRun.startDate) >= new Date()
+      && (!Array.isArray(b.participants) || activeParticipants(b).length > 0)) // hide bookings cancelled down to no riders
     .sort((a, b) => a.courseRun.startDate < b.courseRun.startDate ? -1 : 1);
   const hourly = (state.weather && state.weather.hourly) || [];
   const bkHtml = `<div class="t" style="margin-top:16px">Your upcoming bookings</div>` + (upcoming.length
@@ -42,7 +43,7 @@ export function renderAccount(view, state, go) {
         const lp = londonParts(b.courseRun.startDate);
         const name = prettyCourse((b.courseRun.course || {}).name);
         const wx = wxLine(weatherAt(hourly, b.courseRun.startDate));
-        const riderRows = (b.participants || []).map(p =>
+        const riderRows = activeParticipants(b).map(p =>
           `<div class="rider"><span>${riderName(p, me)}</span>
              <button class="bkcancel" data-pid="${p.id}">Cancel</button></div>`).join("")
           || `<div class="rider muted"><span>booked</span></div>`;
@@ -88,6 +89,7 @@ async function onCancel(btn, view, state, go) {
     // keep the agenda's "booked" flags consistent without a full reload
     const keys = bookingKeys(state.meBookings || []);
     for (const d of state.agenda || []) for (const s of d.slots) s.booked = keys.has(s.key);
+    saveCache(state); // persist so the cancellation survives a later cache fallback
     renderAccount(view, state, go);
   } catch (e) {
     if (e.code === 401) { logout(); return; }

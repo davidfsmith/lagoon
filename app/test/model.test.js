@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runsToSlots, slotKey, bookingKeys, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay } from "../js/model.js";
+import { runsToSlots, slotKey, bookingKeys, activeParticipants, bookingIsHeld, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay } from "../js/model.js";
 
 const now = new Date("2026-06-14T12:00:00+00:00");
 
@@ -29,6 +29,32 @@ test("bookingKeys extracts active booking keys, skipping cancelled", () => {
   const keys = bookingKeys(meBookings);
   assert.ok(keys.has("50@2026-06-21T15:30:00+00:00"));
   assert.equal(keys.has("51@2026-06-22T15:30:00+00:00"), false);
+});
+
+test("a confirmed booking cancelled down to no active riders is not held", () => {
+  // single-participant booking, participant's place cancelled -> empty list
+  const emptied = { status: "confirmed", participants: [],
+    courseRun: { course: { id: 50 }, startDate: "2026-06-23T17:00:00+00:00" } };
+  // ...or the participant is kept but marked cancelled
+  const markedCancelled = { status: "confirmed", participants: [{ id: 1, status: "cancelled" }],
+    courseRun: { course: { id: 50 }, startDate: "2026-06-23T17:00:00+00:00" } };
+  assert.equal(bookingIsHeld(emptied), false);
+  assert.equal(bookingIsHeld(markedCancelled), false);
+  // a real held booking still counts; bookingKeys excludes the cancelled one
+  const held = { status: "confirmed", participants: [{ id: 2, status: "confirmed" }],
+    courseRun: { course: { id: 51 }, startDate: "2026-06-23T16:30:00+00:00" } };
+  assert.equal(bookingIsHeld(held), true);
+  const keys = bookingKeys([emptied, markedCancelled, held]);
+  assert.equal(keys.has("50@2026-06-23T17:00:00+00:00"), false);
+  assert.ok(keys.has("51@2026-06-23T16:30:00+00:00"));
+});
+
+test("activeParticipants drops cancelled/expired riders, keeps status-less ones", () => {
+  const b = { participants: [
+    { id: 1, status: "confirmed" }, { id: 2, status: "cancelled" },
+    { id: 3, status: "expired" }, { id: 4 }, // no status -> treated active
+  ] };
+  assert.deepEqual(activeParticipants(b).map(p => p.id), [1, 4]);
 });
 
 test("markBooked flags slots whose key is in the booking set", () => {
