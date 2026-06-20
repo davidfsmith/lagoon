@@ -28,6 +28,10 @@ export function renderSettings(view, state, go) {
       <span>${APP_RELEASE}</span>
       ${date ? `<span>${date}</span>` : ""}
     </span></div>
+
+    <div class="t" style="margin-top:16px">Support</div>
+    <a class="set-row support" href="mailto:dave@dave-smith.co.uk?subject=Lagoon%20App%20Support">
+      <span>Email support</span><span class="muted">dave@dave-smith.co.uk ›</span></a>
     ${state ? `<button class="primary" id="logout" style="margin-top:18px">Log out</button>` : ""}`;
 
   view.querySelector("#back").addEventListener("click", () => go(state ? "agenda" : "login"));
@@ -54,6 +58,8 @@ function injectSettingsStyles() {
     .set-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface);
       border-radius:12px;padding:12px;font-size:14px}
     .about-ver{display:flex;flex-direction:column;align-items:flex-end;gap:1px;
-      color:var(--muted);font-size:12px;text-align:right;line-height:1.5}`;
+      color:var(--muted);font-size:12px;text-align:right;line-height:1.5}
+    .set-row.support{text-decoration:none;color:var(--text)}
+    .set-row.support .muted{color:var(--accent)}`;
   document.head.appendChild(s);
 }
