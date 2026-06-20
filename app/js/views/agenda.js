@@ -1,6 +1,6 @@
 import { wcEmoji, fmtDate } from "./format.js";
 import { londonParts } from "../tz.js";
-import { COURSES } from "../config.js";
+import { COURSES, FILTER_GROUPS } from "../config.js";
 
 // Per-type filter: one toggle chip per session type. Core types are on by default;
 // `extra` types (Taster, Jam, Drop-in) are hidden until the user taps their chip.
@@ -34,11 +34,13 @@ export function renderAgenda(view, state, go) {
     .map(d => ({ ...d, slots: d.slots.filter(match) }))
     .filter(d => d.slots.length);
 
-  const filterBar = present.length > 1
-    ? `<div class="filterbar">` + present.map(l =>
-        `<button class="filterbtn${active.has(l) ? " active" : ""}" data-type="${l}">${l}</button>`
-      ).join("") + `</div>`
-    : "";
+  // Chips render in two rows: "ride" sessions (30/15) on row 1, "other" on row 2.
+  const chip = (l) => `<button class="filterbtn${active.has(l) ? " active" : ""}" data-type="${l}">${l}</button>`;
+  const rows = FILTER_GROUPS.map(g => {
+    const labels = COURSES.filter(c => c.group === g && present.includes(c.label)).map(c => c.label);
+    return labels.length ? `<div class="filterbar">${labels.map(chip).join("")}</div>` : "";
+  }).join("");
+  const filterBar = present.length > 1 ? `<div class="filters">${rows}</div>` : "";
 
   const body = shownDays.length
     ? shownDays.map(d => {
@@ -80,7 +82,9 @@ function injectAgendaStyles() {
   if (document.getElementById("agenda-css")) return;
   const s = document.createElement("style"); s.id = "agenda-css";
   s.textContent = `
-    .filterbar{display:flex;gap:8px;margin-bottom:12px}
+    .filters{margin-bottom:12px}
+    .filterbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+    .filterbar:last-child{margin-bottom:0}
     .filterbtn{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:18px;padding:5px 15px;font-size:13px;cursor:pointer}
     .filterbtn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
     .day{display:block;width:100%;text-align:left;background:var(--surface);border:none;border-radius:14px;padding:12px;margin-bottom:10px;color:inherit}

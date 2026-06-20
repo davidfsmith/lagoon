@@ -70,15 +70,15 @@ runtime so a renumber fails loudly.
 
 | id  | session                              | in app? |
 |-----|--------------------------------------|---------|
-| 50  | Wakeboard Tech – Ride Session 30     | ✅ enabled |
-| 51  | Wakeboard Air – Ride Session 30      | ✅ enabled |
-| 714 | Wakeboard Tech – Ride Session 15     | candidate |
-| 713 | Wakeboard Air – Ride Session 15      | candidate |
-| 9   | Wakeboard Taster                     | candidate |
-| 478 | Clinic Wakeboard – Jam session       | candidate |
-| 586 | Clinic Wakeboarding – Drop-in Ride   | candidate |
-| 8   | Wakeboard – Private Cable Hire 60min | candidate |
-| 66  | Clinic – Wakeboard                   | candidate |
+| 50  | Wakeboard Tech – Ride Session 30     | ✅ core (default) |
+| 51  | Wakeboard Air – Ride Session 30      | ✅ core (default) |
+| 714 | Wakeboard Tech – Ride Session 15     | ✅ extra (filter) |
+| 713 | Wakeboard Air – Ride Session 15      | ✅ extra (filter) |
+| 9   | Wakeboard Taster                     | ✅ extra (filter) |
+| 478 | Clinic Wakeboard – Jam session       | ✅ extra (filter) |
+| 586 | Clinic Wakeboarding – Drop-in Ride   | ✅ extra (filter) |
+| 8   | Wakeboard – Private Cable Hire 60min | not added |
+| 66  | Clinic – Wakeboard                   | not added |
 
 (`701`/`702` are `DO NOT USE` decoys for the old 15-min sessions — skipped by the
 name resolver. The live 15-min sessions are `713`/`714`.)
