@@ -29,14 +29,18 @@ unauthenticated** REST API at `https://api.lagoon.co.uk`:
 
 ```
 GET /public/courses?name=<text>     # search catalogue (also ?id= ?salesCategory= ?itemsPerPage= ?page=)
-GET /public/courseRuns?course=<id>  # dated sessions for a course, sorted ascending from today
-    -> each run: { startDate, endDate, maxNumbers, participantsCount }
+GET /public/courseRuns?course=<id>  # dated sessions for a course (paginated)
+    -> each run: { id, startDate, endDate, maxNumbers, participantsCount }
        free spaces = maxNumbers - participantsCount
 ```
 
 Gotchas (handled in `lagoon_client.py`):
-- Server **ignores** date-range params — always returns from today forward, so we
-  filter the horizon client-side and stop paginating once we pass it.
+- Runs come back ordered by **runId (creation order), NOT `startDate`** — dates are
+  scattered across every page, and `order[startDate]=asc` is ignored. So we fetch
+  **all** pages and filter the horizon client-side; early-exiting on the first
+  out-of-horizon run truncates and undercounts (bug fixed 2026-06-20 — see
+  `docs/data-accuracy.md`).
+- Server also **ignores** date-range params — always returns from today forward.
 - Course IDs are resolved **by name at runtime** (whitespace-insensitive, skipping
   `DO NOT USE`/`test`/`closed` decoys) so a renumber fails loudly, not silently.
 - It's an internal API and may change without notice.

@@ -32,12 +32,18 @@ test("authedGet sends bearer header and throws coded error on 401", async () => 
   await assert.rejects(() => authedGet("me", "JWT123", stub), (e) => e.code === 401);
 });
 
-test("getCourseRuns paginates until past horizon", async () => {
+test("getCourseRuns fetches ALL pages (runs are runId-ordered, not date-ordered)", async () => {
+  // page 1's LAST run is far beyond any horizon — the old code broke here and
+  // never fetched page 2's in-horizon runs. Dates are scattered (runId order),
+  // so pagination must be driven by filteredCount, not a startDate comparison.
   const page1 = { meta: { itemsPerPage: 2, filteredCount: 4 },
-    data: [{ startDate: "2026-06-14T10:00:00+00:00" }, { startDate: "2026-06-15T10:00:00+00:00" }] };
+    data: [{ id: 1, startDate: "2026-06-21T10:00:00+00:00" }, { id: 2, startDate: "2026-09-01T10:00:00+00:00" }] };
   const page2 = { meta: { itemsPerPage: 2, filteredCount: 4 },
-    data: [{ startDate: "2026-06-16T10:00:00+00:00" }, { startDate: "2026-09-01T10:00:00+00:00" }] };
-  const stub = async (u) => ({ ok: true, json: async () => (u.includes("page=2") ? page2 : page1) });
-  const runs = await getCourseRuns(50, "2026-07-05T00:00:00+00:00", stub);
-  assert.equal(runs.length, 4); // stops after page 2 (last run beyond horizon)
+    data: [{ id: 3, startDate: "2026-06-22T10:00:00+00:00" }, { id: 4, startDate: "2026-07-01T10:00:00+00:00" }] };
+  let pagesFetched = 0;
+  const stub = async (u) => { pagesFetched++; return { ok: true, json: async () => (u.includes("page=2") ? page2 : page1) }; };
+  const runs = await getCourseRuns(50, stub);
+  assert.equal(pagesFetched, 2);      // did NOT stop after page 1
+  assert.equal(runs.length, 4);       // all runs returned; caller filters by horizon
+  assert.deepEqual(runs.map(r => r.id), [1, 2, 3, 4]);
 });

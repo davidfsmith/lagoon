@@ -4,7 +4,6 @@ import { buildAgenda } from "./agendaModel.js";
 import { COURSES, HOVE, HORIZON_DAYS } from "./config.js";
 
 export async function loadEverything(token, now = new Date()) {
-  const horizonISO = new Date(now.getTime() + HORIZON_DAYS * 86400000).toISOString();
   const [me, bookingsRes, memberships, packages, weather] = await Promise.all([
     authedGet("me", token),
     authedGet("me/bookings", token),
@@ -14,7 +13,7 @@ export async function loadEverything(token, now = new Date()) {
   ]);
   const meBookings = Array.isArray(bookingsRes) ? bookingsRes : (bookingsRes.data || []);
   const runsByCourse = {};
-  await Promise.all(COURSES.map(async (c) => { runsByCourse[c.id] = await getCourseRuns(c.id, horizonISO); }));
+  await Promise.all(COURSES.map(async (c) => { runsByCourse[c.id] = await getCourseRuns(c.id); }));
   const agenda = buildAgenda({ runsByCourse, courses: COURSES, meBookings, meMemberships: memberships, weather, now, horizonDays: HORIZON_DAYS });
   return { me, meBookings, memberships, packages, agenda, weather };
 }

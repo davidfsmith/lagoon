@@ -33,7 +33,11 @@ export async function cancelParticipant(participantId, token, fetchImpl = fetch)
 }
 
 // Paginate ascending runs until we pass horizonISO or exhaust results.
-export async function getCourseRuns(courseId, horizonISO, fetchImpl = fetch) {
+export async function getCourseRuns(courseId, fetchImpl = fetch) {
+  // The API orders runs by runId (creation order), NOT startDate — dates are
+  // scattered across every page. So fetch ALL pages and let the caller filter by
+  // horizon (runsToSlots). Breaking pagination on a startDate comparison would
+  // truncate mid-list and undercount available sessions.
   let page = 1; const all = [];
   for (;;) {
     const res = await fetchImpl(`${API_BASE}/public/courseRuns?course=${courseId}&itemsPerPage=100&page=${page}`);
@@ -42,9 +46,7 @@ export async function getCourseRuns(courseId, horizonISO, fetchImpl = fetch) {
     const data = json.data || [];
     all.push(...data);
     const meta = json.meta || {};
-    const last = data[data.length - 1];
     if (!data.length) break;
-    if (last && last.startDate > horizonISO) break;
     if (page * (meta.itemsPerPage || 100) >= (meta.filteredCount || 0)) break;
     page++;
   }

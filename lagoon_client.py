@@ -178,10 +178,12 @@ def fetch_openings(
         runs = data.get("data", [])
         for run in runs:
             start = _dt.datetime.fromisoformat(run["startDate"])
-            if start < now:
+            # NB: the API orders runs by runId (creation order), NOT startDate, so
+            # dates are scattered across all pages. We must scan every page and
+            # filter — early-returning on the first out-of-horizon run truncates
+            # mid-pagination and undercounts. See tests/test_fetch_openings.py.
+            if start < now or start > horizon:
                 continue
-            if start > horizon:
-                return out  # ascending order → nothing later matters
             free = run["maxNumbers"] - run["participantsCount"]
             if free > 0:
                 out.append(Slot(
