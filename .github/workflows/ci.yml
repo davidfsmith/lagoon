@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 7 * * *"   # daily 07:00 UTC — catch live API contract drift
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Unit tests (offline)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Python unit tests
+        run: python -m unittest discover -s tests -p "test_*.py" -v
+      - name: JS unit tests
+        run: node --test app/test/*.test.js
+
+  verify-live:
+    name: Verify data vs live Lagoon API
+    # The live verifier also catches API-side changes (run ordering, timezone
+    # convention, course renumbering) that offline tests can't. Run it on pushes,
+    # the daily schedule, and manual dispatch — but not on PRs, so a transient API
+    # blip never blocks a merge.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: verify_data.py
+        run: python verify_data.py
