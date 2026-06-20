@@ -18,4 +18,5 @@ export const COURSES = [
 ];
 export const FILTER_GROUPS = ["ride", "other"];
 export const BOOKING_SITE = "https://booking.lagoon.co.uk";
+export const APP_RELEASE = "v20"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"

@@ -38,7 +38,7 @@ export function logout() { clearToken(); state = null; go("login"); }
 // Reload data from the API and render `target`. `showLoading` shows the full-page
 // spinner (initial load); pull-to-refresh skips it since it has its own indicator.
 async function reload(target, showLoading) {
-  if (showLoading) view.innerHTML = `<p class="muted">Loading…</p>`;
+  if (showLoading) view.innerHTML = `<p class="muted">Loading sessions…</p>`;
   const token = getToken();
   try {
     const data = await loadEverything(token);

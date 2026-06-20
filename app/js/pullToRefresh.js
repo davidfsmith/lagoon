@@ -55,8 +55,9 @@ export function initPullToRefresh({ onRefresh, canPull }) {
     pulling = false;
     if (!trigger) { reset(); return; }
     refreshing = true;
+    el.classList.remove("ready");
     el.classList.add("show", "spin");
-    icon.textContent = "⟳"; icon.style.transform = "";
+    icon.textContent = ""; icon.style.transform = "";  // CSS draws a ring spinner
     place(THRESHOLD);
     try { await onRefresh(); }
     finally { refreshing = false; reset(); }
@@ -75,8 +76,9 @@ function injectStyles() {
     #ptr.show{opacity:1}
     #ptr .ptr-icon{color:var(--muted);font-size:18px;line-height:1;transition:transform .15s}
     #ptr.ready{border-color:var(--accent)} #ptr.ready .ptr-icon{color:var(--accent)}
-    #ptr.spin{border-color:var(--accent)}
-    #ptr.spin .ptr-icon{color:var(--accent);font-size:20px;animation:ptr-spin .7s linear infinite}
+    /* Spin state: a symmetric border ring (not a glyph) so it rotates true to centre. */
+    #ptr.spin .ptr-icon{width:18px;height:18px;border:2px solid var(--border);
+      border-top-color:var(--accent);border-radius:50%;animation:ptr-spin .6s linear infinite}
     @keyframes ptr-spin{to{transform:rotate(360deg)}}`;
   document.head.appendChild(s);
 }
