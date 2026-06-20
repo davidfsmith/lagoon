@@ -6,10 +6,12 @@ import { renderDay } from "./views/day.js";
 import { renderAccount } from "./views/account.js";
 import { renderSettings } from "./views/settings.js";
 import { apply as applyTheme } from "./theme.js";
+import { initPullToRefresh } from "./pullToRefresh.js";
 
 const view = document.getElementById("view");
 const nav = document.getElementById("nav");
 let state = null; // { me, meBookings, memberships, packages, agenda, stale }
+let currentRoute = "login";
 
 function setActiveNav(route) {
   nav.hidden = false;
@@ -17,6 +19,7 @@ function setActiveNav(route) {
 }
 
 export function go(route, arg) {
+  currentRoute = route;
   if (route === "login") { nav.hidden = true; renderLogin(view, onLoggedIn); return; }
   if (route === "settings") { renderSettings(view, state, go); return; } // works pre/post login
   if (!state) return;
@@ -32,22 +35,34 @@ async function onLoggedIn() { await loadAndRender(); }
 
 export function logout() { clearToken(); state = null; go("login"); }
 
-async function loadAndRender() {
-  view.innerHTML = `<p class="muted">Loading…</p>`;
+// Reload data from the API and render `target`. `showLoading` shows the full-page
+// spinner (initial load); pull-to-refresh skips it since it has its own indicator.
+async function reload(target, showLoading) {
+  if (showLoading) view.innerHTML = `<p class="muted">Loading…</p>`;
   const token = getToken();
   try {
     const data = await loadEverything(token);
     state = { ...data, stale: false };
     saveCache(data);
-    go("agenda");
+    go(target);
   } catch (e) {
     if (e.code === 401) { logout(); return; }
     const cached = loadCache();
-    if (cached) { state = { ...cached.data, stale: true }; go("agenda"); }
-    else view.innerHTML = `<p class="err">Couldn't load: ${e.message}</p>`;
+    if (cached) { state = { ...cached.data, stale: true }; go(target); }
+    else if (showLoading) view.innerHTML = `<p class="err">Couldn't load: ${e.message}</p>`;
+    // on a pull-to-refresh failure with existing state, keep what's on screen
   }
+}
+
+async function loadAndRender() { await reload("agenda", true); }
+
+// Pull-to-refresh re-fetches and re-renders the current data view in place.
+async function refresh() {
+  const target = (currentRoute === "agenda" || currentRoute === "account") ? currentRoute : "agenda";
+  await reload(target, false);
 }
 
 // boot
 applyTheme();
+initPullToRefresh({ onRefresh: refresh, canPull: () => !!state && currentRoute !== "login" });
 if (getToken()) loadAndRender(); else go("login");
