@@ -1,4 +1,4 @@
-const CACHE = "lagoon-v23";
+const CACHE = "lagoon-v24";
 const ASSETS = ["./", "./index.html", "./manifest.json",
   "./icon.svg", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./js/app.js", "./js/config.js", "./js/tz.js", "./js/theme.js", "./js/api.js", "./js/weather.js", "./js/model.js",
