@@ -54,9 +54,7 @@ export function renderAccount(view, state, go) {
       }).join("")
     : `<div class="bkrow muted">None.</div>`);
 
-  view.innerHTML = `<h2>Account</h2>${memHtml}${passHtml}${bkHtml}
-    <button class="primary" id="logout" style="margin-top:14px">Log out</button>`;
-  view.querySelector("#logout").addEventListener("click", () => logout());
+  view.innerHTML = `<h2>Bookings</h2>${memHtml}${passHtml}${bkHtml}`;
   for (const btn of view.querySelectorAll(".bkcancel")) {
     btn.addEventListener("click", () => onCancel(btn, view, state, go));
   }
