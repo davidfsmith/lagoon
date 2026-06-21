@@ -7,6 +7,7 @@ import { renderAccount } from "./views/account.js";
 import { renderSettings } from "./views/settings.js";
 import { apply as applyTheme } from "./theme.js";
 import { initPullToRefresh } from "./pullToRefresh.js";
+import { maybeShowIntro } from "./intro.js";
 
 const view = document.getElementById("view");
 const nav = document.getElementById("nav");
@@ -54,7 +55,10 @@ async function reload(target, showLoading) {
   }
 }
 
-async function loadAndRender() { await reload("agenda", true); }
+async function loadAndRender() {
+  await reload("agenda", true);
+  if (state) maybeShowIntro(); // first-run walkthrough (shows once); not on pull-to-refresh
+}
 
 // Pull-to-refresh re-fetches and re-renders the current data view in place.
 async function refresh() {

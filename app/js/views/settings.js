@@ -2,6 +2,7 @@ import { getTheme, setTheme } from "../theme.js";
 import { APP_VERSION, APP_RELEASE } from "../config.js";
 import { logout } from "../app.js";
 import { fmtWhen } from "./format.js";
+import { showIntro } from "../intro.js";
 
 // APP_VERSION is stamped at deploy as "build <sha> · <date>" (just "dev" locally).
 // Split it back into the build SHA and date for the stacked About display.
@@ -42,6 +43,9 @@ export function renderSettings(view, state, go) {
     ${state ? `<div class="t" style="margin-top:16px">Data</div>
     <div class="set-row"><span>Last refreshed</span><span class="muted">${fmtWhen(state.refreshedAt)}${state.stale ? " (saved)" : ""}</span></div>` : ""}
 
+    <div class="t" style="margin-top:16px">Help</div>
+    <button class="set-row set-btn" id="replay-intro"><span>Replay intro</span><span class="muted">›</span></button>
+
     <div class="t" style="margin-top:16px">Support</div>
     <a class="set-row support" href="mailto:dave@dave-smith.co.uk?subject=Lagoon%20App%20Support">
       <span>Email support</span><span class="muted">dave@dave-smith.co.uk ›</span></a>
@@ -53,6 +57,7 @@ export function renderSettings(view, state, go) {
   }
   const lo = view.querySelector("#logout");
   if (lo) lo.addEventListener("click", () => logout());
+  view.querySelector("#replay-intro").addEventListener("click", () => showIntro());
   injectSettingsStyles();
 }
 
@@ -76,6 +81,8 @@ function injectSettingsStyles() {
       font-size:13px;color:var(--muted);line-height:1.55}
     .about-box p{margin:0 0 8px}.about-box p:last-child{margin:0}
     .set-row.support{text-decoration:none;color:var(--text)}
-    .set-row.support .muted{color:var(--accent)}`;
+    .set-row.support .muted{color:var(--accent)}
+    .set-btn{width:100%;border:none;cursor:pointer;color:var(--text);font:inherit;text-align:left}
+    .set-btn .muted{color:var(--accent)}`;
   document.head.appendChild(s);
 }
