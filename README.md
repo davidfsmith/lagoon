@@ -57,37 +57,37 @@ directly. We never have our own "availability database" in front of the app; the
 free-session list the app shows is computed **in the browser** from a live API read.
 
 ```
-                         ┌────────────────────────────────────┐
-                         │   LIVE LAGOON API  (source of truth)│
-                         │   https://api.lagoon.co.uk          │
-                         │   GET /public/courseRuns?course=<id>│
-                         └───────┬─────────────┬───────────┬───┘
+                         ┌──────────────────────────────────────┐
+                         │   LIVE LAGOON API  (source of truth) │
+                         │   https://api.lagoon.co.uk           │
+                         │   GET /public/courseRuns?course=<id> │
+                         └───────┬─────────────┬───────────┬────┘
               live, per page-load│             │every 10min│every 10min
                                  │             │(cloud)    │(local Mac)
                                  ▼             ▼           ▼
-         ┌───────────────────────────────┐ ┌──────────┐ ┌──────────────┐
+         ┌───────────────────────────────┐ ┌───────────┐ ┌──────────────┐
          │  PWA app  (dave-smith.co.uk   │ │ AWS Lambda│ │ launchd watch│
-         │           /lagoon)            │ │ watcher  │ │  watch.py    │
+         │           /lagoon)            │ │ watcher   │ │  watch.py    │
          │  api.js getCourseRuns()       │ │ handler.py│ │ (this repo)  │
-         │      │                        │ └────┬─────┘ └──────┬───────┘
-         │      ▼                        │      │ free counts  │ release
-         │  agendaModel.buildAgenda()    │      ▼              ▼ detection
-         │   • free = max − participants │  ┌────────┐   macOS alert +
-         │   • drop full, 21-day horizon │  │   S3   │   state/*.jsonl
-         │   • Europe/London times       │  │free.json│  (local logs)
-         │   • mark your bookings        │  └───┬────┘
+         │      │                        │ └────┬──────┘ └──────┬───────┘
+         │      ▼                        │      │ free counts   │ release
+         │  agendaModel.buildAgenda()    │      ▼               ▼ detection
+         │   • free = max − participants │  ┌──────────┐   macOS alert +
+         │   • drop full, 21-day horizon │  │   S3     │   state/*.jsonl
+         │   • Europe/London times       │  │free.json │   (local logs)
+         │   • mark your bookings        │  └───┬──────┘
          │      │                        │      │ (release logging only;
          │      ▼                        │      │  no alerting yet)
          │  FREE SESSION LIST  ◄─────────┼──────┘
          │      │  (shown to user)       │   NOT used by the app —
          │      ▼                        │   separate background system
          │  localStorage 'lagoon.cache'  │
-         │   = fallback ONLY when the    │      ┌─────────────────────────┐
-         │     live fetch fails entirely │ ···▶ │ static snapshot pages   │
-         │     ("Showing saved data")    │      │ /lagoon/sunday.html (S3)│
-         └───────────────────────────────┘      │ /lagoon/week.html (cache)│
-                                                │ frozen outage fallback   │
-                                                └─────────────────────────┘
+         │   = fallback ONLY when the    │      ┌───────────────────────────┐
+         │     live fetch fails entirely │ ···▶ │ static snapshot pages     │
+         │     ("Showing saved data")    │      │ /lagoon/sunday.html (S3)  │
+         └───────────────────────────────┘      │ /lagoon/week.html (cache) │
+                                                │ frozen outage fallback    │
+                                                └───────────────────────────┘
 ```
 
 **So: the app's free-session list is live Lagoon data + our display logic, computed
