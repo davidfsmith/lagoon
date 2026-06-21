@@ -4,23 +4,23 @@ Tracks short-notice **wakeboarding availability at Hove Lagoon** ("Ride the Cabl
 by reading the public Lagoon Watersports booking API, so you can grab weekend spots
 that come up at the last minute (cancellations / released places).
 
-> Status: early local tooling. Endgame is a hosted service on AWS
-> (Lambda on a schedule + DynamoDB for state + push/email alerts), with a small
-> web app on top — see [Roadmap](#roadmap).
+> Status: live. A **PWA web app** (dave-smith.co.uk/lagoon) reads the Lagoon API
+> directly for browsing, and an **AWS Lambda watcher** (`aws/`) polls every 10 min to
+> detect weekend releases. The original local macOS watcher has been decommissioned
+> now the cloud one is live — see [Roadmap](#roadmap).
 
 ## What's here
 
-| File | Purpose |
-|------|---------|
-| `lagoon_client.py` | Reusable API client — search courses, fetch openings. **Pure Python, no deps** (portable to Lambda). |
-| `check.py` | CLI: print current openings on demand. |
-| `watch.py` | Logs all openings; alerts (`URGENT`) only on **releases** — a slot's free count rising — within a short-notice window. |
-| `analyze.py` | Reads `state/history.jsonl` → churn / lead-time / heatmap report. |
-| `schedule_policy.py` | When a firing should run (build vs production cadence). |
+| File / dir | Purpose |
+|------------|---------|
+| `lagoon_client.py` | Reusable API client — search courses, fetch openings, release detection. **Pure Python, no deps** (shared by the AWS Lambda). |
+| `check.py` | CLI: print current openings on demand (ad-hoc, runs anywhere). |
+| `verify_data.py` | Check the app/client logic against the live API (mapping, free counts, timezone). |
 | `courses.json` | Which courses to monitor (resolved to live IDs by name at runtime). |
-| `run_watch.sh` | Wrapper run by the scheduler; raises a macOS notification only on short-notice (`URGENT`) slots. |
-| `launchd/` | Local macOS schedule (LaunchAgent) + install/uninstall scripts. |
-| `state/` | Runtime state & logs (git-ignored). |
+| `aws/` | The live hosted watcher — Python Lambda + CDK (S3 state, EventBridge schedule). See `aws/README.md`. |
+| `app/` | The PWA web app (vanilla JS). See `app/README.md`. |
+| `tools/` | One-off helpers (e.g. outage snapshot-page generators). |
+| `tests/` | `python3 -m unittest discover -s tests`. |
 
 ## The data source
 
@@ -57,37 +57,37 @@ directly. We never have our own "availability database" in front of the app; the
 free-session list the app shows is computed **in the browser** from a live API read.
 
 ```
-                         ┌──────────────────────────────────────┐
-                         │   LIVE LAGOON API  (source of truth) │
-                         │   https://api.lagoon.co.uk           │
-                         │   GET /public/courseRuns?course=<id> │
-                         └───────┬─────────────┬───────────┬────┘
-              live, per page-load│             │every 10min│every 10min
-                                 │             │(cloud)    │(local Mac)
-                                 ▼             ▼           ▼
-         ┌───────────────────────────────┐ ┌───────────┐ ┌──────────────┐
-         │  PWA app  (dave-smith.co.uk   │ │ AWS Lambda│ │ launchd watch│
-         │           /lagoon)            │ │ watcher   │ │  watch.py    │
-         │  api.js getCourseRuns()       │ │ handler.py│ │ (this repo)  │
-         │      │                        │ └────┬──────┘ └──────┬───────┘
-         │      ▼                        │      │ free counts   │ release
-         │  agendaModel.buildAgenda()    │      ▼               ▼ detection
-         │   • free = max − participants │  ┌──────────┐   macOS alert +
-         │   • drop full, 21-day horizon │  │   S3     │   state/*.jsonl
-         │   • Europe/London times       │  │free.json │   (local logs)
-         │   • mark your bookings        │  └───┬──────┘
-         │      │                        │      │ (release logging only;
-         │      ▼                        │      │  no alerting yet)
-         │  FREE SESSION LIST  ◄─────────┼──────┘
-         │      │  (shown to user)       │   NOT used by the app —
-         │      ▼                        │   separate background system
+                       ┌──────────────────────────────────────┐
+                       │   LIVE LAGOON API  (source of truth)  │
+                       │   https://api.lagoon.co.uk            │
+                       │   GET /public/courseRuns?course=<id>  │
+                       └─────────┬──────────────────┬──────────┘
+            live, per page-load  │                  │ every 10 min (cloud)
+                                 ▼                  ▼
+         ┌───────────────────────────────┐  ┌───────────────┐
+         │  PWA app  (dave-smith.co.uk   │  │ AWS Lambda     │
+         │           /lagoon)            │  │ watcher        │
+         │  api.js getCourseRuns()       │  │ handler.py     │
+         │      │                        │  └──────┬─────────┘
+         │      ▼                        │         ▼  free counts
+         │  agendaModel.buildAgenda()    │     ┌────────┐
+         │   • free = max − participants │     │  S3    │
+         │   • drop full, 21-day horizon │     │free.json│
+         │   • Europe/London times       │     └───┬────┘
+         │   • mark your bookings        │         ▼
+         │      │                        │   release detection / logging
+         │      ▼                        │   (no alerting yet)
+         │  FREE SESSION LIST            │
+         │   (shown to user)             │   ── SEPARATE background system;
+         │      │                        │      the app never reads S3, and
+         │      ▼                        │      it never feeds the app ──
          │  localStorage 'lagoon.cache'  │
-         │   = fallback ONLY when the    │      ┌───────────────────────────┐
-         │     live fetch fails entirely │ ···▶ │ static snapshot pages     │
-         │     ("Showing saved data")    │      │ /lagoon/sunday.html (S3)  │
-         └───────────────────────────────┘      │ /lagoon/week.html (cache) │
-                                                │ frozen outage fallback    │
-                                                └───────────────────────────┘
+         │   = fallback ONLY when the    │     ┌───────────────────────────┐
+         │     live fetch fails entirely │ ··▶ │ static snapshot pages      │
+         │     ("Showing saved data")    │     │ /lagoon/sunday.html (S3)   │
+         └───────────────────────────────┘     │ /lagoon/week.html (cache)  │
+                                              │ frozen outage fallback     │
+                                              └───────────────────────────┘
 ```
 
 **So: the app's free-session list is live Lagoon data + our display logic, computed
@@ -95,13 +95,12 @@ client-side per load — not served from any store of ours.** The only time it i
 live is the explicit *"Showing saved data — couldn't refresh"* banner, when the last
 good response is replayed from the browser cache.
 
-The three readers are independent and never feed each other:
+The two readers are independent and never feed each other:
 
 | Reader | Reads | Produces | Used by app? |
 |--------|-------|----------|--------------|
 | **PWA app** | API live, every load | the free-session list (in-browser) | — it *is* the app |
 | **AWS watcher** | API every 10 min (cloud) | `s3://…/free.json` + release logs | no (separate) |
-| **launchd watcher** | API every 10 min (this Mac) | macOS alerts + `state/*.jsonl` | no (separate) |
 
 ### Freshness: why the app reads live, not our polled data
 
@@ -126,83 +125,32 @@ See `docs/data-accuracy.md` for how the app's logic is verified against the live
 ## Usage
 
 ```sh
-# On-demand
+# Ad-hoc openings from the live API (runs anywhere — no state, no schedule)
 python3 check.py                 # all openings, next 21 days
 python3 check.py --weekend       # weekends only
 python3 check.py --days 14 --json
 
-# Watcher (alerts only on releases within the short-notice window, default 48h)
-python3 watch.py                 # weekend slots, next 14 days
-python3 watch.py --all --days 21 # include weekdays
-python3 watch.py --urgent-hours 24  # tighten the short-notice window
-python3 watch.py --reset         # forget free-count state
+# Verify the client/app logic against the live API
+python3 verify_data.py           # course mapping, free counts, timezone
+
+# Tests
+python3 -m unittest discover -s tests
 ```
 
-`watch.py` prints a marker first line — `URGENT: <n>` (places **released** within
-the window — a slot's free count rose since last run) or `NONE` — so a scheduler
-can key off it. Standing availability never alerts (browse it in the app); only
-genuine releases do. Tracking free counts per slot (`state/free.json`) dedupes
-naturally: a release pings once; a spot booked then freed again pings again.
-First run records a baseline and never alerts.
-
-## Local schedule (current setup)
-
-Runs on this Mac via launchd. The agent **fires every 10 minutes**; `run_watch.sh`
-then applies a schedule policy (`schedule_policy.py`) so only the right firings do
-real work:
-
-- `LAGOON_MODE=build` (default, while building) — every firing runs (~every 10 min,
-  24/7) for dense test data.
-- `LAGOON_MODE=production` — weekdays hourly; weekends every 10 min 08:00–16:00
-  (the short-notice window). Switch by changing the default in `run_watch.sh` or
-  setting the env var.
-
-History (`state/history.jsonl`) always records **all** openings (weekday + weekend);
-notifications are weekend-only by default and fire only for short-notice (`URGENT`)
-slots — far-future availability is logged but stays quiet.
-
-```sh
-launchd/install.sh        # render plist + load the LaunchAgent
-python3 watch.py >/dev/null   # prime alert state (so the first run only shows genuinely new urgent slots)
-launchctl kickstart -k gui/$(id -u)/uk.co.lagoon.wakewatch   # test run now
-launchd/uninstall.sh      # remove the schedule
-```
-
-Logs land in `state/`: `watch.log` (one line per run), `notified.log` (full detail
-when slots are found), `launchd.*.log`.
-
-To change cadence, edit the `StartCalendarInterval` entries in
-`launchd/uk.co.lagoon.wakewatch.plist` and re-run `install.sh`.
-
-## Analysing the data
-
-Once the watcher has run for a while:
-
-```sh
-python3 analyze.py            # weekend churn, lead times, availability heatmap
-python3 analyze.py --all      # include weekdays (scope=all records)
-python3 analyze.py --events   # raw appearance/booking events
-python3 analyze.py --json
-```
-
-Key outputs and why they matter for the AWS build:
-- **Appearances by lead time** — how far ahead short-notice spots show up → how
-  often the schedule actually needs to fire (and the 10th-percentile hint).
-- **Bookings by lead time** — how fast released spots get taken → how stale an
-  alert can be before it's useless.
-- **Weekday × hour heatmap** — when availability exists at all → confirms (or
-  refutes) "weekday hourly is enough".
+The scheduled watcher now runs in the cloud — see **`aws/README.md`** to build,
+deploy, and inspect it. The PWA web app is in **`app/`** (see `app/README.md`).
 
 ## Roadmap
 
-1. **Local CLI + notifier** — *done* (this repo).
-2. **Hosted watcher on AWS** — `watch.py`'s core (`lagoon_client.py`) is dependency-free
-   and side-effect-free, so the fetch/diff logic lifts into a Lambda. Swap the
-   `state/seen.json` file for a DynamoDB table (PK = slot key); alert via SNS
-   (push/SMS) or SES (email).
-3. **Web app** — a small static PWA (mirroring `daves-adventures/site/static/compose`:
-   self-contained `index.html` + manifest + service worker) that calls the same
-   public API directly for live browsing, with the Lambda handling background alerts.
+1. **Local CLI + notifier** — *done, then retired.* The original macOS launchd watcher
+   (`watch.py` + `run_watch.sh` + `launchd/`) is decommissioned now the cloud watcher
+   is live; its release-detection core lives on in `lagoon_client.py`.
+2. **Hosted watcher on AWS** — *done* (`aws/`). EventBridge-scheduled Python Lambda
+   reusing `lagoon_client.py`, free-count state in S3, release detection logged to
+   CloudWatch.
+3. **Web app** — *done* (`app/`, live at dave-smith.co.uk/lagoon). Vanilla-JS PWA that
+   calls the public API directly for live browsing.
+4. **Next** — multi-user alerting (push/email) on top of the watcher; in-app booking.
 
 ## Notes
 

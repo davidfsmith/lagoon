@@ -13,12 +13,11 @@ within a 48h window), logs them to CloudWatch, and keeps free-count state in S3.
 - State: `s3://<StateBucket>/state/free.json` (single JSON map; first run baselines
   silently). Alert scope is weekend-only in the handler, so midweek runs are no-ops.
 
-## ⚠️ The local Mac watcher is still running (intentionally)
-The launchd watcher on Dave's Mac is **NOT decommissioned**. It's the one that
-actually *alerts* (macOS notifications); the AWS watcher only logs (alerting parked).
-They run side by side on independent state (local `state/free.json` vs S3) until the
-notification sub-system exists. Decommission the local one (`launchd/uninstall.sh`)
-only once AWS notifications are built.
+## The local Mac watcher has been decommissioned
+The original launchd watcher on Dave's Mac (`watch.py` + `launchd/`) has been removed
+now this cloud watcher is live — it's the single watcher. Alerting is still parked
+(this watcher logs releases only); macOS notifications went away with the local one.
+The next step is multi-user alerting (push/email) on top of this watcher.
 
 ## Layout
 - `lambda/handler.py` — Lambda entry: `release_record`, `run` (AWS-agnostic, injected
@@ -34,8 +33,7 @@ only once AWS notifications are built.
     npm run deploy     # build asset + cdk deploy
 
 ## Test (logic only, no AWS)
-    python3 tests/test_handler.py
-    python3 tests/test_watch.py
+    python3 -m unittest discover -s ../tests   # handler, release detection, client
 
 Spec: `../docs/superpowers/specs/2026-06-19-watcher-aws-design.md` ·
 Plan: `../docs/superpowers/plans/2026-06-19-watcher-aws.md`

@@ -1,6 +1,7 @@
-"""Tests for watch.released_within_window — the release-based alert logic.
+"""Tests for lagoon_client.released_within_window — the release-detection logic
+(a slot's free count rising within the short-notice window) used by the AWS watcher.
 
-Run: python3 tests/test_watch.py   (exits non-zero on failure)
+Run: python3 tests/test_release_detection.py   (exits non-zero on failure)
 """
 import datetime as dt
 import pathlib
