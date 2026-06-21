@@ -13,7 +13,7 @@ export function renderLogin(view, onLoggedIn) {
     <button class="primary" id="signin">Sign in</button>
     <p id="err" class="err"></p>
     <p class="signup">Don't have a Lagoon account?
-      <a href="${BOOKING_SITE}" target="_blank" rel="noopener">Create one on the Lagoon booking site ↗</a></p>`;
+      <a href="${BOOKING_SITE}/auth/login" target="_blank" rel="noopener">Create one on the Lagoon booking site ↗</a></p>`;
   injectLoginStyles();
   const err = view.querySelector("#err");
   const btn = view.querySelector("#signin");
