@@ -61,7 +61,8 @@ export function renderAgenda(view, state, go) {
       }).join("")
     : `<p class="muted">${active.size ? "No free sessions in the selected types in the next 21 days." : "Tap a session type above to show sessions."}</p>`;
 
-  view.innerHTML = `${stale}<h2>Free sessions</h2>${filterBar}${body}`;
+  view.innerHTML = `${stale}<h2>Free sessions</h2>
+    <p class="refreshed">Last refreshed ${fmtWhen(state.refreshedAt)}</p>${filterBar}${body}`;
 
   for (const btn of view.querySelectorAll(".filterbtn")) {
     btn.addEventListener("click", () => {
@@ -84,6 +85,7 @@ function injectAgendaStyles() {
   if (document.getElementById("agenda-css")) return;
   const s = document.createElement("style"); s.id = "agenda-css";
   s.textContent = `
+    .refreshed{font-size:12px;color:var(--muted);margin:-6px 0 14px}
     .filters{margin-bottom:12px}
     .filterbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
     .filterbar:last-child{margin-bottom:0}
