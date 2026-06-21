@@ -50,6 +50,79 @@ The "Ride the Cables" courses are Tech 30, Air 30, Tech 15, Air 15. Each is a
 session type can be switched off without deleting it. Currently enabled: **Tech 30,
 Air 30** (15-min sessions off).
 
+## Data flow
+
+The **single source of truth is the live Lagoon API** — every consumer reads from it
+directly. We never have our own "availability database" in front of the app; the
+free-session list the app shows is computed **in the browser** from a live API read.
+
+```
+                         ┌────────────────────────────────────┐
+                         │   LIVE LAGOON API  (source of truth)│
+                         │   https://api.lagoon.co.uk          │
+                         │   GET /public/courseRuns?course=<id>│
+                         └───────┬─────────────┬───────────┬───┘
+              live, per page-load│             │every 10min│every 10min
+                                 │             │(cloud)    │(local Mac)
+                                 ▼             ▼           ▼
+         ┌───────────────────────────────┐ ┌──────────┐ ┌──────────────┐
+         │  PWA app  (dave-smith.co.uk   │ │ AWS Lambda│ │ launchd watch│
+         │           /lagoon)            │ │ watcher  │ │  watch.py    │
+         │  api.js getCourseRuns()       │ │ handler.py│ │ (this repo)  │
+         │      │                        │ └────┬─────┘ └──────┬───────┘
+         │      ▼                        │      │ free counts  │ release
+         │  agendaModel.buildAgenda()    │      ▼              ▼ detection
+         │   • free = max − participants │  ┌────────┐   macOS alert +
+         │   • drop full, 21-day horizon │  │   S3   │   state/*.jsonl
+         │   • Europe/London times       │  │free.json│  (local logs)
+         │   • mark your bookings        │  └───┬────┘
+         │      │                        │      │ (release logging only;
+         │      ▼                        │      │  no alerting yet)
+         │  FREE SESSION LIST  ◄─────────┼──────┘
+         │      │  (shown to user)       │   NOT used by the app —
+         │      ▼                        │   separate background system
+         │  localStorage 'lagoon.cache'  │
+         │   = fallback ONLY when the    │      ┌─────────────────────────┐
+         │     live fetch fails entirely │ ···▶ │ static snapshot pages   │
+         │     ("Showing saved data")    │      │ /lagoon/sunday.html (S3)│
+         └───────────────────────────────┘      │ /lagoon/week.html (cache)│
+                                                │ frozen outage fallback   │
+                                                └─────────────────────────┘
+```
+
+**So: the app's free-session list is live Lagoon data + our display logic, computed
+client-side per load — not served from any store of ours.** The only time it isn't
+live is the explicit *"Showing saved data — couldn't refresh"* banner, when the last
+good response is replayed from the browser cache.
+
+The three readers are independent and never feed each other:
+
+| Reader | Reads | Produces | Used by app? |
+|--------|-------|----------|--------------|
+| **PWA app** | API live, every load | the free-session list (in-browser) | — it *is* the app |
+| **AWS watcher** | API every 10 min (cloud) | `s3://…/free.json` + release logs | no (separate) |
+| **launchd watcher** | API every 10 min (this Mac) | macOS alerts + `state/*.jsonl` | no (separate) |
+
+### Freshness: why the app reads live, not our polled data
+
+Polled data is **up to 10 minutes stale** — a slot the watcher last saw as free may
+have been booked in the gap before its next run. That's fine for the watcher's job
+(*"ping me when something opens"*, then you check the live site), but it would be
+**wrong to present as bookable truth**: someone could act on a spot that's already
+gone.
+
+That's exactly why the **app reads the API live on every load** rather than serving
+the watcher's S3 data. A free session shown in the app reflects the API *at that
+moment* — the only race left is the universal one any booking system has (someone
+books in the seconds between your load and your tap), not a 10-minute window. The
+only place polled/frozen data was ever shown as availability is the static
+`/lagoon/*.html` **outage** exports — and those are explicitly stamped *"Snapshot,
+not live"* (see `tools/build_snapshot.py` / `tools/build_week.py`). They're frozen
+and don't auto-update.
+
+See `docs/data-accuracy.md` for how the app's logic is verified against the live API
+(`verify_data.py`).
+
 ## Usage
 
 ```sh
