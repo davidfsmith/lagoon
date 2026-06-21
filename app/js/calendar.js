@@ -2,6 +2,7 @@
 // (Apple Calendar, Google, Outlook), no backend, no deps. On phones, tapping the
 // downloaded file opens the native "Add to Calendar" sheet.
 import { prettyCourse } from "./views/format.js";
+import { getReminderMinutes } from "./store.js";
 
 const LOCATION = "Hove Lagoon, Kingsway, Hove BN3 4LX";
 
@@ -12,8 +13,9 @@ function icsTime(iso) {
 }
 const esc = (t) => String(t || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 
-// Build a VCALENDAR string for one booking (a single VEVENT + a 45-min reminder).
-export function icsForBooking(b, now = new Date()) {
+// Build a VCALENDAR string for one booking (a single VEVENT + a reminder
+// `reminderMin` minutes before the session, default 20).
+export function icsForBooking(b, { now = new Date(), reminderMin = 20 } = {}) {
   const cr = b.courseRun || {};
   const title = `🏄 ${prettyCourse((cr.course || {}).name)} @ Hove Lagoon`;
   return [
@@ -32,7 +34,7 @@ export function icsForBooking(b, now = new Date()) {
     "BEGIN:VALARM",
     "ACTION:DISPLAY",
     `DESCRIPTION:${esc("Wakeboarding at Hove Lagoon — leave time to get there")}`,
-    "TRIGGER:-PT45M",
+    `TRIGGER:-PT${reminderMin}M`,
     "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR",
@@ -41,7 +43,8 @@ export function icsForBooking(b, now = new Date()) {
 
 // Trigger a download of the .ics for a booking.
 export function downloadIcsForBooking(b) {
-  const blob = new Blob([icsForBooking(b)], { type: "text/calendar;charset=utf-8" });
+  const ics = icsForBooking(b, { reminderMin: getReminderMinutes() });
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

@@ -11,18 +11,23 @@ const booking = {
   },
 };
 
+const NOW = new Date("2026-06-21T09:00:00Z");
+
 test("icsForBooking builds a valid VEVENT with UTC times", () => {
-  const ics = icsForBooking(booking, new Date("2026-06-21T09:00:00Z"));
+  const ics = icsForBooking(booking, { now: NOW });
   assert.match(ics, /^BEGIN:VCALENDAR/);
   assert.match(ics, /DTSTART:20260623T153000Z/);   // 15:30 UTC = 16:30 BST, encoded as the UTC instant
   assert.match(ics, /DTEND:20260623T160000Z/);
   assert.match(ics, /SUMMARY:🏄 Tech 30 @ Hove Lagoon/);
   assert.match(ics, /UID:lagoon-123@/);
-  assert.match(ics, /TRIGGER:-PT45M/);
   assert.ok(ics.endsWith("\r\n"), "CRLF line endings");
 });
 
 test("icsForBooking escapes commas in text fields (LOCATION)", () => {
-  const ics = icsForBooking(booking, new Date("2026-06-21T09:00:00Z"));
-  assert.match(ics, /LOCATION:Hove Lagoon\\, Kingsway\\, Hove BN3 4LX/);
+  assert.match(icsForBooking(booking, { now: NOW }), /LOCATION:Hove Lagoon\\, Kingsway\\, Hove BN3 4LX/);
+});
+
+test("reminder defaults to 20 min and honours an override", () => {
+  assert.match(icsForBooking(booking, { now: NOW }), /TRIGGER:-PT20M/);
+  assert.match(icsForBooking(booking, { now: NOW, reminderMin: 50 }), /TRIGGER:-PT50M/);
 });
