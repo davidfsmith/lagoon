@@ -1,0 +1,38 @@
+# Contributor hooks — keep contributions tidy and green.
+# Install once:  pip install pre-commit && pre-commit install --install-hooks
+# (sets up both the pre-commit and pre-push stages). See CONTRIBUTING.md.
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # No direct commits to main — contribute via a branch + pull request.
+      - id: no-commit-to-branch
+        args: [--branch, main]
+      - id: check-merge-conflict
+      # Block accidental data dumps (e.g. an exported cache JSON).
+      - id: check-added-large-files
+        args: [--maxkb=512]
+      - id: check-yaml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        # Keep ASCII diagrams (README) and generated snapshot pages byte-for-byte.
+        exclude: '\.(md|html)$'
+
+  # Run the (fully mocked, fast) test suites before pushing.
+  - repo: local
+    hooks:
+      - id: python-tests
+        name: Python unit tests
+        entry: python3 -m unittest discover -s tests -p "test_*.py"
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+      - id: js-tests
+        name: JS unit tests
+        entry: bash -c 'node --test app/test/*.test.js'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
