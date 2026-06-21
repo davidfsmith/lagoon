@@ -24,6 +24,15 @@ export function renderSettings(view, state, go) {
     <div class="segbar">${seg("system", "System")}${seg("light", "Light")}${seg("dark", "Dark")}</div>
 
     <div class="t" style="margin-top:18px">About</div>
+    <div class="about-box">
+      <p>Shows live wakeboarding availability at Hove Lagoon, read straight from the
+         Lagoon booking system each time you open the app — the same data the
+         official site uses.</p>
+      <p>Your sign-in goes directly to Lagoon. Only an access token is stored on this
+         device to keep you signed in — your username and password are never saved.</p>
+    </div>
+
+    <div class="t" style="margin-top:16px">Version</div>
     <div class="set-row"><span>Hove Lagoon</span><span class="about-ver">
       <span>build ${build}</span>
       <span>${APP_RELEASE}</span>
@@ -63,6 +72,9 @@ function injectSettingsStyles() {
       border-radius:12px;padding:12px;font-size:14px}
     .about-ver{display:flex;flex-direction:column;align-items:flex-end;gap:1px;
       color:var(--muted);font-size:12px;text-align:right;line-height:1.5}
+    .about-box{background:var(--surface);border-radius:12px;padding:12px;
+      font-size:13px;color:var(--muted);line-height:1.55}
+    .about-box p{margin:0 0 8px}.about-box p:last-child{margin:0}
     .set-row.support{text-decoration:none;color:var(--text)}
     .set-row.support .muted{color:var(--accent)}`;
   document.head.appendChild(s);

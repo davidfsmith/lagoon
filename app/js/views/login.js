@@ -10,15 +10,20 @@ export function renderLogin(view, onLoggedIn) {
     <button class="primary" id="signin">Sign in</button>
     <p id="err" class="err"></p>`;
   const err = view.querySelector("#err");
-  view.querySelector("#signin").addEventListener("click", async () => {
+  const btn = view.querySelector("#signin");
+  btn.addEventListener("click", async () => {
     err.textContent = "";
     const email = view.querySelector("#email").value.trim();
     const password = view.querySelector("#password").value;
     if (!email || !password) { err.textContent = "Enter email and password."; return; }
+    btn.disabled = true; btn.textContent = "Signing in…"; // show the click registered
     try {
       const token = await login(email, password);
       setToken(token);
-      await onLoggedIn();
-    } catch (e) { err.textContent = "Sign-in failed. Check your details."; }
+      await onLoggedIn(); // navigates away on success
+    } catch (e) {
+      err.textContent = "Sign-in failed. Check your details.";
+      btn.disabled = false; btn.textContent = "Sign in";
+    }
   });
 }
