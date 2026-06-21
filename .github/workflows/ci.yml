@@ -27,13 +27,13 @@ jobs:
 
   verify-live:
     name: Verify data vs live Lagoon API
-    # Informational check against the live (undocumented, no-SLA) Lagoon API — it can
-    # catch API-side drift (run ordering, timezone, course renumbering) the offline
-    # tests can't. It is NON-BLOCKING: continue-on-error means a red here never fails
-    # the run, because it depends on a flaky third party. verify_data.py already skips
-    # (exit 0) when the API is simply unreachable; continue-on-error covers the rest.
-    # Skipped on PRs so it's never in a merge gate.
-    if: github.event_name != 'pull_request'
+    # A drift MONITOR, not a gate. The unit tests above (fully mocked) gate every
+    # push/PR; this one hits the live, undocumented, no-SLA Lagoon API to catch
+    # API-side drift (run ordering, timezone, course renumbering) the mocks can't.
+    # It runs ONLY on the daily schedule + manual dispatch — never on push/PR — so a
+    # flaky third party adds zero noise to normal dev. Non-blocking too: it's
+    # continue-on-error, and verify_data.py skips (exit 0) when the API is unreachable.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
