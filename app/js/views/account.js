@@ -5,6 +5,7 @@ import { getToken, saveCache } from "../store.js";
 import { cancelParticipant } from "../api.js";
 import { bookingKeys, activeParticipants } from "../model.js";
 import { BOOKING_LIMIT } from "../config.js";
+import { downloadIcsForBooking } from "../calendar.js";
 import { logout } from "../app.js";
 
 const riderName = (p, me) =>
@@ -69,7 +70,10 @@ export function renderAccount(view, state, go) {
              <button class="bkcancel" data-pid="${p.id}">Cancel</button></div>`).join("")
           || `<div class="rider muted"><span>booked</span></div>`;
         return `<div class="bkcard">
-          <div class="bktm">${fmtDate(lp.date)} · <b>${lp.time}</b></div>
+          <div class="bkcard-hd">
+            <div class="bktm">${fmtDate(lp.date)} · <b>${lp.time}</b></div>
+            <button class="bkcal" data-bid="${b.id}" aria-label="Add to calendar">📅 Add</button>
+          </div>
           <div class="bksub">${name}</div>
           ${wx ? `<div class="bksub">${wx}</div>` : ""}
           <div class="riders">${riderRows}</div></div>`;
@@ -79,6 +83,12 @@ export function renderAccount(view, state, go) {
   view.innerHTML = `<h2>Bookings</h2>${memHtml}${passHtml}${bkHtml}`;
   for (const btn of view.querySelectorAll(".bkcancel")) {
     btn.addEventListener("click", () => onCancel(btn, view, state, go));
+  }
+  for (const btn of view.querySelectorAll(".bkcal")) {
+    btn.addEventListener("click", () => {
+      const b = (state.meBookings || []).find(x => x.id === Number(btn.dataset.bid));
+      if (b) downloadIcsForBooking(b);
+    });
   }
   injectAccountStyles();
 }
@@ -135,6 +145,8 @@ function injectAccountStyles() {
     .cap .capn{color:var(--good);font-weight:700}
     .cap.full{border-color:var(--danger-border)}.cap.full .capn{color:var(--danger)}
     .bkcard{background:var(--surface);border-radius:12px;padding:11px 12px;margin-bottom:8px}
+    .bkcard-hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .bkcal{background:none;border:1px solid var(--border);color:var(--accent);font-size:11px;font-weight:600;padding:3px 10px;border-radius:7px;cursor:pointer;white-space:nowrap}
     .bkcard .bksub{margin:3px 0 4px}
     .rider{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--border);font-size:13px}
     .bkcancel{background:none;border:1px solid var(--danger-border);color:var(--danger);font-size:11px;font-weight:600;padding:3px 11px;border-radius:7px;cursor:pointer}
