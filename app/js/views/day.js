@@ -15,8 +15,10 @@ export function renderDay(view, state, arg, go) {
     ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · rain ${w.precipProb}% · wind ${Math.round(w.windMax)} (gust ${Math.round(w.gustMax)}) km/h${w.uvMax != null ? ` · UV ${Math.round(w.uvMax)}` : ""} · sunset ${(w.sunset || "").slice(11, 16)}`
     : "weather unavailable";
 
-  // Same per-type filter as the agenda, so the day view shows the same selection.
-  const present = presentTypes(day.slots);
+  // Same per-type filter as the agenda: show the full chip set (types present
+  // anywhere in the agenda, not just this day) with the same active selection, so
+  // the two pages always agree. Then filter this day's slots by the active types.
+  const present = presentTypes((state.agenda || []).flatMap(d => d.slots));
   const active = getActiveTypes(present);
   const filterBar = filterBarHtml(present, active);
   const slots = day.slots.filter(s => active.has(s.label));
