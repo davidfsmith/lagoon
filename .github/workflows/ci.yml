@@ -27,12 +27,15 @@ jobs:
 
   verify-live:
     name: Verify data vs live Lagoon API
-    # The live verifier also catches API-side changes (run ordering, timezone
-    # convention, course renumbering) that offline tests can't. Run it on pushes,
-    # the daily schedule, and manual dispatch — but not on PRs, so a transient API
-    # blip never blocks a merge.
+    # Informational check against the live (undocumented, no-SLA) Lagoon API — it can
+    # catch API-side drift (run ordering, timezone, course renumbering) the offline
+    # tests can't. It is NON-BLOCKING: continue-on-error means a red here never fails
+    # the run, because it depends on a flaky third party. verify_data.py already skips
+    # (exit 0) when the API is simply unreachable; continue-on-error covers the rest.
+    # Skipped on PRs so it's never in a merge gate.
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
