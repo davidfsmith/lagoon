@@ -4,6 +4,7 @@ import { weatherAt } from "../weather.js";
 import { getToken, saveCache } from "../store.js";
 import { cancelParticipant } from "../api.js";
 import { bookingKeys, activeParticipants } from "../model.js";
+import { BOOKING_LIMIT } from "../config.js";
 import { logout } from "../app.js";
 
 const riderName = (p, me) =>
@@ -37,8 +38,28 @@ export function renderAccount(view, state, go) {
     .filter(b => (b.status || "").toLowerCase() === "confirmed" && b.courseRun && new Date(b.courseRun.startDate) >= new Date()
       && (!Array.isArray(b.participants) || activeParticipants(b).length > 0)) // hide bookings cancelled down to no riders
     .sort((a, b) => a.courseRun.startDate < b.courseRun.startDate ? -1 : 1);
+  // Per-rider tally of active upcoming bookings vs the per-rider cap, so you can
+  // see at a glance who still has room to book. Roster = membership members + you,
+  // so a rider with zero bookings still shows (e.g. "Hamish — 0 / 4").
+  const counts = {};
+  for (const b of upcoming) for (const p of activeParticipants(b)) {
+    const cid = (p.contact || {}).id;
+    if (cid != null) counts[cid] = (counts[cid] || 0) + 1;
+  }
+  const roster = []; const seenIds = new Set();
+  const addRider = (id, name) => { if (id != null && !seenIds.has(id)) { seenIds.add(id); roster.push({ id, name }); } };
+  addRider(me.id, "You");
+  for (const mem of (m && m.members) || []) addRider(mem.id, mem.firstName || "Rider");
+  for (const b of upcoming) for (const p of activeParticipants(b)) addRider((p.contact || {}).id, (p.contact || {}).firstName || "Rider");
+  const capsHtml = roster.length
+    ? `<div class="caps">` + roster.map(r => {
+        const n = counts[r.id] || 0;
+        return `<div class="cap${n >= BOOKING_LIMIT ? " full" : ""}"><span>${r.name}</span><span class="capn">${n} / ${BOOKING_LIMIT}</span></div>`;
+      }).join("") + `</div>`
+    : "";
+
   const hourly = (state.weather && state.weather.hourly) || [];
-  const bkHtml = `<div class="t" style="margin-top:16px">Your upcoming bookings</div>` + (upcoming.length
+  const bkHtml = `<div class="t" style="margin-top:16px">Your upcoming bookings</div>${capsHtml}` + (upcoming.length
     ? upcoming.map(b => {
         const lp = londonParts(b.courseRun.startDate);
         const name = prettyCourse((b.courseRun.course || {}).name);
@@ -109,6 +130,10 @@ function injectAccountStyles() {
     .bktm{font-weight:600;font-size:14px}.bktm b{color:var(--accent)}
     .bksub{font-size:11px;color:var(--muted);margin-top:3px}
     .bktag{background:var(--chip-bg);border:1px solid var(--chip-border);color:var(--accent);font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;white-space:nowrap}
+    .caps{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+    .cap{display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 11px;font-size:13px}
+    .cap .capn{color:var(--good);font-weight:700}
+    .cap.full{border-color:var(--danger-border)}.cap.full .capn{color:var(--danger)}
     .bkcard{background:var(--surface);border-radius:12px;padding:11px 12px;margin-bottom:8px}
     .bkcard .bksub{margin:3px 0 4px}
     .rider{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--border);font-size:13px}
