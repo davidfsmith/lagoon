@@ -62,7 +62,9 @@ app/
     weather.js      — Open-Meteo fetch + parse + attach-to-slot
     store.js        — localStorage: token + the cache fallback
     theme.js        — light / dark / system
+    filters.js      — the per-type filter (chips + selection), SHARED by agenda + day so they agree
     pullToRefresh.js— pull-down-to-refresh gesture
+    intro.js        — first-run welcome carousel (shown once; replayable from Settings)
     app.js          — the router: go(route, arg), boot, reload/refresh
     views/          — one file per screen, each exports render<Name>(view, state, go):
                       login, agenda, day, account (Bookings), settings, format (helpers)
@@ -85,9 +87,9 @@ when the live fetch fails.
 
 1. **Bump the version when you add/remove/rename a file or change cached code.**
    Edit `sw.js` → `const CACHE = "lagoon-vNN"` **and** `js/config.js` →
-   `APP_RELEASE = "vNN"` together (keep them in sync; currently **v28**). If you add
-   a new JS file, also add it to the `ASSETS` list in `sw.js`. Without the bump,
-   returning users get stale code.
+   `APP_RELEASE = "vNN"` together (keep them in sync — bump to the next number each
+   release). If you add a new JS file, also add it to the `ASSETS` list in `sw.js`.
+   Without the bump, returning users get stale code.
 
 2. **Times: only ever convert via `tz.js` (`londonParts`).** The Lagoon API serialises
    every session as UTC with a `+00:00` offset **even in summer (BST)**. Reading the
@@ -106,13 +108,17 @@ when the live fetch fails.
 - Course IDs/labels live in `config.js` `COURSES` (filter chips are driven by `group`
   + `extra`). To add a session type: add an entry there, then bump the version.
 
-## Deploying
+## Contributing & deploying
 
-You don't deploy from here directly. This repo is the **single source**: push to
-`main`, and the dave-smith.co.uk site's CI clones `app/` into its static site, stamps
-`APP_VERSION` with the commit SHA + date, and ships it to S3/CloudFront. So: open a
-PR, get it merged, and it goes live on the next site build. (`APP_VERSION` shows as
-`"dev"` locally — that's expected; it's filled in at deploy.)
+`main` is **protected — no direct pushes**. Work on a branch and **open a PR**; CI
+(offline tests) must pass to merge. Install the hooks once: `pip install pre-commit
+&& pre-commit install --install-hooks` (see `../CONTRIBUTING.md`).
+
+You don't deploy from here directly. This repo is the **single source**: once a PR is
+merged to `main`, the dave-smith.co.uk site's CI ("Deploy Hugo Site (AWS)") clones
+`app/` into its static site, stamps `APP_VERSION` with the commit SHA + date, and
+ships it to S3/CloudFront — live on the next site build. (`APP_VERSION` shows as
+`"dev"` locally — expected; it's filled in at deploy.)
 
 ## Where to look next
 
