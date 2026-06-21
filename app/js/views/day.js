@@ -1,6 +1,7 @@
 import { wcEmoji, fmtDate } from "./format.js";
 import { londonParts } from "../tz.js";
 import { BOOKING_SITE } from "../config.js";
+import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
 
 export function renderDay(view, state, arg, go) {
   // arg is either a date string (e.g. nav within the app) or { date, key }
@@ -14,7 +15,13 @@ export function renderDay(view, state, arg, go) {
     ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · rain ${w.precipProb}% · wind ${Math.round(w.windMax)} (gust ${Math.round(w.gustMax)}) km/h${w.uvMax != null ? ` · UV ${Math.round(w.uvMax)}` : ""} · sunset ${(w.sunset || "").slice(11, 16)}`
     : "weather unavailable";
 
-  const rows = day.slots.map(s => {
+  // Same per-type filter as the agenda, so the day view shows the same selection.
+  const present = presentTypes(day.slots);
+  const active = getActiveTypes(present);
+  const filterBar = filterBarHtml(present, active);
+  const slots = day.slots.filter(s => active.has(s.label));
+
+  const rows = slots.length ? slots.map(s => {
     const wx = s.weather ? `${wcEmoji(s.weather.code)} ${Math.round(s.weather.temp)}° · wind ${Math.round(s.weather.windSpeed)} · rain ${s.weather.precipProb}%${s.weather.uv != null ? ` · UV ${Math.round(s.weather.uv)}` : ""}` : "";
     const right = s.booked
       ? `<span class="tag">✓ You're booked</span>`
@@ -22,14 +29,20 @@ export function renderDay(view, state, arg, go) {
     return `<div class="srow${s.booked ? " booked" : ""}" data-key="${s.key}">
       <div><div class="tm">${londonParts(s.start).time} <b>${s.label}</b></div><div class="muted small">${wx}</div></div>
       <div class="r">${right}</div></div>`;
-  }).join("");
+  }).join("")
+    : `<p class="muted small">${active.size ? "No sessions in the selected types." : "Tap a session type above to show sessions."}</p>`;
 
   view.innerHTML = `
     <button class="link" id="back">‹ Back</button>
     <h2>${fmtDate(date)}${day.weekend ? ' <span class="wknd-tag">WEEKEND</span>' : ''}</h2>
     <p class="muted small">${head}</p>
+    ${filterBar}
     <div class="lbl">Sessions</div>${rows}`;
   view.querySelector("#back").addEventListener("click", () => go("agenda"));
+  // Re-render on filter change. Pass the date only (drop the jump key) so toggling
+  // a chip doesn't re-scroll to the originally-tapped session.
+  wireFilterChips(view, active, () => renderDay(view, state, date, go));
+  injectFilterStyles();
   injectDayStyles();
 
   // Jump to the session tapped on the agenda, if any.
