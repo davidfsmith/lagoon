@@ -39,6 +39,19 @@ export function renderAccount(view, state, go) {
     .filter(b => (b.status || "").toLowerCase() === "confirmed" && b.courseRun && new Date(b.courseRun.startDate) >= new Date()
       && (!Array.isArray(b.participants) || activeParticipants(b).length > 0)) // hide bookings cancelled down to no riders
     .sort((a, b) => a.courseRun.startDate < b.courseRun.startDate ? -1 : 1);
+  // Split the cable sessions from optional extras (board store / hire), which get
+  // their own section like membership/passes rather than a session card.
+  const sessions = upcoming.filter(b => countsTowardLimit(b));
+  const extras = upcoming.filter(b => !countsTowardLimit(b));
+
+  const extrasHtml = extras.length
+    ? `<div class="t" style="margin-top:16px">Extras</div>` + extras.map(b => {
+        const name = prettyCourse((b.courseRun.course || {}).name);
+        return `<div class="bkrow">
+          <div><div class="bktm">${name}</div><div class="bksub">optional extra</div></div>
+          <span class="bktag">${fmtDate(londonParts(b.courseRun.startDate).date)}</span></div>`;
+      }).join("")
+    : "";
   // Per-rider tally of active upcoming bookings vs the per-rider cap, so you can
   // see at a glance who still has room to book. Roster = membership members + you,
   // so a rider with zero bookings still shows (e.g. "Hamish — 0 / 4").
@@ -63,8 +76,8 @@ export function renderAccount(view, state, go) {
     : "";
 
   const hourly = (state.weather && state.weather.hourly) || [];
-  const bkHtml = `<div class="t" style="margin-top:16px">Your upcoming bookings</div>${capsHtml}` + (upcoming.length
-    ? upcoming.map(b => {
+  const bkHtml = `<div class="t" style="margin-top:16px">Your upcoming bookings</div>${capsHtml}` + (sessions.length
+    ? sessions.map(b => {
         const lp = londonParts(b.courseRun.startDate);
         const name = prettyCourse((b.courseRun.course || {}).name);
         const wx = wxLine(weatherAt(hourly, b.courseRun.startDate));
@@ -83,7 +96,7 @@ export function renderAccount(view, state, go) {
       }).join("")
     : `<div class="bkrow muted">None.</div>`);
 
-  view.innerHTML = `<h2>Bookings</h2>${memHtml}${passHtml}${bkHtml}`;
+  view.innerHTML = `<h2>Bookings</h2>${memHtml}${passHtml}${extrasHtml}${bkHtml}`;
   for (const btn of view.querySelectorAll(".bkcancel")) {
     btn.addEventListener("click", () => onCancel(btn, view, state, go));
   }
