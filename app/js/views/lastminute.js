@@ -48,7 +48,7 @@ export function renderLastMinute(view, state, go) {
     : `<p class="muted">Nothing free ${winDef.prose} right now — pull to refresh, or browse everything in <button class="linkish" id="lm-toagenda">Availability</button>.</p>`;
 
   view.innerHTML = `${stale}<h2>🔥 Last-minute</h2>
-    <p class="refreshed">Last refreshed ${fmtWhen(state.refreshedAt)}${state.stale ? " (saved)" : ""}</p>
+    <p class="refreshed">Last refreshed ${fmtWhen(state.refreshedAt)}</p>
     <div class="lmsegbar">${seg}</div>
     ${filterBar}
     ${rows}`;
