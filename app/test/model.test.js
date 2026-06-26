@@ -130,3 +130,69 @@ test("justOpenedKeys returns empty for identical agendas", () => {
   const a = [{ slots: [{ key: "a", free: 1 }, { key: "b", free: 3 }] }];
   assert.equal(justOpenedKeys(a, a).size, 0);
 });
+
+// Helper to build a one-slot day list keyed by start time.
+const slot = (start, extra = {}) => ({ start, key: start, free: 1, label: "Air 30", ...extra });
+const agendaOf = (...starts) => [{ slots: starts.map(s => slot(s)) }];
+
+test("sessionsInWindow 'today' keeps same-London-date future slots only", () => {
+  const now = new Date("2026-06-25T09:00:00+00:00"); // Thu 10:00 BST -> London 2026-06-25
+  const agenda = agendaOf(
+    "2026-06-25T08:00:00+00:00", // already started -> excluded
+    "2026-06-25T16:00:00+00:00", // today, future   -> included
+    "2026-06-25T23:30:00+00:00", // 00:30 BST next day -> London 2026-06-26 -> excluded
+    "2026-06-26T16:00:00+00:00", // tomorrow         -> excluded
+  );
+  const out = sessionsInWindow(agenda, "today", now);
+  assert.deepEqual(out.map(s => s.start), ["2026-06-25T16:00:00+00:00"]);
+});
+
+test("sessionsInWindow '48h' includes slots within 48h, excludes beyond", () => {
+  const now = new Date("2026-06-25T09:00:00+00:00"); // +48h = 2026-06-27T09:00Z
+  const agenda = agendaOf(
+    "2026-06-26T16:00:00+00:00", // within 48h -> included
+    "2026-06-27T08:59:00+00:00", // just within -> included
+    "2026-06-27T11:00:00+00:00", // beyond 48h  -> excluded
+  );
+  const out = sessionsInWindow(agenda, "48h", now);
+  assert.deepEqual(out.map(s => s.start),
+    ["2026-06-26T16:00:00+00:00", "2026-06-27T08:59:00+00:00"]);
+});
+
+test("sessionsInWindow 'weekend' from a weekday = the coming Sat+Sun only", () => {
+  const now = new Date("2026-06-25T09:00:00+00:00"); // Thursday
+  const agenda = agendaOf(
+    "2026-06-26T16:00:00+00:00", // Fri        -> excluded
+    "2026-06-27T11:00:00+00:00", // Sat        -> included
+    "2026-06-28T11:00:00+00:00", // Sun        -> included
+    "2026-07-04T11:00:00+00:00", // next Sat   -> excluded
+  );
+  const out = sessionsInWindow(agenda, "weekend", now);
+  assert.deepEqual(out.map(s => s.start),
+    ["2026-06-27T11:00:00+00:00", "2026-06-28T11:00:00+00:00"]);
+});
+
+test("sessionsInWindow 'weekend' from a Saturday keeps the rest of this weekend", () => {
+  const now = new Date("2026-06-27T08:00:00+00:00"); // Sat 09:00 BST
+  const agenda = agendaOf(
+    "2026-06-27T07:00:00+00:00", // earlier Sat -> already started -> excluded
+    "2026-06-27T14:00:00+00:00", // Sat future  -> included
+    "2026-06-28T11:00:00+00:00", // Sun         -> included
+    "2026-07-04T11:00:00+00:00", // next Sat    -> excluded
+  );
+  const out = sessionsInWindow(agenda, "weekend", now);
+  assert.deepEqual(out.map(s => s.start),
+    ["2026-06-27T14:00:00+00:00", "2026-06-28T11:00:00+00:00"]);
+});
+
+test("sessionsInWindow sorts soonest-first and drops full slots", () => {
+  const now = new Date("2026-06-25T09:00:00+00:00");
+  const agenda = [{ slots: [
+    slot("2026-06-25T18:00:00+00:00"),
+    slot("2026-06-25T16:00:00+00:00"),
+    slot("2026-06-25T17:00:00+00:00", { free: 0 }), // full -> excluded
+  ] }];
+  const out = sessionsInWindow(agenda, "today", now);
+  assert.deepEqual(out.map(s => s.start),
+    ["2026-06-25T16:00:00+00:00", "2026-06-25T18:00:00+00:00"]);
+});

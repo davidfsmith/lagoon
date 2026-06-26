@@ -122,5 +122,41 @@ export function justOpenedKeys(prevAgenda, curAgenda) {
   return out;
 }
 
-// Placeholder — implemented in Task 2.
-export const sessionsInWindow = undefined;
+// London day-of-week (0=Sun..6=Sat) for a UTC ISO timestamp. Noon-local avoids any
+// tz date-shift when reading the day back (same trick as groupByDay).
+function londonDow(iso) {
+  return new Date(londonParts(iso).date + "T12:00:00").getDay();
+}
+
+// The two calendar dates ("YYYY-MM-DD") of the coming weekend, in Europe/London.
+// From a weekday: the upcoming Sat+Sun. From Sat/Sun: that same weekend (Sat+Sun).
+function comingWeekendDates(now) {
+  const base = new Date(londonParts(now).date + "T12:00:00"); // local noon, dow-safe
+  const dow = base.getDay();                  // 0 Sun .. 6 Sat
+  const toSat = dow === 0 ? -1 : 6 - dow;      // Sunday: Saturday was yesterday
+  const sat = new Date(base.getTime() + toSat * 86400000);
+  const sun = new Date(sat.getTime() + 86400000);
+  const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return new Set([fmt(sat), fmt(sun)]);
+}
+
+// Free, not-yet-started sessions within a short-notice window, soonest first.
+// window: "today" | "weekend" | "48h". All dates compared in Europe/London (never
+// raw UTC hours). `now` is a Date.
+export function sessionsInWindow(agenda, window, now) {
+  const nowMs = now.getTime();
+  const soon = (agenda || []).flatMap(d => d.slots || [])
+    .filter(s => s.free > 0 && new Date(s.start).getTime() > nowMs);
+  let inWindow;
+  if (window === "weekend") {
+    const wknd = comingWeekendDates(now);
+    inWindow = (s) => (londonDow(s.start) === 0 || londonDow(s.start) === 6) && wknd.has(londonParts(s.start).date);
+  } else if (window === "48h") {
+    const limit = nowMs + 48 * 3600000;
+    inWindow = (s) => new Date(s.start).getTime() <= limit;
+  } else { // "today"
+    const today = londonParts(now).date;
+    inWindow = (s) => londonParts(s.start).date === today;
+  }
+  return soon.filter(inWindow).sort((a, b) => (a.start < b.start ? -1 : 1));
+}
