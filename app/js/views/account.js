@@ -3,7 +3,7 @@ import { londonParts } from "../tz.js";
 import { weatherAt } from "../weather.js";
 import { getToken, saveCache } from "../store.js";
 import { cancelParticipant } from "../api.js";
-import { bookingKeys, activeParticipants } from "../model.js";
+import { bookingKeys, activeParticipants, countsTowardLimit } from "../model.js";
 import { BOOKING_LIMIT } from "../config.js";
 import { downloadIcsForBooking } from "../calendar.js";
 import { logout } from "../app.js";
@@ -43,9 +43,12 @@ export function renderAccount(view, state, go) {
   // see at a glance who still has room to book. Roster = membership members + you,
   // so a rider with zero bookings still shows (e.g. "Hamish — 0 / 4").
   const counts = {};
-  for (const b of upcoming) for (const p of activeParticipants(b)) {
-    const cid = (p.contact || {}).id;
-    if (cid != null) counts[cid] = (counts[cid] || 0) + 1;
+  for (const b of upcoming) {
+    if (!countsTowardLimit(b)) continue; // skip add-ons like the board store
+    for (const p of activeParticipants(b)) {
+      const cid = (p.contact || {}).id;
+      if (cid != null) counts[cid] = (counts[cid] || 0) + 1;
+    }
   }
   const roster = []; const seenIds = new Set();
   const addRider = (id, name) => { if (id != null && !seenIds.has(id)) { seenIds.add(id); roster.push({ id, name }); } };

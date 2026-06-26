@@ -50,6 +50,13 @@ export function bookingIsHeld(b) {
   return true;
 }
 
+// Equipment add-ons (e.g. "Wakeboard Board Store", board hire) are optional extras,
+// not cable sessions, so they must NOT count toward the per-rider booking cap.
+const NON_SESSION_RE = /board\s*store|board\s*hire|storage/i;
+export function countsTowardLimit(b) {
+  return !NON_SESSION_RE.test(((b.courseRun || {}).course || {}).name || "");
+}
+
 export function bookingKeys(meBookings) {
   const set = new Set();
   for (const b of meBookings || []) {
