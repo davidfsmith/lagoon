@@ -56,11 +56,28 @@ All three are gated by a single flag so non-gated users see **zero change**.
 ## 2. Navigation & landing (`app.js`, `index.html`)
 
 ### Nav button
-- `index.html`: add a bottom-nav button `data-route="lastminute"` labelled `🔥
-  Last-minute`, placed **first** (order: Last-minute · Availability · Bookings).
-  Render it `hidden` by default.
+- `index.html`: add a bottom-nav button `data-route="lastminute"`, placed **first**
+  (order: Last-minute · Availability · Bookings). Markup separates the emoji from the
+  label so only the emoji swaps: `<span class="nav-emoji">🔥</span> Last-minute`.
+  Render the button `hidden` by default.
 - `app.js`, after a successful load (in `reload`, once `state` is set): reveal the
   button iff `isOn("lastMinute", state)`; otherwise keep it `hidden`.
+
+### Dynamic tab emoji (🔥 / 🌊)
+- The Last-minute tab's emoji reflects whether there's anything to grab **right
+  now-ish**, as a glanceable ambient light:
+  - 🔥 when at least one free, not-yet-started session falls in the **next 48h**,
+  - 🌊 (calm water — on-brand) otherwise.
+- **Stable, window-independent:** the trigger is a fixed 48h check, **not** the user's
+  Today/Weekend/48h selector and **not** the type filter — so the icon doesn't flicker
+  as the user changes views, and "anything available" means any session type. Reuse
+  `sessionsInWindow(state.agenda, "48h", now).length > 0` (see §5).
+- Only the `.nav-emoji` text content changes; the `Last-minute` label is constant so
+  the tab never reflows. `app.js` sets it at the same point it reveals the button
+  (after each load/refresh), via a tiny `setLastMinuteTabIcon(state)` helper.
+- The per-row "just opened ↑" badge (not the tab fire) carries the *release* signal —
+  fire = "stuff available soon", badge = "this one newly freed". Clean division.
+
 - `go()` gains a `lastminute` route:
   - if `isOn("lastMinute", state)` → `setActiveNav("lastminute")` +
     `renderLastMinute(view, state, go)`,
@@ -199,8 +216,8 @@ closed is Phase 2 (watcher + Web Push).
 | `app/js/model.js` | **new** `justOpenedKeys`, `sessionsInWindow` |
 | `app/js/store.js` | **new** `getDefaultLanding`/`setDefaultLanding`/`LANDING_OPTIONS`, `getLastMinuteWindow`/`setLastMinuteWindow` |
 | `app/js/data.js` | none (diff lives in `app.js`, which owns the cache seam) |
-| `app/js/app.js` | `lastminute` route; reveal nav button when gated; default-landing resolution; `justOpened` diff in `reload`; add `lastminute` to pull-to-refresh set |
-| `app/index.html` | hidden `🔥 Last-minute` nav button (first) |
+| `app/js/app.js` | `lastminute` route; reveal nav button when gated; set 🔥/🌊 tab emoji per 48h availability; default-landing resolution; `justOpened` diff in `reload`; add `lastminute` to pull-to-refresh set |
+| `app/index.html` | hidden Last-minute nav button (first), with a `.nav-emoji` span (`🔥`) before the label |
 | `app/js/views/lastminute.js` | **new** view |
 | `app/js/views/settings.js` | "Default page" dropdown (Settings tab) |
 | `app/sw.js` | add `js/views/lastminute.js` to `ASSETS`; bump `CACHE` (in lock-step with `APP_RELEASE`) |
