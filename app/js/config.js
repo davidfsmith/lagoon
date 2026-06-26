@@ -25,7 +25,7 @@ export const BETA_TESTERS = [9720]; // Dave
 // Wrap a feature's UI in isOn("flagName", state); promote the tier, then delete the
 // flag once it's stable. NOTE: client-side soft gate — code still ships to everyone.
 export const FEATURES = {
-  // example: newAvailabilityChart: "internal",
+  lastMinute: "internal", // 🔥 Last-minute tab + just-opened + default-page choice (Dave only for now)
 };
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
