@@ -4,6 +4,7 @@ import { BOOKING_SITE } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
 import { getLastMinuteWindow, setLastMinuteWindow } from "../store.js";
 import { sessionsInWindow } from "../model.js";
+import { setLastMinuteIcon } from "../app.js";
 
 const WINDOWS = [
   { id: "today", label: "Today", prose: "today" },
@@ -54,7 +55,7 @@ export function renderLastMinute(view, state, go) {
     ${rows}`;
 
   for (const b of view.querySelectorAll(".lmseg")) {
-    b.addEventListener("click", () => { setLastMinuteWindow(b.dataset.win); renderLastMinute(view, state, go); });
+    b.addEventListener("click", () => { setLastMinuteWindow(b.dataset.win); renderLastMinute(view, state, go); setLastMinuteIcon(); });
   }
   const toAgenda = view.querySelector("#lm-toagenda");
   if (toAgenda) toAgenda.addEventListener("click", () => go("agenda"));

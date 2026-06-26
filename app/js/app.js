@@ -1,4 +1,4 @@
-import { getToken, clearToken, saveCache, loadCache, getDefaultLanding } from "./store.js";
+import { getToken, clearToken, saveCache, loadCache, getDefaultLanding, getLastMinuteWindow } from "./store.js";
 import { loadEverything } from "./data.js";
 import { renderLogin } from "./views/login.js";
 import { renderAgenda } from "./views/agenda.js";
@@ -22,18 +22,24 @@ function setActiveNav(route) {
   for (const b of nav.querySelectorAll("button")) b.classList.toggle("active", b.dataset.route === route);
 }
 
-// After each load, reveal the Last-minute tab only for gated users and set its
-// 🔥/🌊 icon. 🔥 = at least one free, not-yet-started session in the next 48h
-// (a stable ambient signal, independent of the in-view window selector + filter);
-// 🌊 = nothing soon.
+// After each load, reveal the Last-minute tab only for gated users and set its icon.
 function afterLoad() {
   const btn = nav.querySelector('button[data-route="lastminute"]');
   if (!btn) return;
   const gated = isOn("lastMinute", state);
   btn.hidden = !gated;
-  if (!gated) return;
-  const em = btn.querySelector(".nav-emoji");
-  if (em) em.textContent = sessionsInWindow(state.agenda, "48h", new Date()).length > 0 ? "🔥" : "🌊";
+  if (gated) setLastMinuteIcon();
+}
+
+// 🔥 when something's free in the user's SELECTED Last-minute window, 🌊 when not.
+// Tied to the chosen window (default Today, not a fixed 48h) so the icon actually
+// goes calm when there's nothing to grab — a busy lagoon nearly always has *some*
+// 48h availability, which left it permanently lit. The view re-calls this when the
+// window changes. Type-filter-independent: any session type counts as "available".
+export function setLastMinuteIcon() {
+  const em = nav.querySelector('button[data-route="lastminute"] .nav-emoji');
+  if (!em || !state) return;
+  em.textContent = sessionsInWindow(state.agenda, getLastMinuteWindow(), new Date()).length > 0 ? "🔥" : "🌊";
 }
 
 export function go(route, arg) {
