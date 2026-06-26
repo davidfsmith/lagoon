@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runsToSlots, slotKey, bookingKeys, activeParticipants, bookingIsHeld, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay } from "../js/model.js";
+import { runsToSlots, slotKey, bookingKeys, activeParticipants, bookingIsHeld, countsTowardLimit, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay } from "../js/model.js";
+
+test("countsTowardLimit excludes equipment add-ons (board store), counts real sessions", () => {
+  const session = { courseRun: { course: { name: "2026 Wakeboard -Tech - Ride Session 30" } } };
+  const store = { courseRun: { course: { name: "Wakeboard Board Store" } } };
+  assert.equal(countsTowardLimit(session), true);
+  assert.equal(countsTowardLimit(store), false);
+});
 
 const now = new Date("2026-06-14T12:00:00+00:00");
 
