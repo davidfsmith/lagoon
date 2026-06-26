@@ -5,6 +5,7 @@ import { fmtWhen } from "./format.js";
 import { showIntro } from "../intro.js";
 import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS } from "../store.js";
 import { isBetaUser } from "../features.js";
+import { tabBarHtml, injectTabStyles } from "../tabs.js";
 
 // Two tabs: Settings (appearance, reminder, data, log out) and About (what it is,
 // version, help, support). The active tab persists for the session.
@@ -61,12 +62,10 @@ export function renderSettings(view, state, go) {
     <a class="set-row support" href="mailto:dave@dave-smith.co.uk?subject=Lagoon%20App%20Support">
       <span>Email support</span><span class="muted">dave@dave-smith.co.uk ›</span></a>`;
 
-  const tab = (id, label) => `<button class="tab${activeTab === id ? " active" : ""}" data-tab="${id}">${label}</button>`;
-
   view.innerHTML = `
     <button class="link" id="back">‹ Back</button>
     <h2>Settings</h2>
-    <div class="tabbar">${tab("settings", "Settings")}${tab("about", "About")}</div>
+    ${tabBarHtml([{ id: "settings", label: "Settings" }, { id: "about", label: "About" }], activeTab)}
     ${activeTab === "settings" ? settingsTab : aboutTab}`;
 
   view.querySelector("#back").addEventListener("click", () => go(state ? "agenda" : "login"));
@@ -82,6 +81,7 @@ export function renderSettings(view, state, go) {
   if (lo) lo.addEventListener("click", () => logout());
   const ri = view.querySelector("#replay-intro");
   if (ri) ri.addEventListener("click", () => showIntro());
+  injectTabStyles();
   injectSettingsStyles();
 }
 
@@ -92,10 +92,6 @@ function injectSettingsStyles() {
     .link{position:sticky;top:50px;z-index:5;display:inline-flex;align-items:center;
       background:var(--surface);border:1px solid var(--border);color:var(--accent);font-size:14px;
       padding:6px 14px;border-radius:20px;margin-bottom:10px;cursor:pointer;box-shadow:0 2px 8px var(--shadow)}
-    .tabbar{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px}
-    .tab{flex:1;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);
-      padding:10px;font-size:14px;cursor:pointer;margin-bottom:-1px}
-    .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
     .t{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
     .segbar{display:flex;gap:8px}
     .seg{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--muted);
