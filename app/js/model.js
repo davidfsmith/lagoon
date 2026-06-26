@@ -103,3 +103,24 @@ export function groupByDay(slots, daily = {}) {
       return { date, weekend: dow === 0 || dow === 6, summary: daily[date] || null, slots: daySlots };
     });
 }
+
+// Slots that newly freed up since the previous snapshot: present now AND either
+// absent before (was full — i.e. a cancellation, since the agenda only ever holds
+// free>0 slots) or with a higher free count than before (one of several spots
+// freed). Pure diff of two agendas ([{ slots:[{ key, free }] }]); prevAgenda may be
+// null on the first ever load -> empty result.
+// NOTE: this only sees changes between the user's OWN loads/refreshes. Detecting
+// opens while the app is closed is Phase 2 (AWS watcher + Web Push) — not a bug.
+export function justOpenedKeys(prevAgenda, curAgenda) {
+  if (prevAgenda == null) return new Set(); // first load — no baseline to diff against
+  const prev = new Map();
+  for (const d of prevAgenda) for (const s of d.slots || []) prev.set(s.key, s.free);
+  const out = new Set();
+  for (const d of curAgenda || []) for (const s of d.slots || []) {
+    if (!prev.has(s.key) || s.free > prev.get(s.key)) out.add(s.key);
+  }
+  return out;
+}
+
+// Placeholder — implemented in Task 2.
+export const sessionsInWindow = undefined;

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runsToSlots, slotKey, bookingKeys, activeParticipants, bookingIsHeld, countsTowardLimit, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay } from "../js/model.js";
+import { runsToSlots, slotKey, bookingKeys, activeParticipants, bookingIsHeld, countsTowardLimit, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay, justOpenedKeys, sessionsInWindow } from "../js/model.js";
 
 test("countsTowardLimit excludes equipment add-ons (board store), counts real sessions", () => {
   const session = { courseRun: { course: { name: "2026 Wakeboard -Tech - Ride Session 30" } } };
@@ -104,4 +104,29 @@ test("groupByDay groups slots by date, sorts, flags weekends, attaches summary",
   assert.deepEqual(days[0].slots.map(s => s.key), ["c", "b"]); // sorted by time
   assert.deepEqual(days[0].summary, { tMax: 20 });
   assert.equal(days[1].summary, null);
+});
+
+test("justOpenedKeys flags newly-present and free-risen slots, ignores unchanged/dropped", () => {
+  const prev = [{ slots: [
+    { key: "a", free: 1 }, // unchanged
+    { key: "b", free: 2 }, // will drop
+    { key: "c", free: 1 }, // will rise
+  ] }];
+  const cur = [{ slots: [
+    { key: "a", free: 1 }, // unchanged -> not flagged
+    { key: "b", free: 1 }, // dropped   -> not flagged
+    { key: "c", free: 2 }, // rose      -> flagged
+    { key: "d", free: 1 }, // new        -> flagged (was full/absent)
+  ] }];
+  assert.deepEqual([...justOpenedKeys(prev, cur)].sort(), ["c", "d"]);
+});
+
+test("justOpenedKeys returns empty when there is no previous snapshot", () => {
+  const cur = [{ slots: [{ key: "a", free: 1 }] }];
+  assert.equal(justOpenedKeys(null, cur).size, 0);
+});
+
+test("justOpenedKeys returns empty for identical agendas", () => {
+  const a = [{ slots: [{ key: "a", free: 1 }, { key: "b", free: 3 }] }];
+  assert.equal(justOpenedKeys(a, a).size, 0);
 });
