@@ -4,6 +4,7 @@ import { logout } from "../app.js";
 import { fmtWhen } from "./format.js";
 import { showIntro } from "../intro.js";
 import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS } from "../store.js";
+import { isBetaUser } from "../features.js";
 
 // Two tabs: Settings (appearance, reminder, data, log out) and About (what it is,
 // version, help, support). The active tab persists for the session.
@@ -47,7 +48,7 @@ export function renderSettings(view, state, go) {
     </div>
 
     <div class="t" style="margin-top:16px">Version</div>
-    <div class="set-row"><span>Hove Lagoon</span><span class="about-ver">
+    <div class="set-row"><span>Hove Lagoon${isBetaUser(state) ? ' <span class="beta-badge">BETA</span>' : ""}</span><span class="about-ver">
       <span>build ${build}</span>
       <span>${APP_RELEASE}</span>
       ${date ? `<span>${date}</span>` : ""}
@@ -112,6 +113,8 @@ function injectSettingsStyles() {
     .set-row.support{text-decoration:none;color:var(--text)}
     .set-row.support .muted{color:var(--accent)}
     .set-btn{width:100%;border:none;cursor:pointer;color:var(--text);font:inherit;text-align:left}
-    .set-btn .muted{color:var(--accent)}`;
+    .set-btn .muted{color:var(--accent)}
+    .beta-badge{background:var(--accent);color:var(--accent-ink);font-size:9px;font-weight:700;
+      letter-spacing:.05em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:6px}`;
   document.head.appendChild(s);
 }
