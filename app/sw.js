@@ -1,8 +1,8 @@
-const CACHE = "lagoon-v37";
+const CACHE = "lagoon-v38";
 const ASSETS = ["./", "./index.html", "./manifest.json",
   "./icon.svg", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./js/app.js", "./js/config.js", "./js/tz.js", "./js/theme.js", "./js/api.js", "./js/weather.js", "./js/model.js",
-  "./js/agendaModel.js", "./js/store.js", "./js/data.js", "./js/pullToRefresh.js", "./js/intro.js", "./js/filters.js", "./js/calendar.js",
+  "./js/agendaModel.js", "./js/store.js", "./js/data.js", "./js/pullToRefresh.js", "./js/intro.js", "./js/filters.js", "./js/calendar.js", "./js/features.js",
   "./js/views/login.js", "./js/views/agenda.js", "./js/views/day.js", "./js/views/account.js", "./js/views/format.js", "./js/views/settings.js"];
 
 self.addEventListener("install", (e) => {
