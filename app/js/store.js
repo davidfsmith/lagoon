@@ -1,3 +1,5 @@
+import { isOn } from "./features.js";
+
 const TOKEN_KEY = "lagoon.token";
 const CACHE_KEY = "lagoon.cache";
 
@@ -24,3 +26,29 @@ export function getReminderMinutes() {
   return REMINDER_OPTIONS.includes(v) ? v : REMINDER_DEFAULT;
 }
 export function setReminderMinutes(m) { localStorage.setItem(REMINDER_KEY, String(m)); }
+
+// Which screen the app opens on. "lastminute" is offered only to gated users; for
+// everyone else (and for a stale "lastminute" read after the flag is turned off) it
+// falls back to Availability.
+const LANDING_KEY = "lagoon.defaultLanding";
+export const LANDING_OPTIONS = [
+  { id: "lastminute", label: "Last minute" },
+  { id: "agenda", label: "Availability" },
+  { id: "account", label: "Bookings" },
+];
+export function setDefaultLanding(id) { localStorage.setItem(LANDING_KEY, id); }
+export function getDefaultLanding(state) {
+  const raw = localStorage.getItem(LANDING_KEY);
+  const valid = LANDING_OPTIONS.some(o => o.id === raw) && (raw !== "lastminute" || isOn("lastMinute", state));
+  if (valid) return raw;
+  return isOn("lastMinute", state) ? "lastminute" : "agenda";
+}
+
+// Last-minute view's window selector: "today" | "weekend" | "48h" (default today).
+const LM_WINDOW_KEY = "lagoon.lastMinuteWindow";
+const LM_WINDOWS = ["today", "weekend", "48h"];
+export function getLastMinuteWindow() {
+  const v = localStorage.getItem(LM_WINDOW_KEY);
+  return LM_WINDOWS.includes(v) ? v : "today";
+}
+export function setLastMinuteWindow(w) { localStorage.setItem(LM_WINDOW_KEY, w); }

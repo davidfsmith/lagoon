@@ -3,8 +3,8 @@ import { APP_VERSION, APP_RELEASE } from "../config.js";
 import { logout } from "../app.js";
 import { fmtWhen } from "./format.js";
 import { showIntro } from "../intro.js";
-import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS } from "../store.js";
-import { isBetaUser } from "../features.js";
+import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS } from "../store.js";
+import { isBetaUser, isOn } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
 
 // Two tabs: Settings (appearance, reminder, data, log out) and About (what it is,
@@ -23,9 +23,18 @@ export function renderSettings(view, state, go) {
   const seg = (val, label) =>
     `<button class="seg${val === theme ? " active" : ""}" data-theme="${val}">${label}</button>`;
 
+  const landing = getDefaultLanding(state);
+  const landingOptions = LANDING_OPTIONS
+    .filter(o => o.id !== "lastminute" || isOn("lastMinute", state)) // only offer Last minute to gated users
+    .map(o => `<option value="${o.id}"${o.id === landing ? " selected" : ""}>${o.label}</option>`).join("");
+
   const settingsTab = `
     <div class="t">Appearance</div>
     <div class="segbar">${seg("system", "System")}${seg("light", "Light")}${seg("dark", "Dark")}</div>
+
+    <div class="t" style="margin-top:18px">Default page</div>
+    <div class="set-row"><span>Open the app on</span>
+      <select id="landing" class="set-select">${landingOptions}</select></div>
 
     <div class="t" style="margin-top:18px">Calendar</div>
     <div class="set-row"><span>Default reminder time</span>
@@ -77,6 +86,8 @@ export function renderSettings(view, state, go) {
   }
   const rem = view.querySelector("#reminder");
   if (rem) rem.addEventListener("change", () => setReminderMinutes(parseInt(rem.value, 10)));
+  const ld = view.querySelector("#landing");
+  if (ld) ld.addEventListener("change", () => setDefaultLanding(ld.value));
   const lo = view.querySelector("#logout");
   if (lo) lo.addEventListener("click", () => logout());
   const ri = view.querySelector("#replay-intro");
