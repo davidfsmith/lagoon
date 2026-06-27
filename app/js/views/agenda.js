@@ -46,7 +46,7 @@ export function renderAgenda(view, state, go) {
   }
   injectFilterStyles();
   injectAgendaStyles();
-  startRefreshedTicker("ag-refreshed", state.refreshedAt);
+  startRefreshedTicker("ag-refreshed", () => `Last refreshed ${agoText(state.refreshedAt)}`);
 }
 
 function injectAgendaStyles() {

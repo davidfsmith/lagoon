@@ -63,7 +63,7 @@ export function renderLastMinute(view, state, go) {
   wireFilterChips(view, active, () => renderLastMinute(view, state, go));
   injectFilterStyles();
   injectLastMinuteStyles();
-  startRefreshedTicker("lm-refreshed", state.refreshedAt, isRefreshing); // skip while "Refreshing…"
+  startRefreshedTicker("lm-refreshed", () => isRefreshing() ? null : `Last refreshed ${agoText(state.refreshedAt)}`);
 }
 
 function injectLastMinuteStyles() {
