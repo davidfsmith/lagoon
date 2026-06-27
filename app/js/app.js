@@ -16,6 +16,8 @@ const view = document.getElementById("view");
 const nav = document.getElementById("nav");
 let state = null; // { me, meBookings, memberships, packages, agenda, stale }
 let currentRoute = "login";
+let lmRefreshing = false; // a background Last-minute refresh is in flight
+const LM_REFRESH_AFTER_MS = 300000; // on tab entry, only re-fetch if data is older than this (5 min) — spare the Lagoon API
 
 function setActiveNav(route) {
   nav.hidden = false;
@@ -42,6 +44,26 @@ export function setLastMinuteIcon() {
   em.textContent = sessionsInWindow(state.agenda, getLastMinuteWindow(), new Date()).length > 0 ? "🔥" : "🌊";
 }
 
+// True while a background Last-minute refresh is in flight (drives the "Refreshing…"
+// label in the view). Exported so the view can read it.
+export const isRefreshing = () => lmRefreshing;
+
+// Background refresh fired when the user opens the Last-minute tab: show "Refreshing…",
+// fetch fresh data, then fall back to the normal display (updated "Last refreshed", or
+// the stale banner on failure). Doesn't navigate — only re-renders if still on the tab,
+// so a slow fetch can't yank the user back after they've moved on.
+async function refreshLastMinute() {
+  if (lmRefreshing || !state || !isOn("lastMinute", state)) return;
+  if (state.refreshedAt && Date.now() - state.refreshedAt < LM_REFRESH_AFTER_MS) return; // fresh enough — don't re-fetch
+  lmRefreshing = true;
+  renderLastMinute(view, state, go);              // swap "Last refreshed" -> "Refreshing…"
+  try { await loadState(); } catch { /* logout / no-cache handled in loadState; keep data */ }
+  finally {
+    lmRefreshing = false;
+    if (currentRoute === "lastminute") renderLastMinute(view, state, go);
+  }
+}
+
 export function go(route, arg) {
   currentRoute = route;
   if (route === "login") { nav.hidden = true; renderLogin(view, onLoggedIn); return; }
@@ -56,20 +78,26 @@ export function go(route, arg) {
   else if (route === "account") { setActiveNav("account"); renderAccount(view, state, go); }
 }
 
-nav.addEventListener("click", (e) => { const b = e.target.closest("button"); const r = b && b.dataset.route; if (r) go(r); });
+nav.addEventListener("click", (e) => {
+  const b = e.target.closest("button"); const r = b && b.dataset.route;
+  if (!r) return;
+  go(r);
+  if (r === "lastminute" && currentRoute === "lastminute") refreshLastMinute(); // fresh data on entry
+});
 document.getElementById("btn-settings").addEventListener("click", () => go("settings"));
 
 async function onLoggedIn() { await loadAndRender(); }
 
 export function logout() { clearToken(); state = null; go("login"); }
 
-// Reload data from the API and render `target`. `showLoading` shows the full-page
-// spinner (initial load); pull-to-refresh skips it since it has its own indicator.
-async function reload(target, showLoading) {
-  if (showLoading) view.innerHTML = `<p class="muted">Loading sessions…</p>`;
+// Fetch fresh data into `state`. Returns true on a live load, false if it fell back
+// to the cache (stale). Throws on a hard failure (no cache, or 401 after logout).
+// Navigation is the caller's job — so a background refresh can update data without
+// yanking the user back to a tab they've since left.
+async function loadState() {
   const token = getToken();
+  const prev = loadCache();                         // previous snapshot, BEFORE we overwrite it
   try {
-    const prev = loadCache();                       // previous snapshot, BEFORE we overwrite it
     const data = await loadEverything(token);
     // Slots that newly freed since our last successful load — drives "just opened ↑".
     // Derived, ephemeral: not persisted to the cache.
@@ -77,17 +105,28 @@ async function reload(target, showLoading) {
     state = { ...data, stale: false, refreshedAt: Date.now(), justOpened };
     saveCache(data);
     afterLoad();
+    return true;
+  } catch (e) {
+    if (e.code === 401) { logout(); throw e; }
+    const cached = loadCache();
+    if (!cached) throw e;
+    state = { ...cached.data, stale: true, refreshedAt: cached.at, justOpened: new Set() };
+    afterLoad();
+    return false;
+  }
+}
+
+// Reload data from the API and render `target`. `showLoading` shows the full-page
+// spinner (initial load); pull-to-refresh skips it since it has its own indicator.
+async function reload(target, showLoading) {
+  if (showLoading) view.innerHTML = `<p class="muted">Loading sessions…</p>`;
+  try {
+    await loadState();                              // success or cache-fallback both set state
     go(target ?? getDefaultLanding(state));         // null target -> configurable default page
   } catch (e) {
-    if (e.code === 401) { logout(); return; }
-    const cached = loadCache();
-    if (cached) {
-      state = { ...cached.data, stale: true, refreshedAt: cached.at, justOpened: new Set() };
-      afterLoad();
-      go(target ?? getDefaultLanding(state));
-    }
-    else if (showLoading) view.innerHTML = `<p class="err">Couldn't load: ${e.message}</p>`;
-    // on a pull-to-refresh failure with existing state, keep what's on screen
+    if (e.code === 401) return;                     // logout() already navigated to login
+    if (showLoading) view.innerHTML = `<p class="err">Couldn't load: ${e.message}</p>`;
+    // on a pull-to-refresh failure with no cache + existing state, keep what's on screen
   }
 }
 

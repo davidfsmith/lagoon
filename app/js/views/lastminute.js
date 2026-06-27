@@ -1,10 +1,11 @@
-import { wcEmoji, fmtWhen, fmtDate } from "./format.js";
+import { wcEmoji, fmtWhen, fmtDate, agoText } from "./format.js";
 import { londonParts } from "../tz.js";
 import { BOOKING_SITE } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
 import { getLastMinuteWindow, setLastMinuteWindow } from "../store.js";
 import { sessionsInWindow } from "../model.js";
-import { setLastMinuteIcon } from "../app.js";
+import { setLastMinuteIcon, isRefreshing } from "../app.js";
+import { startRefreshedTicker } from "../refreshedTicker.js";
 
 const WINDOWS = [
   { id: "today", label: "Today", prose: "today" },
@@ -49,7 +50,7 @@ export function renderLastMinute(view, state, go) {
     : `<p class="muted">Nothing free ${winDef.prose} right now — pull to refresh, or browse everything in <button class="linkish" id="lm-toagenda">Availability</button>.</p>`;
 
   view.innerHTML = `${stale}<h2>🔥 Last-minute</h2>
-    <p class="refreshed">Last refreshed ${fmtWhen(state.refreshedAt)}</p>
+    <p class="refreshed" id="lm-refreshed">${isRefreshing() ? "Refreshing…" : `Last refreshed ${agoText(state.refreshedAt)}`}</p>
     <div class="lmsegbar">${seg}</div>
     ${filterBar}
     ${rows}`;
@@ -62,6 +63,7 @@ export function renderLastMinute(view, state, go) {
   wireFilterChips(view, active, () => renderLastMinute(view, state, go));
   injectFilterStyles();
   injectLastMinuteStyles();
+  startRefreshedTicker("lm-refreshed", () => isRefreshing() ? null : `Last refreshed ${agoText(state.refreshedAt)}`);
 }
 
 function injectLastMinuteStyles() {
@@ -77,7 +79,7 @@ function injectLastMinuteStyles() {
     .tm{font-weight:600}.tm b{color:var(--accent)}
     .r{text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
     .free{color:var(--good);font-size:12px}.tag{color:var(--warn);font-size:12px}
-    .bk{background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none}
+    .bk{background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap}
     .small{font-size:11px}
     .lmnew{background:var(--good);color:var(--accent-ink);font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 7px;border-radius:6px;margin-left:4px;white-space:nowrap}
     .linkish{background:none;border:none;color:var(--accent);font:inherit;cursor:pointer;padding:0;text-decoration:underline}`;

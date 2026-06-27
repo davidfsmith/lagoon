@@ -1,7 +1,8 @@
 import { getTheme, setTheme } from "../theme.js";
 import { APP_VERSION, APP_RELEASE } from "../config.js";
 import { logout } from "../app.js";
-import { fmtWhen } from "./format.js";
+import { agoText } from "./format.js";
+import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
 import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS } from "../store.js";
 import { isBetaUser, isOn } from "../features.js";
@@ -43,7 +44,7 @@ export function renderSettings(view, state, go) {
       </select></div>
 
     ${state ? `<div class="t" style="margin-top:18px">Data</div>
-    <div class="set-row"><span>Last refreshed</span><span class="muted">${fmtWhen(state.refreshedAt)}${state.stale ? " (saved)" : ""}</span></div>
+    <div class="set-row"><span>Last refreshed</span><span class="muted" id="set-refreshed">${agoText(state.refreshedAt)}${state.stale ? " (saved)" : ""}</span></div>
 
     <button class="primary" id="logout" style="margin-top:18px">Log out</button>` : ""}`;
 
@@ -94,6 +95,9 @@ export function renderSettings(view, state, go) {
   if (ri) ri.addEventListener("click", () => showIntro());
   injectTabStyles();
   injectSettingsStyles();
+  // Keep the Data → Last refreshed value live too (no "Last refreshed" prefix here —
+  // that's the row label). Self-clears on the About tab / pre-login (element absent).
+  if (state) startRefreshedTicker("set-refreshed", () => `${agoText(state.refreshedAt)}${state.stale ? " (saved)" : ""}`);
 }
 
 function injectSettingsStyles() {
