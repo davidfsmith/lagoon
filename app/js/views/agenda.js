@@ -1,6 +1,7 @@
-import { wcEmoji, fmtDate, fmtWhen } from "./format.js";
+import { wcEmoji, fmtDate, fmtWhen, agoText } from "./format.js";
 import { londonParts } from "../tz.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
+import { startRefreshedTicker } from "../refreshedTicker.js";
 
 export function renderAgenda(view, state, go) {
   const days = state.agenda || [];
@@ -34,7 +35,7 @@ export function renderAgenda(view, state, go) {
     : `<p class="muted">${active.size ? "No free sessions in the selected types in the next 21 days." : "Tap a session type above to show sessions."}</p>`;
 
   view.innerHTML = `${stale}<h2>Free sessions</h2>
-    <p class="refreshed">Last refreshed ${fmtWhen(state.refreshedAt)}</p>${filterBar}${body}`;
+    <p class="refreshed" id="ag-refreshed">Last refreshed ${agoText(state.refreshedAt)}</p>${filterBar}${body}`;
 
   wireFilterChips(view, active, () => renderAgenda(view, state, go));
   for (const el of view.querySelectorAll(".day")) {
@@ -45,6 +46,7 @@ export function renderAgenda(view, state, go) {
   }
   injectFilterStyles();
   injectAgendaStyles();
+  startRefreshedTicker("ag-refreshed", state.refreshedAt);
 }
 
 function injectAgendaStyles() {

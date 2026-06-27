@@ -5,25 +5,13 @@ import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFil
 import { getLastMinuteWindow, setLastMinuteWindow } from "../store.js";
 import { sessionsInWindow } from "../model.js";
 import { setLastMinuteIcon, isRefreshing } from "../app.js";
+import { startRefreshedTicker } from "../refreshedTicker.js";
 
 const WINDOWS = [
   { id: "today", label: "Today", prose: "today" },
   { id: "weekend", label: "Weekend", prose: "this weekend" },
   { id: "48h", label: "48h", prose: "in the next 48h" },
 ];
-
-// Keep the "Last refreshed …" line live without re-fetching: tick every 10s and rewrite
-// just that line (agoText moves in 10s steps for the first minute, so it visibly ages).
-// Self-stops once the view is replaced (its element is gone).
-let refreshedTimer = null;
-function startRefreshedTicker(state) {
-  clearInterval(refreshedTimer);
-  refreshedTimer = setInterval(() => {
-    const el = document.getElementById("lm-refreshed");
-    if (!el) { clearInterval(refreshedTimer); return; }      // navigated away — stop ticking
-    if (!isRefreshing()) el.textContent = `Last refreshed ${agoText(state.refreshedAt)}`;
-  }, 10000);
-}
 
 export function renderLastMinute(view, state, go) {
   const win = getLastMinuteWindow();
@@ -75,7 +63,7 @@ export function renderLastMinute(view, state, go) {
   wireFilterChips(view, active, () => renderLastMinute(view, state, go));
   injectFilterStyles();
   injectLastMinuteStyles();
-  startRefreshedTicker(state);
+  startRefreshedTicker("lm-refreshed", state.refreshedAt, isRefreshing); // skip while "Refreshing…"
 }
 
 function injectLastMinuteStyles() {
