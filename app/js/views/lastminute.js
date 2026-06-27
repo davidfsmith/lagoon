@@ -79,7 +79,7 @@ function injectLastMinuteStyles() {
     .tm{font-weight:600}.tm b{color:var(--accent)}
     .r{text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
     .free{color:var(--good);font-size:12px}.tag{color:var(--warn);font-size:12px}
-    .bk{background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none}
+    .bk{background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap}
     .small{font-size:11px}
     .lmnew{background:var(--good);color:var(--accent-ink);font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 7px;border-radius:6px;margin-left:4px;white-space:nowrap}
     .linkish{background:none;border:none;color:var(--accent);font:inherit;cursor:pointer;padding:0;text-decoration:underline}`;
