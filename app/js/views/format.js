@@ -9,7 +9,7 @@ export function fmtWhen(ts, nowMs = Date.now()) {
   const d = new Date(ts);
   const mins = Math.floor((nowMs - ts) / 60000);
   if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
+  if (mins < 60) return `${mins} min${mins === 1 ? "" : "s"} ago`;
   const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   const sameDay = new Date(nowMs).toDateString() === d.toDateString();
   if (sameDay) return `today at ${time}`;

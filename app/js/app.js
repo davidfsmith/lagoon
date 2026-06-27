@@ -17,7 +17,8 @@ const nav = document.getElementById("nav");
 let state = null; // { me, meBookings, memberships, packages, agenda, stale }
 let currentRoute = "login";
 let lmRefreshing = false; // a background Last-minute refresh is in flight
-const LM_REFRESH_AFTER_MS = 300000; // on tab entry, only re-fetch if data is older than this (5 min) — spare the Lagoon API
+let lmAutoTimer = null;   // periodic refresh while the Last-minute tab is open
+const LM_REFRESH_AFTER_MS = 300000; // only re-fetch if data is older than this (5 min) — spare the Lagoon API
 
 function setActiveNav(route) {
   nav.hidden = false;
@@ -64,6 +65,18 @@ async function refreshLastMinute() {
   }
 }
 
+// While the Last-minute tab stays open, poll once a minute and background-refresh as
+// soon as the data passes the freshness threshold — so just sitting on the tab keeps
+// availability current (~every 5 min). refreshLastMinute() is throttled, so this won't
+// over-fetch. Self-stops once the user leaves the tab.
+function armLastMinuteAutoRefresh() {
+  if (lmAutoTimer) return;                        // already polling
+  lmAutoTimer = setInterval(() => {
+    if (currentRoute !== "lastminute") { clearInterval(lmAutoTimer); lmAutoTimer = null; return; }
+    refreshLastMinute();
+  }, 60000);
+}
+
 export function go(route, arg) {
   currentRoute = route;
   if (route === "login") { nav.hidden = true; renderLogin(view, onLoggedIn); return; }
@@ -71,7 +84,7 @@ export function go(route, arg) {
   if (!state) return;
   if (route === "lastminute") {
     if (!isOn("lastMinute", state)) { go("agenda"); return; } // safe degrade for non-gated
-    setActiveNav("lastminute"); renderLastMinute(view, state, go);
+    setActiveNav("lastminute"); renderLastMinute(view, state, go); armLastMinuteAutoRefresh();
   }
   else if (route === "agenda") { setActiveNav("agenda"); renderAgenda(view, state, go); }
   else if (route === "day") { setActiveNav("agenda"); renderDay(view, state, arg, go); }

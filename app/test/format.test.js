@@ -8,7 +8,8 @@ test("fmtWhen: just now / minutes / today / older", () => {
   assert.equal(fmtWhen(0), "never");
   assert.equal(fmtWhen(null), "never");
   assert.equal(fmtWhen(now - 30 * 1000, now), "just now");      // <1 min
-  assert.equal(fmtWhen(now - 5 * 60000, now), "5 min ago");     // minutes
+  assert.equal(fmtWhen(now - 1 * 60000, now), "1 min ago");     // singular
+  assert.equal(fmtWhen(now - 5 * 60000, now), "5 mins ago");    // plural
   assert.equal(fmtWhen(now - 90 * 60000, now), "today at 13:00"); // same day, >1h
   const older = fmtWhen(now - 26 * 3600 * 1000, now);            // previous day
   assert.match(older, /^\w{3} \d{1,2} \w{3}, \d{2}:\d{2}$/);     // "Thu 19 Jun, 12:30"
@@ -24,7 +25,7 @@ test("agoText: 'just now' under 10s, then 10s steps within the first minute", ()
 
 test("agoText: rolls into minutes after a minute, and handles missing ts", () => {
   assert.equal(agoText(now - 60 * 1000, now), "1 min ago");
-  assert.equal(agoText(now - 125 * 1000, now), "2 min ago");
+  assert.equal(agoText(now - 125 * 1000, now), "2 mins ago");
   assert.equal(agoText(0, now), "never");
   assert.equal(agoText(null, now), "never");
 });
