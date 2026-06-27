@@ -15,6 +15,17 @@ export function fmtWhen(ts, nowMs = Date.now()) {
   if (sameDay) return `today at ${time}`;
   return `${d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}, ${time}`;
 }
+
+// Live-friendly "time ago" for the Last-refreshed line: seconds (in 10s steps) within
+// the first minute so a ticker visibly moves, then defers to fmtWhen for the calmer
+// minutes / hours / date display.
+export function agoText(ts, nowMs = Date.now()) {
+  if (!ts) return "never";
+  const s = Math.max(0, Math.floor((nowMs - ts) / 1000));
+  if (s < 10) return "just now";
+  if (s < 60) return `${Math.floor(s / 10) * 10}s ago`;
+  return fmtWhen(ts, nowMs);
+}
 // WMO weather code -> emoji (coarse buckets)
 export function wcEmoji(code) {
   if (code === 0) return "☀️";

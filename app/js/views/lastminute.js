@@ -1,4 +1,4 @@
-import { wcEmoji, fmtWhen, fmtDate } from "./format.js";
+import { wcEmoji, fmtWhen, fmtDate, agoText } from "./format.js";
 import { londonParts } from "../tz.js";
 import { BOOKING_SITE } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
@@ -12,16 +12,17 @@ const WINDOWS = [
   { id: "48h", label: "48h", prose: "in the next 48h" },
 ];
 
-// Keep the "Last refreshed Xm ago" line live without re-fetching: tick every 30s and
-// rewrite just that line. Self-stops once the view is replaced (its element is gone).
+// Keep the "Last refreshed …" line live without re-fetching: tick every 10s and rewrite
+// just that line (agoText moves in 10s steps for the first minute, so it visibly ages).
+// Self-stops once the view is replaced (its element is gone).
 let refreshedTimer = null;
 function startRefreshedTicker(state) {
   clearInterval(refreshedTimer);
   refreshedTimer = setInterval(() => {
     const el = document.getElementById("lm-refreshed");
     if (!el) { clearInterval(refreshedTimer); return; }      // navigated away — stop ticking
-    if (!isRefreshing()) el.textContent = `Last refreshed ${fmtWhen(state.refreshedAt)}`;
-  }, 30000);
+    if (!isRefreshing()) el.textContent = `Last refreshed ${agoText(state.refreshedAt)}`;
+  }, 10000);
 }
 
 export function renderLastMinute(view, state, go) {
@@ -61,7 +62,7 @@ export function renderLastMinute(view, state, go) {
     : `<p class="muted">Nothing free ${winDef.prose} right now — pull to refresh, or browse everything in <button class="linkish" id="lm-toagenda">Availability</button>.</p>`;
 
   view.innerHTML = `${stale}<h2>🔥 Last-minute</h2>
-    <p class="refreshed" id="lm-refreshed">${isRefreshing() ? "Refreshing…" : `Last refreshed ${fmtWhen(state.refreshedAt)}`}</p>
+    <p class="refreshed" id="lm-refreshed">${isRefreshing() ? "Refreshing…" : `Last refreshed ${agoText(state.refreshedAt)}`}</p>
     <div class="lmsegbar">${seg}</div>
     ${filterBar}
     ${rows}`;
