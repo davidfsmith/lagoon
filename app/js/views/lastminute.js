@@ -4,13 +4,25 @@ import { BOOKING_SITE } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
 import { getLastMinuteWindow, setLastMinuteWindow } from "../store.js";
 import { sessionsInWindow } from "../model.js";
-import { setLastMinuteIcon } from "../app.js";
+import { setLastMinuteIcon, isRefreshing } from "../app.js";
 
 const WINDOWS = [
   { id: "today", label: "Today", prose: "today" },
   { id: "weekend", label: "Weekend", prose: "this weekend" },
   { id: "48h", label: "48h", prose: "in the next 48h" },
 ];
+
+// Keep the "Last refreshed Xm ago" line live without re-fetching: tick every 30s and
+// rewrite just that line. Self-stops once the view is replaced (its element is gone).
+let refreshedTimer = null;
+function startRefreshedTicker(state) {
+  clearInterval(refreshedTimer);
+  refreshedTimer = setInterval(() => {
+    const el = document.getElementById("lm-refreshed");
+    if (!el) { clearInterval(refreshedTimer); return; }      // navigated away — stop ticking
+    if (!isRefreshing()) el.textContent = `Last refreshed ${fmtWhen(state.refreshedAt)}`;
+  }, 30000);
+}
 
 export function renderLastMinute(view, state, go) {
   const win = getLastMinuteWindow();
@@ -49,7 +61,7 @@ export function renderLastMinute(view, state, go) {
     : `<p class="muted">Nothing free ${winDef.prose} right now — pull to refresh, or browse everything in <button class="linkish" id="lm-toagenda">Availability</button>.</p>`;
 
   view.innerHTML = `${stale}<h2>🔥 Last-minute</h2>
-    <p class="refreshed">Last refreshed ${fmtWhen(state.refreshedAt)}</p>
+    <p class="refreshed" id="lm-refreshed">${isRefreshing() ? "Refreshing…" : `Last refreshed ${fmtWhen(state.refreshedAt)}`}</p>
     <div class="lmsegbar">${seg}</div>
     ${filterBar}
     ${rows}`;
@@ -62,6 +74,7 @@ export function renderLastMinute(view, state, go) {
   wireFilterChips(view, active, () => renderLastMinute(view, state, go));
   injectFilterStyles();
   injectLastMinuteStyles();
+  startRefreshedTicker(state);
 }
 
 function injectLastMinuteStyles() {
