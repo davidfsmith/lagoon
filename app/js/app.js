@@ -18,6 +18,7 @@ let state = null; // { me, meBookings, memberships, packages, agenda, stale }
 let currentRoute = "login";
 let lmRefreshing = false; // a background Last-minute refresh is in flight
 let lmAutoTimer = null;   // periodic refresh while the Last-minute tab is open
+let pendingBookingReturn = false; // user tapped "Book ↗"; refresh when they come back
 const LM_REFRESH_AFTER_MS = 300000; // only re-fetch if data is older than this (5 min) — spare the Lagoon API
 
 function setActiveNav(route) {
@@ -77,6 +78,15 @@ function armLastMinuteAutoRefresh() {
   }, 60000);
 }
 
+// After the user returns from the Lagoon booking site, background-refresh so a just-made
+// booking shows without a manual pull. Re-fetches data, then re-renders the current data
+// view in place (leaves day/settings navigation alone).
+async function refreshAfterBooking() {
+  if (!state) return;
+  try { await loadState(); } catch { return; } // logout / no-cache handled in loadState
+  if (["agenda", "account", "lastminute"].includes(currentRoute)) go(currentRoute);
+}
+
 export function go(route, arg) {
   currentRoute = route;
   if (route === "login") { nav.hidden = true; renderLogin(view, onLoggedIn); return; }
@@ -98,6 +108,16 @@ nav.addEventListener("click", (e) => {
   if (r === "lastminute" && currentRoute === "lastminute") refreshLastMinute(); // fresh data on entry
 });
 document.getElementById("btn-settings").addEventListener("click", () => go("settings"));
+
+// Tapping a "Book ↗" link opens the Lagoon booking site in a new tab. Flag it, and when
+// the app returns to the foreground refresh once so a new booking shows on Bookings
+// without a manual pull. Gated on the flag (not every tab-switch) to spare the API.
+document.addEventListener("click", (e) => { if (e.target.closest("a.bk")) pendingBookingReturn = true; });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || !pendingBookingReturn) return;
+  pendingBookingReturn = false;
+  refreshAfterBooking();
+});
 
 async function onLoggedIn() { await loadAndRender(); }
 
