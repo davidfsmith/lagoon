@@ -40,8 +40,7 @@ export function setDefaultLanding(id) { localStorage.setItem(LANDING_KEY, id); }
 export function getDefaultLanding(state) {
   const raw = localStorage.getItem(LANDING_KEY);
   const valid = LANDING_OPTIONS.some(o => o.id === raw) && (raw !== "lastminute" || isOn("lastMinute", state));
-  if (valid) return raw;
-  return isOn("lastMinute", state) ? "lastminute" : "agenda";
+  return valid ? raw : "agenda"; // no (valid) choice -> open on Availability; a stored "lastminute" is honoured
 }
 
 // Last-minute view's window selector: "today" | "tomorrow" | "weekend" (default today;
