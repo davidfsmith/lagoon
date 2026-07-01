@@ -147,16 +147,18 @@ test("sessionsInWindow 'today' keeps same-London-date future slots only", () => 
   assert.deepEqual(out.map(s => s.start), ["2026-06-25T16:00:00+00:00"]);
 });
 
-test("sessionsInWindow '48h' includes slots within 48h, excludes beyond", () => {
-  const now = new Date("2026-06-25T09:00:00+00:00"); // +48h = 2026-06-27T09:00Z
+test("sessionsInWindow 'tomorrow' keeps only next-London-day future slots", () => {
+  const now = new Date("2026-06-25T09:00:00+00:00"); // Thu, London date 2026-06-25
   const agenda = agendaOf(
-    "2026-06-26T16:00:00+00:00", // within 48h -> included
-    "2026-06-27T08:59:00+00:00", // just within -> included
-    "2026-06-27T11:00:00+00:00", // beyond 48h  -> excluded
+    "2026-06-25T16:00:00+00:00", // today                        -> excluded
+    "2026-06-25T23:30:00+00:00", // 00:30 BST -> London 2026-06-26 (tomorrow) -> included
+    "2026-06-26T16:00:00+00:00", // tomorrow                     -> included
+    "2026-06-26T23:30:00+00:00", // 00:30 BST -> London 2026-06-27 -> excluded
+    "2026-06-27T11:00:00+00:00", // day after tomorrow           -> excluded
   );
-  const out = sessionsInWindow(agenda, "48h", now);
+  const out = sessionsInWindow(agenda, "tomorrow", now);
   assert.deepEqual(out.map(s => s.start),
-    ["2026-06-26T16:00:00+00:00", "2026-06-27T08:59:00+00:00"]);
+    ["2026-06-25T23:30:00+00:00", "2026-06-26T16:00:00+00:00"]);
 });
 
 test("sessionsInWindow 'weekend' from a weekday = the coming Sat+Sun only", () => {

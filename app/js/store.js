@@ -44,9 +44,10 @@ export function getDefaultLanding(state) {
   return isOn("lastMinute", state) ? "lastminute" : "agenda";
 }
 
-// Last-minute view's window selector: "today" | "weekend" | "48h" (default today).
+// Last-minute view's window selector: "today" | "tomorrow" | "weekend" (default today;
+// a stale "48h" from before falls back to today via the validation below).
 const LM_WINDOW_KEY = "lagoon.lastMinuteWindow";
-const LM_WINDOWS = ["today", "weekend", "48h"];
+const LM_WINDOWS = ["today", "tomorrow", "weekend"];
 export function getLastMinuteWindow() {
   const v = localStorage.getItem(LM_WINDOW_KEY);
   return LM_WINDOWS.includes(v) ? v : "today";

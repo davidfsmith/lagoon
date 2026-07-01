@@ -140,9 +140,18 @@ function comingWeekendDates(now) {
   return new Set([fmt(sat), fmt(sun)]);
 }
 
+// The Europe/London calendar date ("YYYY-MM-DD") `days` after `now` (0 = today, 1 =
+// tomorrow). Noon-local keeps the date stable across time zones + DST (same trick as
+// groupByDay / comingWeekendDates); setDate handles month/year rollover.
+function londonDatePlus(now, days) {
+  const d = new Date(londonParts(now).date + "T12:00:00");
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 // Free, not-yet-started sessions within a short-notice window, soonest first.
-// window: "today" | "weekend" | "48h". All dates compared in Europe/London (never
-// raw UTC hours). `now` is a Date.
+// window: "today" | "tomorrow" | "weekend". All dates compared in Europe/London (never
+// raw UTC hours). `now` is a Date. Unknown windows fall back to "today".
 export function sessionsInWindow(agenda, window, now) {
   const nowMs = now.getTime();
   const soon = (agenda || []).flatMap(d => d.slots || [])
@@ -151,9 +160,9 @@ export function sessionsInWindow(agenda, window, now) {
   if (window === "weekend") {
     const wknd = comingWeekendDates(now);
     inWindow = (s) => (londonDow(s.start) === 0 || londonDow(s.start) === 6) && wknd.has(londonParts(s.start).date);
-  } else if (window === "48h") {
-    const limit = nowMs + 48 * 3600000;
-    inWindow = (s) => new Date(s.start).getTime() <= limit;
+  } else if (window === "tomorrow") {
+    const tomorrow = londonDatePlus(now, 1);
+    inWindow = (s) => londonParts(s.start).date === tomorrow;
   } else { // "today"
     const today = londonParts(now).date;
     inWindow = (s) => londonParts(s.start).date === today;

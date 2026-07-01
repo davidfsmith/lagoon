@@ -9,8 +9,8 @@ import { startRefreshedTicker } from "../refreshedTicker.js";
 
 const WINDOWS = [
   { id: "today", label: "Today", prose: "today" },
+  { id: "tomorrow", label: "Tomorrow", prose: "tomorrow" },
   { id: "weekend", label: "Weekend", prose: "this weekend" },
-  { id: "48h", label: "48h", prose: "in the next 48h" },
 ];
 
 export function renderLastMinute(view, state, go) {
