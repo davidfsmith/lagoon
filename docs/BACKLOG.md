@@ -17,9 +17,3 @@ just a place to park things so they aren't forgotten.
   closed: the AWS watcher already detects releases → add Web Push (SW push handler, VAPID
   keys, a subscription store, and the watcher sending on release). The in-app Last-minute
   surfacing (Phase 1) is the interim. See `docs/superpowers/specs/` for the Phase 1 design.
-
-## Tidy-ups
-
-- **Remove the `lastMinute` feature flag** once the feature has proven stable in the wild
-  (currently kept at `"on"` in `config.js` as a kill-switch) — then delete the `isOn`
-  checks and make the code unconditional.
