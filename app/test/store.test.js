@@ -45,9 +45,11 @@ test("LANDING_OPTIONS lists the three pages", () => {
   assert.deepEqual(LANDING_OPTIONS.map(o => o.id), ["lastminute", "agenda", "account"]);
 });
 
-test("getDefaultLanding default: lastminute for gated, agenda for others", () => {
+// lastMinute is now "on" for everyone, so gated/other behave the same. The unset
+// default is Availability; a stored choice (incl. "lastminute") is honoured.
+test("getDefaultLanding defaults to Availability when nothing is stored", () => {
   mem.clear();
-  assert.equal(getDefaultLanding(gated), "lastminute");
+  assert.equal(getDefaultLanding(gated), "agenda");
   assert.equal(getDefaultLanding(other), "agenda");
 });
 
@@ -58,17 +60,17 @@ test("getDefaultLanding returns a valid stored choice for anyone", () => {
   assert.equal(getDefaultLanding(other), "account");
 });
 
-test("a stored 'lastminute' degrades to agenda for a non-gated user", () => {
+test("a stored 'lastminute' is honoured for everyone (feature is on)", () => {
   mem.clear();
   setDefaultLanding("lastminute");
   assert.equal(getDefaultLanding(gated), "lastminute");
-  assert.equal(getDefaultLanding(other), "agenda");
+  assert.equal(getDefaultLanding(other), "lastminute");
 });
 
-test("an invalid stored landing falls back per gating", () => {
+test("an invalid stored landing falls back to Availability", () => {
   mem.clear();
   setDefaultLanding("bogus");
-  assert.equal(getDefaultLanding(gated), "lastminute");
+  assert.equal(getDefaultLanding(gated), "agenda");
   assert.equal(getDefaultLanding(other), "agenda");
 });
 

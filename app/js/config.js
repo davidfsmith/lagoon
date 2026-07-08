@@ -25,10 +25,10 @@ export const BETA_TESTERS = [9720]; // Dave
 // Wrap a feature's UI in isOn("flagName", state); promote the tier, then delete the
 // flag once it's stable. NOTE: client-side soft gate — code still ships to everyone.
 export const FEATURES = {
-  lastMinute: "internal", // 🔥 Last-minute tab + just-opened + default-page choice (Dave only for now)
+  lastMinute: "on", // 🔥 Last-minute tab — live for everyone (kept as a kill-switch; delete the flag once proven)
 };
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
 export const BOOKING_SITE = "https://booking.lagoon.co.uk";
-export const APP_RELEASE = "v44"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v45"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"
