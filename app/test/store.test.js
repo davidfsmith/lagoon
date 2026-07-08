@@ -16,6 +16,8 @@ const {
   getDefaultLanding, setDefaultLanding,
   getLastMinuteWindow, setLastMinuteWindow,
   LANDING_OPTIONS,
+  getBetaOptIn, setBetaOptIn,
+  getInternalOptIn, setInternalOptIn,
 } = await import("../js/store.js");
 
 // --- token / cache (existing) ---
@@ -81,4 +83,24 @@ test("getLastMinuteWindow defaults to today and persists valid values only", () 
   assert.equal(getLastMinuteWindow(), "weekend");
   setLastMinuteWindow("bogus");
   assert.equal(getLastMinuteWindow(), "today");
+});
+
+// --- beta / internal opt-in flags ---
+
+test("beta opt-in round-trips (default off)", () => {
+  mem.clear();
+  assert.equal(getBetaOptIn(), false);
+  setBetaOptIn(true);
+  assert.equal(getBetaOptIn(), true);
+  setBetaOptIn(false);
+  assert.equal(getBetaOptIn(), false);
+});
+
+test("internal opt-in round-trips (default off)", () => {
+  mem.clear();
+  assert.equal(getInternalOptIn(), false);
+  setInternalOptIn(true);
+  assert.equal(getInternalOptIn(), true);
+  setInternalOptIn(false);
+  assert.equal(getInternalOptIn(), false);
 });

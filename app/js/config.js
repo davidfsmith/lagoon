@@ -18,17 +18,15 @@ export const COURSES = [
 ];
 export const FILTER_GROUPS = ["ride", "other"];
 
-// Beta access: Lagoon user IDs that see in-flight (internal/beta) features.
-export const BETA_TESTERS = [9720]; // Dave
 // Feature flags → audience tier: "off" | "internal" | "beta" | "on".
-//   internal = BETA_TESTERS only · beta = BETA_TESTERS or opted-in · on = everyone.
-// Wrap a feature's UI in isOn("flagName", state); promote the tier, then delete the
-// flag once it's stable. NOTE: client-side soft gate — code still ships to everyone.
+//   internal = developer opt-in (hidden) · beta = internal or beta opt-in · on = everyone.
+// Wrap a feature's UI in isOn("flagName"); promote the tier, then delete the flag once
+// it's stable. NOTE: client-side soft gate — code still ships to everyone.
 export const FEATURES = {
   // example: newAvailabilityChart: "internal",
 };
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
 export const BOOKING_SITE = "https://booking.lagoon.co.uk";
-export const APP_RELEASE = "v47"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v48"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"

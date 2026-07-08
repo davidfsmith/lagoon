@@ -4,13 +4,26 @@ import { logout } from "../app.js";
 import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
-import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS } from "../store.js";
-import { isBetaUser } from "../features.js";
+import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn } from "../store.js";
+import { accessTier } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
 
 // Two tabs: Settings (appearance, reminder, data, log out) and About (what it is,
 // version, help, support). The active tab persists for the session.
 let activeTab = "settings";
+let devTaps = 0; // version-row taps this session; 7 reveals the Developer section
+
+// Badge for the current access level (DEV outranks BETA).
+function badgeHtml() {
+  const t = accessTier();
+  if (t === "internal") return ' <span class="dev-badge">DEV</span>';
+  if (t === "beta") return ' <span class="beta-badge">BETA</span>';
+  return "";
+}
+// A themed on/off toggle switch (checkbox styled via .switch CSS).
+function switchHtml(id, on) {
+  return `<label class="switch"><input type="checkbox" id="${id}"${on ? " checked" : ""}><span class="slider"></span></label>`;
+}
 
 // APP_VERSION is stamped at deploy as "build <sha> · <date>" (just "dev" locally).
 function buildParts() {
@@ -42,6 +55,14 @@ export function renderSettings(view, state, go) {
         ${REMINDER_OPTIONS.map(m => `<option value="${m}"${m === getReminderMinutes() ? " selected" : ""}>${m} min</option>`).join("")}
       </select></div>
 
+    <div class="t" style="margin-top:18px">Beta</div>
+    <div class="set-row"><span>Beta features</span>${switchHtml("beta-toggle", getBetaOptIn())}</div>
+    <div class="set-cap">Try in-progress features early. They may be rough or change.</div>
+
+    ${getInternalOptIn() ? `<div class="t" style="margin-top:18px">Developer</div>
+    <div class="set-row"><span>Internal features</span>${switchHtml("internal-toggle", getInternalOptIn())}</div>
+    <div class="set-cap">Unreleased, in-progress features. Expect breakage. Includes beta features.</div>` : ""}
+
     ${state ? `<div class="t" style="margin-top:18px">Data</div>
     <div class="set-row"><span>Last refreshed</span><span class="muted" id="set-refreshed">${agoText(state.refreshedAt)}${state.stale ? " (saved)" : ""}</span></div>
 
@@ -58,7 +79,7 @@ export function renderSettings(view, state, go) {
     </div>
 
     <div class="t" style="margin-top:16px">Version</div>
-    <div class="set-row"><span>Hove Lagoon${isBetaUser(state) ? ' <span class="beta-badge">BETA</span>' : ""}</span><span class="about-ver">
+    <div class="set-row" id="ver-row"><span>Hove Lagoon${badgeHtml()}</span><span class="about-ver">
       <span>build ${build}</span>
       <span>${APP_RELEASE}</span>
       ${date ? `<span>${date}</span>` : ""}
@@ -92,6 +113,15 @@ export function renderSettings(view, state, go) {
   if (lo) lo.addEventListener("click", () => logout());
   const ri = view.querySelector("#replay-intro");
   if (ri) ri.addEventListener("click", () => showIntro());
+  const bt = view.querySelector("#beta-toggle");
+  if (bt) bt.addEventListener("change", () => { setBetaOptIn(bt.checked); renderSettings(view, state, go); });
+  const it = view.querySelector("#internal-toggle");
+  if (it) it.addEventListener("change", () => { setInternalOptIn(it.checked); renderSettings(view, state, go); });
+  const ver = view.querySelector("#ver-row");
+  if (ver) ver.addEventListener("click", () => {
+    if (getInternalOptIn()) return;            // already unlocked
+    if (++devTaps >= 7) { devTaps = 0; setInternalOptIn(true); renderSettings(view, state, go); }
+  });
   injectTabStyles();
   injectSettingsStyles();
   // Keep the Data → Last refreshed value live too (no "Last refreshed" prefix here —
@@ -125,6 +155,15 @@ function injectSettingsStyles() {
     .set-btn{width:100%;border:none;cursor:pointer;color:var(--text);font:inherit;text-align:left}
     .set-btn .muted{color:var(--accent)}
     .beta-badge{background:var(--accent);color:var(--accent-ink);font-size:9px;font-weight:700;
-      letter-spacing:.05em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:6px}`;
+      letter-spacing:.05em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:6px}
+    .dev-badge{background:#b7791f;color:#fff;font-size:9px;font-weight:700;
+      letter-spacing:.05em;padding:2px 6px;border-radius:5px;vertical-align:middle;margin-left:6px}
+    .set-cap{font-size:12px;color:var(--muted);margin:6px 2px 0;line-height:1.4}
+    .switch{position:relative;display:inline-block;width:42px;height:24px;flex:none}
+    .switch input{opacity:0;width:0;height:0}
+    .slider{position:absolute;inset:0;background:var(--border);border-radius:24px;cursor:pointer;transition:background .15s}
+    .slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .15s}
+    .switch input:checked+.slider{background:var(--accent)}
+    .switch input:checked+.slider::before{transform:translateX(18px)}`;
   document.head.appendChild(s);
 }
