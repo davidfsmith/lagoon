@@ -1,4 +1,4 @@
-import { wcEmoji, fmtWhen, fmtDate, agoText } from "./format.js";
+import { wcEmoji, fmtWhen, fmtDate, agoText, windDirLabel } from "./format.js";
 import { londonParts } from "../tz.js";
 import { BOOKING_SITE } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
@@ -35,8 +35,9 @@ export function renderLastMinute(view, state, go) {
 
   const rows = slots.length ? slots.map(s => {
     const lp = londonParts(s.start);
+    const dir = s.weather ? windDirLabel(s.weather.windDir) : "";
     const wx = s.weather
-      ? `${wcEmoji(s.weather.code)} ${Math.round(s.weather.temp)}° · wind ${Math.round(s.weather.windSpeed)} · rain ${s.weather.precipProb}%`
+      ? `${wcEmoji(s.weather.code)} ${Math.round(s.weather.temp)}° · wind ${dir ? dir + " " : ""}${Math.round(s.weather.windSpeed)} · rain ${s.weather.precipProb}%`
       : "";
     const opened = justOpened.has(s.key) ? `<span class="lmnew">just opened ↑</span>` : "";
     const right = s.booked

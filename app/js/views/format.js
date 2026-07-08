@@ -2,6 +2,15 @@ export function fmtDate(date) {
   return new Date(date + "T12:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 }
 
+// Full date with year + ordinal day, no weekday: "6th July 2027". For the membership
+// expiry on Bookings > Extras (fmtDate's compact "Tue 6 Jul" hides the year).
+export function fmtDateLong(date) {
+  const d = new Date(date + "T12:00:00");
+  const day = d.getDate(), j = day % 10, k = day % 100;
+  const suffix = (j === 1 && k !== 11) ? "st" : (j === 2 && k !== 12) ? "nd" : (j === 3 && k !== 13) ? "rd" : "th";
+  return `${day}${suffix} ${d.toLocaleDateString("en-GB", { month: "long" })} ${d.getFullYear()}`;
+}
+
 // Friendly "when" for a timestamp (ms): "just now", "5 min ago", "14:32" (today),
 // or "Fri 20 Jun, 14:32" (older). Used for the last-refreshed indicator.
 export function fmtWhen(ts, nowMs = Date.now()) {
@@ -36,6 +45,14 @@ export function wcEmoji(code) {
   if (code <= 77) return "🌨";
   if (code <= 82) return "🌧";
   return "⛈";
+}
+
+// Compass label for a wind bearing in degrees (meteorological — the direction the wind
+// blows FROM). 8-point is enough for reading riding conditions. "" when unknown.
+const COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+export function windDirLabel(deg) {
+  if (deg == null || Number.isNaN(deg)) return "";
+  return COMPASS[Math.round((deg % 360) / 45) % 8];
 }
 
 // Shorten a raw Lagoon course name for display.

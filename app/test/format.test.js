@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fmtWhen, agoText } from "../js/views/format.js";
+import { fmtWhen, agoText, fmtDateLong, windDirLabel } from "../js/views/format.js";
 
 const now = new Date("2026-06-20T14:30:00").getTime();
 
@@ -28,4 +28,24 @@ test("agoText: rolls into minutes after a minute, and handles missing ts", () =>
   assert.equal(agoText(now - 125 * 1000, now), "2 mins ago");
   assert.equal(agoText(0, now), "never");
   assert.equal(agoText(null, now), "never");
+});
+
+test("fmtDateLong: full date with year and ordinal day, no weekday", () => {
+  assert.equal(fmtDateLong("2027-07-06"), "6th July 2027");
+  assert.equal(fmtDateLong("2027-07-01"), "1st July 2027");
+  assert.equal(fmtDateLong("2027-07-02"), "2nd July 2027");
+  assert.equal(fmtDateLong("2027-07-03"), "3rd July 2027");
+  assert.equal(fmtDateLong("2027-07-11"), "11th July 2027"); // 11/12/13 -> th
+  assert.equal(fmtDateLong("2027-07-21"), "21st July 2027");
+  assert.equal(fmtDateLong("2027-12-31"), "31st December 2027");
+});
+
+test("windDirLabel: degrees -> 8-point compass, '' when unknown", () => {
+  assert.equal(windDirLabel(0), "N");
+  assert.equal(windDirLabel(45), "NE");
+  assert.equal(windDirLabel(180), "S");
+  assert.equal(windDirLabel(225), "SW");
+  assert.equal(windDirLabel(350), "N");   // wraps back to N
+  assert.equal(windDirLabel(null), "");
+  assert.equal(windDirLabel(undefined), "");
 });
