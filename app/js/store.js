@@ -51,3 +51,23 @@ export function getLastMinuteWindow() {
   return LM_WINDOWS.includes(v) ? v : "today";
 }
 export function setLastMinuteWindow(w) { localStorage.setItem(LM_WINDOW_KEY, w); }
+
+// Beta opt-in: the public "try in-progress features" toggle (Settings). Soft,
+// client-side — see features.js. Stored "1"/"0"; any non-"1" reads as off.
+const BETA_OPTIN_KEY = "lagoon.betaOptIn";
+export function getBetaOptIn() {
+  try { return localStorage.getItem(BETA_OPTIN_KEY) === "1"; } catch { return false; }
+}
+export function setBetaOptIn(on) {
+  try { localStorage.setItem(BETA_OPTIN_KEY, on ? "1" : "0"); } catch {}
+}
+
+// Internal opt-in: the hidden developer level (revealed by the version-tap gesture),
+// for features that are still being built. Superset of beta — see features.js.
+const INTERNAL_OPTIN_KEY = "lagoon.internalOptIn";
+export function getInternalOptIn() {
+  try { return localStorage.getItem(INTERNAL_OPTIN_KEY) === "1"; } catch { return false; }
+}
+export function setInternalOptIn(on) {
+  try { localStorage.setItem(INTERNAL_OPTIN_KEY, on ? "1" : "0"); } catch {}
+}
