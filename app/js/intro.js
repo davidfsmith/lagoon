@@ -13,6 +13,8 @@ const SLIDES = [
     body: "The <b>Availability</b> tab lists free sessions for the next few weeks. Tap the chips to filter by type; “Last refreshed” shows how current it is." },
   { emoji: "🌤️", title: "Reading the conditions",
     body: "Each day card packs in the forecast: the sky icon, <b>temp range</b> (°C), <b>☔ chance of rain</b>, <b>UV</b>, and wind as <b>direction speed(gust)</b> in km/h — so <b>🌬 NE 24(45)</b> is a north-easterly wind, 24 gusting 45. The chips below are the sessions: <b>time · type · spaces free</b>." },
+  { emoji: "🔥", title: "Grab a last-minute spot",
+    body: "The <b>Last-minute</b> tab surfaces sessions happening soon — filter by <b>Today / Tomorrow / Weekend</b>. A <b>“just opened ↑”</b> tag flags spots that freed up since you last looked, so you can pounce on cancellations. Prefer to open here? Set it in Settings → Default page." },
   { emoji: "⬇️", title: "Pull down to refresh",
     body: "Drag down from the top of the list to fetch the latest availability — no need to close and reopen the app." },
   { emoji: "🎟️", title: "Your bookings",
