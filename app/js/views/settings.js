@@ -60,7 +60,7 @@ export function renderSettings(view, state, go) {
     <div class="set-cap">Try in-progress features early. They may be rough or change.</div>
 
     ${getInternalOptIn() ? `<div class="t" style="margin-top:18px">Developer</div>
-    <div class="set-row"><span>Internal features</span>${switchHtml("internal-toggle", true)}</div>
+    <div class="set-row"><span>Internal features</span>${switchHtml("internal-toggle", getInternalOptIn())}</div>
     <div class="set-cap">Unreleased, in-progress features. Expect breakage. Includes beta features.</div>` : ""}
 
     ${state ? `<div class="t" style="margin-top:18px">Data</div>
