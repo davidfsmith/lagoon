@@ -113,7 +113,8 @@ function injectStyles() {
     .intro-dot{width:7px;height:7px;border-radius:50%;background:var(--border)}
     .intro-dot.on{background:var(--accent)}
     .intro-nav{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .intro-back{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:8px}
+    .intro-back{background:none;border:1px solid var(--border);color:var(--muted);border-radius:10px;
+      padding:10px 18px;font-size:14px;cursor:pointer;min-width:96px}
     .intro-next{background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;
       padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;min-width:96px}
     @keyframes intro-fade{from{opacity:0}to{opacity:1}}
