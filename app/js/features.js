@@ -1,34 +1,35 @@
-// Feature gating for in-flight (beta) work. Soft, client-side: this controls what's
-// shown by default, not security — the code still ships to everyone. Gate a feature
-// with isOn("flagName", state); flags + the allowlist live in config.js.
-import { BETA_TESTERS, FEATURES } from "./config.js";
-
-const BETA_OPTIN_KEY = "lagoon.betaOptIn"; // set by a future Settings toggle (not built yet)
-
-function inAllowlist(state) {
-  const id = state && state.me && state.me.id;
-  return id != null && BETA_TESTERS.includes(id);
-}
-function optedIn() {
-  try { return localStorage.getItem(BETA_OPTIN_KEY) === "1"; } catch { return false; }
-}
+// Feature gating for in-flight work. Soft, client-side: this controls what's shown by
+// default, not security — the code still ships to everyone. Gate a feature with
+// isOn("flagName"); flags live in config.js. Two opt-in levels (both localStorage):
+//   internal = developer opt-in (hidden, version-tap) — features mid-build
+//   beta     = public opt-in (Settings toggle) — features that work but aren't GA
+// internal sees everything beta does.
+import { FEATURES } from "./config.js";
+import { getBetaOptIn, getInternalOptIn } from "./store.js";
 
 // Whether an audience tier is allowed for this user. Exported for testing.
-export function tierAllows(tier, state) {
+export function tierAllows(tier) {
   switch (tier) {
     case "on": return true;
-    case "internal": return inAllowlist(state);
-    case "beta": return inAllowlist(state) || optedIn();
+    case "beta": return getBetaOptIn() || getInternalOptIn();
+    case "internal": return getInternalOptIn();
     default: return false; // "off", undefined, or unknown → safe default
   }
 }
 
 // Is a given feature flag enabled for this user?
-export function isOn(flag, state) {
-  return tierAllows(FEATURES[flag], state);
+export function isOn(flag) {
+  return tierAllows(FEATURES[flag]);
 }
 
-// Does this user have beta access at all? (allowlist now; + opt-in once that ships)
-export function isBetaUser(state) {
-  return inAllowlist(state) || optedIn();
+// Does this user have any beta access at all?
+export function isBetaUser() {
+  return getBetaOptIn() || getInternalOptIn();
+}
+
+// Highest active level, for the badge: "internal" | "beta" | null.
+export function accessTier() {
+  if (getInternalOptIn()) return "internal";
+  if (getBetaOptIn()) return "beta";
+  return null;
 }
