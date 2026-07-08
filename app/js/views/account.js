@@ -1,4 +1,4 @@
-import { fmtDate, prettyCourse, wcEmoji } from "./format.js";
+import { fmtDate, fmtDateLong, prettyCourse, wcEmoji, windDirLabel } from "./format.js";
 import { londonParts } from "../tz.js";
 import { weatherAt } from "../weather.js";
 import { getToken, saveCache } from "../store.js";
@@ -16,8 +16,11 @@ let activeTab = "bookings";
 const riderName = (p, me) =>
   (p.contact || {}).id === (me || {}).id ? "You" : ((p.contact || {}).firstName || "Rider");
 
-const wxLine = (w) =>
-  w ? `${wcEmoji(w.code)} ${Math.round(w.temp)}° · wind ${Math.round(w.windSpeed)} · rain ${w.precipProb}%${w.uv != null ? ` · UV ${Math.round(w.uv)}` : ""}` : "";
+const wxLine = (w) => {
+  if (!w) return "";
+  const dir = windDirLabel(w.windDir);
+  return `${wcEmoji(w.code)} ${Math.round(w.temp)}° · wind ${dir ? dir + " " : ""}${Math.round(w.windSpeed)} · rain ${w.precipProb}%${w.uv != null ? ` · UV ${Math.round(w.uv)}` : ""}`;
+};
 
 export function renderAccount(view, state, go) {
   const me = state.me || {};
@@ -26,7 +29,7 @@ export function renderAccount(view, state, go) {
   const memHtml = `<div class="t">Membership</div>` + (m
     ? `<div class="bkrow">
         <div><div class="bktm">${(m.membershipType && m.membershipType.name) || "Member"}</div>
-          <div class="bksub">${m.expiryDate ? "expires " + fmtDate(m.expiryDate.slice(0, 10)) : "no expiry"}</div></div>
+          <div class="bksub">${m.expiryDate ? "expires " + fmtDateLong(m.expiryDate.slice(0, 10)) : "no expiry"}</div></div>
         <span class="bktag">${m.status || ""}</span></div>`
     : `<div class="bkrow muted">No membership found.</div>`);
 

@@ -6,7 +6,6 @@ import { renderDay } from "./views/day.js";
 import { renderAccount } from "./views/account.js";
 import { renderSettings } from "./views/settings.js";
 import { renderLastMinute } from "./views/lastminute.js";
-import { isOn } from "./features.js";
 import { justOpenedKeys, sessionsInWindow } from "./model.js";
 import { apply as applyTheme } from "./theme.js";
 import { initPullToRefresh } from "./pullToRefresh.js";
@@ -30,9 +29,8 @@ function setActiveNav(route) {
 function afterLoad() {
   const btn = nav.querySelector('button[data-route="lastminute"]');
   if (!btn) return;
-  const gated = isOn("lastMinute", state);
-  btn.hidden = !gated;
-  if (gated) setLastMinuteIcon();
+  btn.hidden = false;
+  setLastMinuteIcon();
 }
 
 // 🔥 when something's free in the user's SELECTED Last-minute window, 🌊 when not.
@@ -55,7 +53,7 @@ export const isRefreshing = () => lmRefreshing;
 // the stale banner on failure). Doesn't navigate — only re-renders if still on the tab,
 // so a slow fetch can't yank the user back after they've moved on.
 async function refreshLastMinute() {
-  if (lmRefreshing || !state || !isOn("lastMinute", state)) return;
+  if (lmRefreshing || !state) return;
   if (state.refreshedAt && Date.now() - state.refreshedAt < LM_REFRESH_AFTER_MS) return; // fresh enough — don't re-fetch
   lmRefreshing = true;
   renderLastMinute(view, state, go);              // swap "Last refreshed" -> "Refreshing…"
@@ -93,7 +91,6 @@ export function go(route, arg) {
   if (route === "settings") { renderSettings(view, state, go); return; } // works pre/post login
   if (!state) return;
   if (route === "lastminute") {
-    if (!isOn("lastMinute", state)) { go("agenda"); return; } // safe degrade for non-gated
     setActiveNav("lastminute"); renderLastMinute(view, state, go); armLastMinuteAutoRefresh();
   }
   else if (route === "agenda") { setActiveNav("agenda"); renderAgenda(view, state, go); }
@@ -155,7 +152,7 @@ async function reload(target, showLoading) {
   if (showLoading) view.innerHTML = `<p class="muted">Loading sessions…</p>`;
   try {
     await loadState();                              // success or cache-fallback both set state
-    go(target ?? getDefaultLanding(state));         // null target -> configurable default page
+    go(target ?? getDefaultLanding());              // null target -> configurable default page
   } catch (e) {
     if (e.code === 401) return;                     // logout() already navigated to login
     if (showLoading) view.innerHTML = `<p class="err">Couldn't load: ${e.message}</p>`;
@@ -164,7 +161,7 @@ async function reload(target, showLoading) {
 }
 
 async function loadAndRender() {
-  await reload(null, true); // null -> getDefaultLanding (Last-minute for gated, else Availability)
+  await reload(null, true); // null -> getDefaultLanding (Availability unless the user chose otherwise)
   if (state) maybeShowIntro();
 }
 

@@ -1,4 +1,3 @@
-import { isOn } from "./features.js";
 
 const TOKEN_KEY = "lagoon.token";
 const CACHE_KEY = "lagoon.cache";
@@ -37,10 +36,10 @@ export const LANDING_OPTIONS = [
   { id: "account", label: "Bookings" },
 ];
 export function setDefaultLanding(id) { localStorage.setItem(LANDING_KEY, id); }
-export function getDefaultLanding(state) {
+export function getDefaultLanding() {
   const raw = localStorage.getItem(LANDING_KEY);
-  const valid = LANDING_OPTIONS.some(o => o.id === raw) && (raw !== "lastminute" || isOn("lastMinute", state));
-  return valid ? raw : "agenda"; // no (valid) choice -> open on Availability; a stored "lastminute" is honoured
+  const valid = LANDING_OPTIONS.some(o => o.id === raw);
+  return valid ? raw : "agenda"; // no stored choice -> open on Availability
 }
 
 // Last-minute view's window selector: "today" | "tomorrow" | "weekend" (default today;

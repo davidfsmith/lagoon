@@ -5,7 +5,7 @@ import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
 import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS } from "../store.js";
-import { isBetaUser, isOn } from "../features.js";
+import { isBetaUser } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
 
 // Two tabs: Settings (appearance, reminder, data, log out) and About (what it is,
@@ -24,9 +24,8 @@ export function renderSettings(view, state, go) {
   const seg = (val, label) =>
     `<button class="seg${val === theme ? " active" : ""}" data-theme="${val}">${label}</button>`;
 
-  const landing = getDefaultLanding(state);
+  const landing = getDefaultLanding();
   const landingOptions = LANDING_OPTIONS
-    .filter(o => o.id !== "lastminute" || isOn("lastMinute", state)) // only offer Last minute to gated users
     .map(o => `<option value="${o.id}"${o.id === landing ? " selected" : ""}>${o.label}</option>`).join("");
 
   const settingsTab = `

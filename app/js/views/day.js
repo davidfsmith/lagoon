@@ -1,4 +1,4 @@
-import { wcEmoji, fmtDate } from "./format.js";
+import { wcEmoji, fmtDate, windDirLabel } from "./format.js";
 import { londonParts } from "../tz.js";
 import { BOOKING_SITE } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
@@ -24,7 +24,8 @@ export function renderDay(view, state, arg, go) {
   const slots = day.slots.filter(s => active.has(s.label));
 
   const rows = slots.length ? slots.map(s => {
-    const wx = s.weather ? `${wcEmoji(s.weather.code)} ${Math.round(s.weather.temp)}° · wind ${Math.round(s.weather.windSpeed)} · rain ${s.weather.precipProb}%${s.weather.uv != null ? ` · UV ${Math.round(s.weather.uv)}` : ""}` : "";
+    const dir = s.weather ? windDirLabel(s.weather.windDir) : "";
+    const wx = s.weather ? `${wcEmoji(s.weather.code)} ${Math.round(s.weather.temp)}° · wind ${dir ? dir + " " : ""}${Math.round(s.weather.windSpeed)} · rain ${s.weather.precipProb}%${s.weather.uv != null ? ` · UV ${Math.round(s.weather.uv)}` : ""}` : "";
     const right = s.booked
       ? `<span class="tag">✓ You're booked</span>`
       : `<span class="free">${s.free} free</span>${s.freeWithMembership ? '<span class="mem">free w/ membership</span>' : ''}<a class="bk" target="_blank" rel="noopener" href="${s.runId ? `${BOOKING_SITE}/book?courseRunId=${s.runId}` : BOOKING_SITE}">Book ↗</a>`;
