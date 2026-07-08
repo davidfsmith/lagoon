@@ -2,7 +2,7 @@
 // Shows once (remembered in localStorage); replayable from Settings via showIntro().
 
 const SEEN_KEY = "lagoon.introSeen";
-const VERSION = 1; // bump to re-show the intro after a significant change
+const VERSION = 2; // bump to re-show the intro after a significant change (v2: conditions slide)
 
 const SLIDES = [
   { emoji: "🏄", title: "Welcome to Hove Lagoon",
@@ -11,6 +11,8 @@ const SLIDES = [
     body: "It uses your existing Hove Lagoon booking login — the same email & password as the website. There's no separate sign-up, and your password is never stored." },
   { emoji: "🗓️", title: "Find a session",
     body: "The <b>Availability</b> tab lists free sessions for the next few weeks. Tap the chips to filter by type; “Last refreshed” shows how current it is." },
+  { emoji: "🌤️", title: "Reading the conditions",
+    body: "Each day card packs in the forecast: the sky icon, <b>temp range</b> (°C), <b>☔ chance of rain</b>, <b>UV</b>, and wind as <b>direction speed(gust)</b> in km/h — so <b>🌬 NE 24(45)</b> is a north-easterly wind, 24 gusting 45. The chips below are the sessions: <b>time · type · spaces free</b>." },
   { emoji: "⬇️", title: "Pull down to refresh",
     body: "Drag down from the top of the list to fetch the latest availability — no need to close and reopen the app." },
   { emoji: "🎟️", title: "Your bookings",
