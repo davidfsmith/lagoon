@@ -80,7 +80,11 @@ def lambda_handler(event, context):
         import push
         from pywebpush import webpush
         ddb = boto3.resource("dynamodb").Table(subs_table)
-        subs = ddb.scan(ProjectionExpression="subId,endpoint,p256dh,auth").get("Items", [])
+        # "auth" is a DynamoDB reserved word — alias it via ExpressionAttributeNames.
+        subs = ddb.scan(
+            ProjectionExpression="subId,endpoint,p256dh,#a",
+            ExpressionAttributeNames={"#a": "auth"},
+        ).get("Items", [])
         if not subs:
             return
         priv = boto3.client("ssm").get_parameter(
