@@ -1,8 +1,8 @@
-const CACHE = "lagoon-v49";
+const CACHE = "lagoon-v50";
 const ASSETS = ["./", "./index.html", "./manifest.json",
   "./icon.svg", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./js/app.js", "./js/config.js", "./js/tz.js", "./js/theme.js", "./js/api.js", "./js/weather.js", "./js/model.js",
-  "./js/agendaModel.js", "./js/store.js", "./js/data.js", "./js/pullToRefresh.js", "./js/intro.js", "./js/filters.js", "./js/calendar.js", "./js/features.js", "./js/tabs.js", "./js/refreshedTicker.js",
+  "./js/agendaModel.js", "./js/store.js", "./js/data.js", "./js/pullToRefresh.js", "./js/intro.js", "./js/filters.js", "./js/calendar.js", "./js/features.js", "./js/tabs.js", "./js/refreshedTicker.js", "./js/push.js",
   "./js/views/login.js", "./js/views/agenda.js", "./js/views/day.js", "./js/views/account.js", "./js/views/format.js", "./js/views/settings.js", "./js/views/lastminute.js"];
 
 self.addEventListener("install", (e) => {
@@ -24,4 +24,28 @@ self.addEventListener("fetch", (e) => {
   }
   // Cache-first for static images (icons).
   e.respondWith(caches.match(e.request).then(c => c || fetch(e.request)));
+});
+
+// Web Push: show the notification from the pushed JSON payload.
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = {}; }
+  const title = d.title || "Hove Lagoon";
+  e.waitUntil(self.registration.showNotification(title, {
+    body: d.body || "",
+    icon: "./icon-192.png",
+    badge: "./icon-192.png",
+    data: { url: d.url || "./" },
+    tag: "lagoon-opening", // coalesce onto one notification per device
+  }));
+});
+
+// Tap → focus an existing app tab (or open one) at the payload URL.
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "./";
+  e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+    for (const w of wins) { if ("focus" in w) return w.focus(); }
+    return clients.openWindow(url);
+  }));
 });

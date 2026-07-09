@@ -34,5 +34,5 @@ export const BOOKING_SITE = "https://booking.lagoon.co.uk";
 // (from `vapid --applicationServerKey`) and the registration Lambda's function URL.
 export const VAPID_PUBLIC_KEY = "PLACEHOLDER_VAPID_PUBLIC_KEY";
 export const PUSH_REGISTER_URL = "PLACEHOLDER_PUSH_REGISTER_URL";
-export const APP_RELEASE = "v49"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v50"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"
