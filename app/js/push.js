@@ -71,5 +71,5 @@ export async function syncPrefs() {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: subscribeBody(sub.toJSON(), getNotifyPrefs()),
-  });
+  }).catch(() => {});   // best-effort; ignore offline/transient failures
 }
