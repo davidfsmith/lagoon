@@ -111,6 +111,25 @@ prefs UI (days/types/travel)
   existing `verify_data.py` / mocked-test discipline. Client subscribe/prefs logic gets
   matching JS tests (Node's runner, mocked).
 
+## Data source (unchanged)
+
+This design does **not** change where the app gets its data, and deliberately so. There are
+two independent readers of the Lagoon API, and they stay separate:
+
+- **The client (PWA)** keeps reading the Lagoon API **live, in the browser, every load** —
+  authoritative, for "is this bookable right now."
+- **The watcher** keeps polling every 10 min → S3 snapshot → detecting openings; it only
+  gains the send step.
+
+Notifications ride entirely on the watcher side. The division is intentional: the watcher
+is a **tolerant alerting** trigger (up to ~10 min stale is fine — the `app/CLAUDE.md`
+"Live, not cached" rule), and when a rider **taps a notification the app opens and fetches
+live data**, which reconciles any staleness *before* they book — so a spot that filled in
+those 10 minutes shows as gone and no one books a phantom slot. The notification's content
+(free count, weather) is a point-in-time snapshot from detection; the live fetch on tap
+supersedes it. Switching the client to read our S3 snapshot would trade live accuracy for
+staleness on the one screen where accuracy matters most (booking) — a bad trade, not done.
+
 ## Build phasing
 
 Large but cohesive; built in stages, each behind the tier gate, likely **its own
