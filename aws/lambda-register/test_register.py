@@ -36,3 +36,16 @@ def test_parse_request_rejects_bad_input():
     assert handler.parse_request("POST", "{}")[0] == "error"
     assert handler.parse_request("PATCH", "{}")[0] == "error"
     assert handler.parse_request("POST", "not json")[0] == "error"
+
+
+def test_parse_request_rejects_malformed_subscription():
+    # keys present but missing p256dh/auth -> would have crashed sub_item
+    bad_keys = {"subscription": {"endpoint": "https://x", "keys": {"foo": "bar"}}}
+    assert handler.parse_request("POST", json.dumps(bad_keys))[0] == "error"
+    # non-string endpoint -> would have crashed sub_id
+    bad_ep = {"subscription": {"endpoint": 123, "keys": {"p256dh": "a", "auth": "b"}}}
+    assert handler.parse_request("POST", json.dumps(bad_ep))[0] == "error"
+
+
+def test_parse_request_delete_without_endpoint_is_error():
+    assert handler.parse_request("DELETE", "{}")[0] == "error"

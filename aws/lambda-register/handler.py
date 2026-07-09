@@ -38,7 +38,9 @@ def parse_request(method: str, body: str):
         return ("error", "bad json")
     if method == "POST":
         sub = data.get("subscription")
-        if isinstance(sub, dict) and sub.get("endpoint") and sub.get("keys"):
+        keys = sub.get("keys") if isinstance(sub, dict) else None
+        if (isinstance(sub, dict) and isinstance(sub.get("endpoint"), str)
+                and isinstance(keys, dict) and keys.get("p256dh") and keys.get("auth")):
             return ("subscribe", sub)
         return ("error", "missing subscription")
     if method == "DELETE":
