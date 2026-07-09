@@ -12,5 +12,5 @@ rm -rf "$BUILD"; mkdir -p "$BUILD"
 "$PYTHON" -m pip install -r "$HERE/requirements.txt" -t "$BUILD" --quiet \
   --platform manylinux2014_x86_64 --implementation cp --python-version 3.12 \
   --only-binary=:all: --upgrade
-cp "$HERE/handler.py" "$ROOT/lagoon_client.py" "$ROOT/courses.json" "$BUILD/"
+cp "$HERE/handler.py" "$HERE/push.py" "$ROOT/lagoon_client.py" "$ROOT/courses.json" "$BUILD/"
 echo "Built Lambda asset at $BUILD:"; ls "$BUILD"
