@@ -83,6 +83,45 @@ packages, agenda, refreshedAt, stale). Data is live-loaded in `data.js`; the
 `localStorage` cache is **only** a fallback shown with a "Showing saved data" banner
 when the live fetch fails.
 
+## Feature flags & beta / hidden features
+
+New work is gated behind **client-side opt-in tiers** so it can ship to `main` (and go
+live) before it's ready for everyone. The machinery lives in `js/features.js` +
+`js/store.js`; declare a flag's tier in `js/config.js` `FEATURES` and check it with
+`isOn("myFlag")`.
+
+**Two tiers** (both plain `localStorage` opt-ins — no allowlist, no server):
+
+- **`internal`** — hidden developer tier for half-built features. Unlocked by tapping the
+  About version row 7×; toggled off in the Settings *Developer* section. Shows a `DEV` badge.
+- **`beta`** — public, always-visible *Beta features* toggle in Settings, for
+  works-but-not-GA features. Shows a `BETA` badge. `internal` is a superset of `beta`.
+
+Lifecycle: gate `internal` while building → promote to `beta` when it works → `on` (or
+delete the flag) at GA. No deploy needed to move a user between tiers.
+
+**The golden rule: gating is *additive*, never *destructive*.** A flag may **add** a new
+capability or **offer an alternative** path — it must never remove, degrade, or change the
+existing GA path. A non-opted-in user must execute the *current* code, unchanged. So all
+beta code lives behind the `isOn(flag)` guard (default off); "current functionality is
+unaffected" is then structurally true, not just hoped for.
+
+This takes two shapes:
+
+- **Purely additive** (e.g. push notifications) — no existing equivalent, so opt in → new
+  UI appears, opt out → it's simply absent. Nothing to reconcile.
+- **Dual-flow** — a *rework* of something that already exists. The current flow and the
+  new beta flow coexist. Rules:
+  - **Gate at the smallest seam** — branch at the entry point, don't fork a whole view
+    into two parallel files. The live path stays literally untouched.
+  - **Share the data model** — both flows read/write the *same* state and storage. Fork
+    presentation, converge data — so opting out (and GA cleanup) stays clean.
+  - **Beta flow is primary, old flow is a fallback link** for opted-in users, and the
+    global Beta toggle is the ultimate escape hatch. So a beta user can always get back to
+    the working flow without a deploy.
+  - **At GA the duality ends** — the new flow becomes the only flow, the old code is
+    deleted, and the flag is removed. The two-flow period is temporary scaffolding.
+
 ## ⚠️ Two rules that bite if you forget them
 
 1. **Bump the version when you add/remove/rename a file or change cached code.**
