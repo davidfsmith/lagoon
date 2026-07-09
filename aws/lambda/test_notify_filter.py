@@ -61,8 +61,9 @@ def test_dedupe_same_slot_same_day():
 def test_cap_blocks_after_five_pushes_today():
     base = int(NOW.timestamp())
     log = {f"k{i}": base - i * 60 for i in range(5)}   # 5 distinct pushes today
-    out, _ = nf.filter_for_sub(sub(notifyLog=log), [rec("1@z")], {}, NOW)
+    out, state = nf.filter_for_sub(sub(notifyLog=log), [rec("1@z")], {}, NOW)
     assert out is None
+    assert state["pending"] == []   # a cap-blocked FRESH candidate is dropped, not held
 
 
 def test_cooldown_blocks_within_30_min():
