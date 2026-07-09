@@ -18,6 +18,7 @@ const {
   LANDING_OPTIONS,
   getBetaOptIn, setBetaOptIn,
   getInternalOptIn, setInternalOptIn,
+  getNotifyPrefs, setNotifyPrefs,
 } = await import("../js/store.js");
 
 // --- token / cache (existing) ---
@@ -103,4 +104,17 @@ test("internal opt-in round-trips (default off)", () => {
   assert.equal(getInternalOptIn(), true);
   setInternalOptIn(false);
   assert.equal(getInternalOptIn(), false);
+});
+
+test("notify prefs round-trip with defaults", () => {
+  mem.clear();
+  const d = getNotifyPrefs();
+  assert.deepEqual(d.days, ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+  assert.deepEqual(d.types, ["Air 30", "Tech 30"]);
+  assert.equal(d.travelMins, 30);
+  setNotifyPrefs({ days: ["Sat", "Sun"], types: ["Air 30"], travelMins: 45 });
+  const p = getNotifyPrefs();
+  assert.deepEqual(p.days, ["Sat", "Sun"]);
+  assert.deepEqual(p.types, ["Air 30"]);
+  assert.equal(p.travelMins, 45);
 });
