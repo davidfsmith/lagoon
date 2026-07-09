@@ -55,6 +55,26 @@ export function windDirLabel(deg) {
   return COMPASS[Math.round((deg % 360) / 45) % 8];
 }
 
+// Weather readouts — two shapes, one emoji vocabulary, shared by every view so they
+// always agree. 🌬 = wind (dir + speed, gust in parens), ☔ = rain, 🌇 = sunset. UV is
+// spelled out ("UV 4") rather than prefixed with ☀️, which collides with wcEmoji's sunny ☀️.
+
+// One session (a single hour). `w` is an hourly-shaped slot weather object
+// (code, temp, windSpeed, gust, windDir, precipProb, uv) — or null. "" when absent.
+export function sessionWx(w) {
+  if (!w) return "";
+  const dir = windDirLabel(w.windDir);
+  return `${wcEmoji(w.code)} ${Math.round(w.temp)}° · 🌬${dir ? dir + " " : ""}${Math.round(w.windSpeed)}(${Math.round(w.gust)}) · ☔${w.precipProb}%${w.uv != null ? ` · UV ${Math.round(w.uv)}` : ""}`;
+}
+
+// A whole day (a min–max range). `w` is a daily-summary object
+// (code, tMin, tMax, precipProb, windMax, gustMax, windDir, uvMax, sunset) — or null.
+export function dayWx(w) {
+  if (!w) return "";
+  const dir = windDirLabel(w.windDir);
+  return `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · 🌬${dir ? dir + " " : ""}${Math.round(w.windMax)}(${Math.round(w.gustMax)}) · ☔${w.precipProb}%${w.uvMax != null ? ` · UV ${Math.round(w.uvMax)}` : ""}${w.sunset ? ` · 🌇${w.sunset.slice(11, 16)}` : ""}`;
+}
+
 // Shorten a raw Lagoon course name for display.
 // "2026 Wakeboard -Tech - Ride Session 30" -> "Tech 30";
 // "2026 Wakeboard - Skills Clinic" -> "Skills Clinic".

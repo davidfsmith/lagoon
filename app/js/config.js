@@ -28,5 +28,5 @@ export const FEATURES = {
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
 export const BOOKING_SITE = "https://booking.lagoon.co.uk";
-export const APP_RELEASE = "v48"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v49"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"

@@ -1,4 +1,4 @@
-import { wcEmoji, fmtDate, fmtWhen, agoText, windDirLabel } from "./format.js";
+import { fmtDate, fmtWhen, agoText, dayWx } from "./format.js";
 import { londonParts } from "../tz.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
@@ -19,8 +19,7 @@ export function renderAgenda(view, state, go) {
 
   const body = shownDays.length
     ? shownDays.map(d => {
-        const w = d.summary;
-        const wx = w ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · ☔${w.precipProb}% · 🌬${windDirLabel(w.windDir)} ${Math.round(w.windMax)}(${Math.round(w.gustMax)})${w.uvMax != null ? ` · UV ${Math.round(w.uvMax)}` : ""}` : "";
+        const wx = dayWx(d.summary);
         const bookable = d.slots.filter(s => !s.booked);
         const chips = d.slots.map(s =>
           `<span class="chip${s.booked ? " booked" : ""}" data-key="${s.key}">${londonParts(s.start).time} ${s.label}${s.booked ? " ✓" : ` <b>${s.free}</b>`}</span>`

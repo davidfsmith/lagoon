@@ -1,4 +1,4 @@
-import { wcEmoji, fmtDate, windDirLabel } from "./format.js";
+import { fmtDate, sessionWx, dayWx } from "./format.js";
 import { londonParts } from "../tz.js";
 import { BOOKING_SITE } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
@@ -10,10 +10,7 @@ export function renderDay(view, state, arg, go) {
   const targetKey = (arg && typeof arg === "object") ? arg.key : null;
   const day = (state.agenda || []).find(d => d.date === date);
   if (!day) { go("agenda"); return; }
-  const w = day.summary;
-  const head = w
-    ? `${wcEmoji(w.code)} ${Math.round(w.tMin)}–${Math.round(w.tMax)}° · rain ${w.precipProb}% · wind ${Math.round(w.windMax)} (gust ${Math.round(w.gustMax)}) km/h${w.uvMax != null ? ` · UV ${Math.round(w.uvMax)}` : ""} · sunset ${(w.sunset || "").slice(11, 16)}`
-    : "weather unavailable";
+  const head = day.summary ? dayWx(day.summary) : "weather unavailable";
 
   // Same per-type filter as the agenda: show the full chip set (types present
   // anywhere in the agenda, not just this day) with the same active selection, so
@@ -24,8 +21,7 @@ export function renderDay(view, state, arg, go) {
   const slots = day.slots.filter(s => active.has(s.label));
 
   const rows = slots.length ? slots.map(s => {
-    const dir = s.weather ? windDirLabel(s.weather.windDir) : "";
-    const wx = s.weather ? `${wcEmoji(s.weather.code)} ${Math.round(s.weather.temp)}° · wind ${dir ? dir + " " : ""}${Math.round(s.weather.windSpeed)} · rain ${s.weather.precipProb}%${s.weather.uv != null ? ` · UV ${Math.round(s.weather.uv)}` : ""}` : "";
+    const wx = sessionWx(s.weather);
     const right = s.booked
       ? `<span class="tag">✓ You're booked</span>`
       : `<span class="free">${s.free} free</span>${s.freeWithMembership ? '<span class="mem">free w/ membership</span>' : ''}<a class="bk" target="_blank" rel="noopener" href="${s.runId ? `${BOOKING_SITE}/book?courseRunId=${s.runId}` : BOOKING_SITE}">Book ↗</a>`;
