@@ -38,3 +38,21 @@ def test_send_all_posts_each_and_drops_410():
                          poster=poster, on_gone=lambda s: gone.append(s["subId"]))
     assert sent == ["e1", "e2"]
     assert dead == ["b"] and gone == ["b"]
+
+
+def test_send_all_logs_other_errors_without_marking_dead():
+    subs = [{"subId": "a", "endpoint": "e1", "p256dh": "k", "auth": "x"},
+            {"subId": "b", "endpoint": "e2", "p256dh": "k", "auth": "x"}]
+    sent = []
+
+    class Boom(Exception):  # non-HTTP error, no .response
+        pass
+
+    def poster(sub_info, data, vapid_private_key, vapid_claims):
+        sent.append(sub_info["endpoint"])
+        if sub_info["endpoint"] == "e1":
+            raise Boom()
+
+    dead = push.send_all(subs, {"title": "t"}, "PEM", "mailto:x@y.z", poster=poster)
+    assert sent == ["e1", "e2"]  # loop continued past the transient error
+    assert dead == []            # a non-410 error is NOT "gone"

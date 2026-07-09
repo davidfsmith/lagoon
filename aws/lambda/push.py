@@ -3,6 +3,8 @@ or network. Stage 1: one summary notification per run to every subscription.
 """
 from __future__ import annotations
 
+import json
+
 APP_URL = "https://www.dave-smith.co.uk/lagoon/"
 
 
@@ -22,13 +24,11 @@ def send_all(subs, payload, vapid_private_key, vapid_subject, poster, on_gone=No
     Gone (HTTP 410) — expired subscriptions the caller should delete. `poster` has
     the pywebpush.webpush signature; `on_gone(sub)` is called per dead sub.
     """
-    import json
-
     dead = []
     for s in subs:
-        sub_info = {"endpoint": s["endpoint"],
-                    "keys": {"p256dh": s["p256dh"], "auth": s["auth"]}}
         try:
+            sub_info = {"endpoint": s["endpoint"],
+                        "keys": {"p256dh": s["p256dh"], "auth": s["auth"]}}
             poster(sub_info, json.dumps(payload),
                    vapid_private_key=vapid_private_key,
                    vapid_claims={"sub": vapid_subject})
