@@ -5,6 +5,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as logs from "aws-cdk-lib/aws-logs";
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as path from "path";
 
 export class WatcherStack extends Stack {
@@ -19,6 +20,15 @@ export class WatcherStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY, // state is recreatable (baseline on next run)
       autoDeleteObjects: true,
       lifecycleRules: [{ noncurrentVersionExpiration: Duration.days(30) }],
+    });
+
+    // Push subscriptions. PK = subId (a sha256 of the push endpoint — deterministic,
+    // bounded length). Pay-per-request: traffic is tiny and spiky. Stage 1 stores the
+    // subscription only; Stage 2 adds prefs columns to the same item.
+    const subsTable = new dynamodb.Table(this, "PushSubs", {
+      partitionKey: { name: "subId", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.DESTROY, // subscriptions are re-createable from the client
     });
 
     // The watcher. Asset is prebuilt by ../lambda/build-lambda.sh (run via npm scripts).
