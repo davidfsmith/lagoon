@@ -79,14 +79,19 @@ def lambda_handler(event, context):
     def send(records):
         import push
         from pywebpush import webpush
+        from py_vapid import Vapid01
         ddb = boto3.resource("dynamodb").Table(subs_table)
         subs = ddb.scan(ProjectionExpression="subId,endpoint,p256dh,authKey").get("Items", [])
         if not subs:
             return
-        priv = boto3.client("ssm").get_parameter(
+        # SSM stores the VAPID key as PEM; parse it into a Vapid instance. Passing the
+        # raw PEM string to webpush fails — it treats a non-file-path string as a
+        # base64 DER key (Vapid.from_string), not PEM.
+        pem = boto3.client("ssm").get_parameter(
             Name=vapid_param, WithDecryption=True)["Parameter"]["Value"]
+        vapid = Vapid01.from_pem(pem.encode())
         dead = push.send_all(
-            subs, push.build_payload(records), priv, "mailto:dave@dave-smith.co.uk",
+            subs, push.build_payload(records), vapid, "mailto:dave@dave-smith.co.uk",
             poster=webpush, on_gone=lambda s: ddb.delete_item(Key={"subId": s["subId"]}))
         print(json.dumps({"pushSummary": {"subs": len(subs), "dead": len(dead)}}))
 
