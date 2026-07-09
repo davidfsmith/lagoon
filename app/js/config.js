@@ -23,10 +23,16 @@ export const FILTER_GROUPS = ["ride", "other"];
 // Wrap a feature's UI in isOn("flagName"); promote the tier, then delete the flag once
 // it's stable. NOTE: client-side soft gate — code still ships to everyone.
 export const FEATURES = {
-  // example: newAvailabilityChart: "internal",
+  notifications: "internal", // push notifications — Stage 1 pipe, dev-only
 };
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
 export const BOOKING_SITE = "https://booking.lagoon.co.uk";
+// Web Push (see docs/superpowers/specs/2026-07-09-push-notifications-design.md).
+// Public key is safe to ship; the private key lives only in SSM.
+// TODO(push deploy): replace both placeholders with the real VAPID applicationServerKey
+// (from `vapid --applicationServerKey`) and the registration Lambda's function URL.
+export const VAPID_PUBLIC_KEY = "PLACEHOLDER_VAPID_PUBLIC_KEY";
+export const PUSH_REGISTER_URL = "PLACEHOLDER_PUSH_REGISTER_URL";
 export const APP_RELEASE = "v49"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"
