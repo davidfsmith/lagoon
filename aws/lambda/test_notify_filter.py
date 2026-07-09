@@ -94,3 +94,33 @@ def test_quiet_pending_dropped_if_no_longer_open():
                                    [], {}, morning)  # not in current open set
     assert out is None
     assert state["pending"] == []
+
+
+def test_travel_zero_is_respected_not_defaulted():
+    soon = (NOW + dt.timedelta(minutes=20)).isoformat()  # 20 min away, Mon
+    out, _ = nf.filter_for_sub(sub(travelMins=0), [rec("1@a", start=soon)], {}, NOW)
+    assert out and out[0]["key"] == "1@a"   # 0 travel + 15 buffer = 15 <= 20 -> reachable
+
+
+def test_empty_days_means_no_notifications():
+    out, _ = nf.filter_for_sub(sub(days=[]), [rec("1@a")], {}, NOW)
+    assert out is None
+
+
+def test_multiple_slots_coalesce_into_one_batch():
+    r1 = rec("1@a", start="2026-07-13T17:00:00+00:00")
+    r2 = rec("1@b", start="2026-07-13T18:00:00+00:00")
+    out, state = nf.filter_for_sub(sub(days=nf.WEEKDAYS), [r1, r2], {}, NOW)
+    assert out is not None and {r["key"] for r in out} == {"1@a", "1@b"}
+    assert state["notifyLog"]["1@a"] == state["notifyLog"]["1@b"]  # one shared push epoch
+
+
+def test_pending_retained_when_cap_blocks_delivery():
+    now = dt.datetime(2026, 7, 13, 14, 0, tzinfo=UTC)  # 15:00 London Mon, non-quiet
+    base = int(now.timestamp())
+    log = {f"k{i}": base - i * 60 for i in range(5)}   # 5 pushes today -> cap hit
+    held = rec("1@a", start="2026-07-13T20:00:00+00:00")  # Mon 21:00 London, reachable
+    out, state = nf.filter_for_sub(sub(days=nf.WEEKDAYS, notifyLog=log, pending=["1@a"]),
+                                   [], {"1@a": held}, now)
+    assert out is None                     # cap blocked
+    assert state["pending"] == ["1@a"]     # still-valid held slot RETAINED, not dropped

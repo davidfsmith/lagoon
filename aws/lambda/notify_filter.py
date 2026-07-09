@@ -64,6 +64,8 @@ def _notified_today_keys(notify_log, now):
     return {k for k, v in notify_log.items() if _london_day(v) == today}
 
 
+# Cap counts DISTINCT epoch-seconds today as "pushes" (a coalesced batch shares one
+# stamp). Safe while the >=30-min cooldown guarantees separate pushes never share a second.
 def cap_ok(notify_log, now) -> bool:
     today = now.astimezone(LONDON).date()
     epochs_today = {int(v) for v in notify_log.values() if _london_day(v) == today}
@@ -88,9 +90,11 @@ def filter_for_sub(sub, new_openings, current_open_by_key, now):
     new_openings: this run's released records. current_open_by_key: {key: record}
     of ALL currently-open slots (to re-check held slots). now: aware datetime.
     """
-    days = list(sub.get("days") or DEFAULT_DAYS)
-    types = list(sub.get("types") or DEFAULT_TYPES)
-    travel = int(sub.get("travelMins") or DEFAULT_TRAVEL)
+    # presence checks (not truthiness): an explicit travelMins=0 or empty days/types
+    # is a real preference (live on-site / opted out of all days), not "missing".
+    days = list(sub["days"]) if sub.get("days") is not None else list(DEFAULT_DAYS)
+    types = list(sub["types"]) if sub.get("types") is not None else list(DEFAULT_TYPES)
+    travel = int(sub["travelMins"]) if sub.get("travelMins") is not None else DEFAULT_TRAVEL
     notify_log = {k: int(v) for k, v in (sub.get("notifyLog") or {}).items()}
     pending = list(sub.get("pending") or [])
 
@@ -103,20 +107,25 @@ def filter_for_sub(sub, new_openings, current_open_by_key, now):
         for r in fresh:
             if r["key"] not in pending:
                 pending.append(r["key"])
-        return (None, {"notifyLog": notify_log, "pending": pending})
+        return (None, {"notifyLog": _prune(notify_log, now), "pending": pending})
 
     deliver = list(fresh)
     if pending:
+        still_valid = []
         for key in pending:
             rec = current_open_by_key.get(key)
             if rec and is_candidate(rec, days, types, travel, now) and key not in dedupe:
                 deliver.append(rec)
-        pending = []   # one delivery attempt after quiet hours; survivors sent, rest dropped
+                still_valid.append(key)   # keep unless we actually deliver below
+            # else: no longer open / not a candidate -> drop
+        pending = still_valid
 
     if not deliver or not cap_ok(notify_log, now):
+        # nothing to send, or throttled -> keep still-valid pending for a later run
         return (None, {"notifyLog": _prune(notify_log, now), "pending": pending})
 
     stamp = int(now.timestamp())
     for r in deliver:
         notify_log[r["key"]] = stamp
+    pending = []   # everything still-valid was just delivered
     return (deliver, {"notifyLog": _prune(notify_log, now), "pending": pending})
