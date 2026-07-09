@@ -1,4 +1,7 @@
+import datetime as dt
+
 import push
+import handler
 
 
 def _rec(label="Tech", start="2026-07-12T18:00", free=2):
@@ -56,10 +59,6 @@ def test_send_all_logs_other_errors_without_marking_dead():
     dead = push.send_all(subs, {"title": "t"}, "PEM", "mailto:x@y.z", poster=poster)
     assert sent == ["e1", "e2"]  # loop continued past the transient error
     assert dead == []            # a non-410 error is NOT "gone"
-
-
-import datetime as dt
-import handler
 
 
 def test_run_calls_send_when_releases_found():

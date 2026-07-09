@@ -70,7 +70,7 @@ export class WatcherStack extends Stack {
     // Least-privilege: the handler only GETs and PUTs the one object (no delete).
     stateBucket.grantRead(fn);
     stateBucket.grantPut(fn);
-    subsTable.grantReadWriteData(fn); // scan + delete expired (410) subscriptions
+    subsTable.grant(fn, "dynamodb:Scan", "dynamodb:DeleteItem"); // scan + delete expired (410) subscriptions
     fn.addToRolePolicy(new iam.PolicyStatement({
       actions: ["ssm:GetParameter"],
       resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/lagoon/push/vapid-private`],
