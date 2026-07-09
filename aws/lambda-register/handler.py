@@ -22,7 +22,7 @@ def sub_item(subscription: dict, now_iso: str) -> dict:
         "subId": sub_id(subscription["endpoint"]),
         "endpoint": subscription["endpoint"],
         "p256dh": keys["p256dh"],
-        "auth": keys["auth"],
+        "authKey": keys["auth"],  # stored under a non-reserved name; source is Web Push "auth"
         "createdAt": now_iso,
     }
 

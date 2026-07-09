@@ -23,8 +23,8 @@ def test_build_payload_coalesces_count():
 
 def test_send_all_posts_each_and_drops_410():
     subs = [
-        {"subId": "a", "endpoint": "e1", "p256dh": "k1", "auth": "x1"},
-        {"subId": "b", "endpoint": "e2", "p256dh": "k2", "auth": "x2"},
+        {"subId": "a", "endpoint": "e1", "p256dh": "k1", "authKey": "x1"},
+        {"subId": "b", "endpoint": "e2", "p256dh": "k2", "authKey": "x2"},
     ]
     sent, gone = [], []
 
@@ -44,8 +44,8 @@ def test_send_all_posts_each_and_drops_410():
 
 
 def test_send_all_logs_other_errors_without_marking_dead():
-    subs = [{"subId": "a", "endpoint": "e1", "p256dh": "k", "auth": "x"},
-            {"subId": "b", "endpoint": "e2", "p256dh": "k", "auth": "x"}]
+    subs = [{"subId": "a", "endpoint": "e1", "p256dh": "k", "authKey": "x"},
+            {"subId": "b", "endpoint": "e2", "p256dh": "k", "authKey": "x"}]
     sent = []
 
     class Boom(Exception):  # non-HTTP error, no .response
