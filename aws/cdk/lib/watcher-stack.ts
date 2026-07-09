@@ -6,6 +6,7 @@ import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as iam from "aws-cdk-lib/aws-iam";
 import * as path from "path";
 
 export class WatcherStack extends Stack {
@@ -62,11 +63,18 @@ export class WatcherStack extends Stack {
         STATE_KEY: "state/free.json",
         URGENT_HOURS: "48",
         HORIZON_DAYS: "14",
+        SUBS_TABLE: subsTable.tableName,
+        VAPID_PRIVATE_PARAM: "/lagoon/push/vapid-private",
       },
     });
     // Least-privilege: the handler only GETs and PUTs the one object (no delete).
     stateBucket.grantRead(fn);
     stateBucket.grantPut(fn);
+    subsTable.grantReadWriteData(fn); // scan + delete expired (410) subscriptions
+    fn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ["ssm:GetParameter"],
+      resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/lagoon/push/vapid-private`],
+    }));
 
     // Every 10 min, 06:00–23:50 UTC, daily. EventBridge cron is UTC (no DST).
     new events.Rule(this, "Schedule", {

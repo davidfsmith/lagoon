@@ -56,3 +56,27 @@ def test_send_all_logs_other_errors_without_marking_dead():
     dead = push.send_all(subs, {"title": "t"}, "PEM", "mailto:x@y.z", poster=poster)
     assert sent == ["e1", "e2"]  # loop continued past the transient error
     assert dead == []            # a non-410 error is NOT "gone"
+
+
+import datetime as dt
+import handler
+
+
+def test_run_calls_send_when_releases_found():
+    now = dt.datetime(2026, 7, 10, 12, 0, tzinfo=dt.timezone.utc)
+
+    class Slot:
+        key = "1@x"; label = "Tech"; course_id = 1; run_id = 9
+        free = 2; capacity = 6
+        start = dt.datetime(2026, 7, 11, 17, 0, tzinfo=dt.timezone.utc)
+        local = dt.datetime(2026, 7, 11, 18, 0)
+
+    calls = []
+    handler.run(
+        read_state=lambda: {},                       # prev free = 0 for our key
+        write_state=lambda free: None,
+        courses=[], now=now, urgent_hours=48, horizon_days=14,
+        find_openings=lambda *a, **k: [Slot()],
+        send=lambda records: calls.append(records),
+    )
+    assert len(calls) == 1 and calls[0][0]["label"] == "Tech"
