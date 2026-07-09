@@ -1,1 +1,2 @@
 tzdata
+pywebpush<2  # 1.x keeps the sync webpush() API without dragging in the aiohttp stack

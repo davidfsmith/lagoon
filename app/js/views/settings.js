@@ -5,13 +5,15 @@ import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
 import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn } from "../store.js";
-import { accessTier } from "../features.js";
+import { accessTier, isOn } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
+import { notifState, subscribe, unsubscribe } from "../push.js";
 
 // Two tabs: Settings (appearance, reminder, data, log out) and About (what it is,
 // version, help, support). The active tab persists for the session.
 let activeTab = "settings";
 let devTaps = 0; // version-row taps this session; 7 reveals the Developer section
+let notifOn = false; // last-read push subscription state, refreshed on render
 
 // Badge for the current access level (DEV outranks BETA).
 function badgeHtml() {
@@ -58,6 +60,10 @@ export function renderSettings(view, state, go) {
     <div class="t" style="margin-top:18px">Beta</div>
     <div class="set-row"><span>Beta features</span>${switchHtml("beta-toggle", getBetaOptIn())}</div>
     <div class="set-cap">Try in-progress features early. They may be rough or change.</div>
+
+    ${isOn("notifications") ? `<div class="t" style="margin-top:18px">Notifications</div>
+    <div class="set-row"><span>Spot-opened alerts</span>${switchHtml("notif-toggle", notifOn)}</div>
+    <div class="set-cap">Get a push when a spot opens. You'll be asked for permission.</div>` : ""}
 
     ${getInternalOptIn() ? `<div class="t" style="margin-top:18px">Developer</div>
     <div class="set-row"><span>Internal features</span>${switchHtml("internal-toggle", getInternalOptIn())}</div>
@@ -117,6 +123,18 @@ export function renderSettings(view, state, go) {
   if (bt) bt.addEventListener("change", () => { setBetaOptIn(bt.checked); renderSettings(view, state, go); });
   const it = view.querySelector("#internal-toggle");
   if (it) it.addEventListener("change", () => { setInternalOptIn(it.checked); renderSettings(view, state, go); });
+  const nt = view.querySelector("#notif-toggle");
+  if (nt) {
+    notifState().then((s) => { notifOn = s === "subscribed"; nt.checked = notifOn; });
+    nt.addEventListener("change", async () => {
+      nt.disabled = true;
+      try {
+        if (nt.checked) { await subscribe(); notifOn = true; }
+        else { await unsubscribe(); notifOn = false; }
+      } catch { notifOn = false; nt.checked = false; }
+      finally { nt.disabled = false; renderSettings(view, state, go); }
+    });
+  }
   const ver = view.querySelector("#ver-row");
   if (ver) ver.addEventListener("click", () => {
     if (getInternalOptIn()) return;            // already unlocked

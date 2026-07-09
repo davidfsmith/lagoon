@@ -32,7 +32,7 @@ def release_record(slot, now: dt.datetime) -> dict:
 
 
 def run(read_state, write_state, courses, now, urgent_hours, horizon_days,
-        find_openings=lc.find_openings):
+        find_openings=lc.find_openings, send=None):
     """Detect weekend releases and record state. AWS-agnostic — state IO and the
     fetch are injected so this is unit-testable. Fetches first, so any fetch/read
     error aborts BEFORE state is written (never baseline-wipe on a transient error).
@@ -44,6 +44,8 @@ def run(read_state, write_state, courses, now, urgent_hours, horizon_days,
     records = [release_record(s, now) for s in releases]
     for r in records:
         print(json.dumps({"release": r}))
+    if records and send:
+        send(records)
     print(json.dumps({"summary": {"released": len(records), "open": len(slots)}}))
     return records
 
@@ -71,11 +73,29 @@ def lambda_handler(event, context):
                       Body=json.dumps(free, sort_keys=True).encode(),
                       ContentType="application/json")
 
+    subs_table = os.environ.get("SUBS_TABLE")
+    vapid_param = os.environ.get("VAPID_PRIVATE_PARAM")
+
+    def send(records):
+        import push
+        from pywebpush import webpush
+        ddb = boto3.resource("dynamodb").Table(subs_table)
+        subs = ddb.scan(ProjectionExpression="subId,endpoint,p256dh,auth").get("Items", [])
+        if not subs:
+            return
+        priv = boto3.client("ssm").get_parameter(
+            Name=vapid_param, WithDecryption=True)["Parameter"]["Value"]
+        dead = push.send_all(
+            subs, push.build_payload(records), priv, "mailto:dave@dave-smith.co.uk",
+            poster=webpush, on_gone=lambda s: ddb.delete_item(Key={"subId": s["subId"]}))
+        print(json.dumps({"pushSummary": {"subs": len(subs), "dead": len(dead)}}))
+
     courses = lc.resolve_courses(lc.load_monitor(CONFIG_PATH))
     records = run(
         read_state, write_state, courses,
         now=dt.datetime.now(dt.timezone.utc),
         urgent_hours=float(os.environ.get("URGENT_HOURS", "48")),
         horizon_days=int(os.environ.get("HORIZON_DAYS", "14")),
+        send=send if subs_table else None,
     )
     return {"released": len(records)}

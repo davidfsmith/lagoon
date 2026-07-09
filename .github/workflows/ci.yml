@@ -22,6 +22,14 @@ jobs:
           node-version: "22"
       - name: Python unit tests
         run: python -m unittest discover -s tests -p "test_*.py" -v
+      - name: AWS Lambda unit tests
+        # Run each Lambda's suite in a SEPARATE pytest process — both define a
+        # module named `handler`, which collides in one shared session. The watcher
+        # suite needs the repo root on the path for `import lagoon_client`.
+        run: |
+          python -m pip install --quiet pytest
+          PYTHONPATH="$PWD" python -m pytest aws/lambda/test_push.py -q
+          python -m pytest aws/lambda-register/test_register.py -q
       - name: JS unit tests
         run: node --test app/test/*.test.js
 
