@@ -19,7 +19,7 @@ def test_sub_item_extracts_endpoint_and_keys():
         "subId": handler.sub_id("https://push.example/abc"),
         "endpoint": "https://push.example/abc",
         "p256dh": "PUB",
-        "auth": "AUTH",
+        "authKey": "AUTH",
         "createdAt": "2026-07-09T12:00:00Z",
     }
 

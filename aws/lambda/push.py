@@ -28,7 +28,7 @@ def send_all(subs, payload, vapid_private_key, vapid_subject, poster, on_gone=No
     for s in subs:
         try:
             sub_info = {"endpoint": s["endpoint"],
-                        "keys": {"p256dh": s["p256dh"], "auth": s["auth"]}}
+                        "keys": {"p256dh": s["p256dh"], "auth": s["authKey"]}}
             poster(sub_info, json.dumps(payload),
                    vapid_private_key=vapid_private_key,
                    vapid_claims={"sub": vapid_subject})
