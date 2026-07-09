@@ -79,3 +79,35 @@ def test_run_calls_send_when_releases_found():
         send=lambda records: calls.append(records),
     )
     assert len(calls) == 1 and calls[0][0]["label"] == "Tech"
+
+
+def test_release_record_includes_utc_start():
+    import datetime as dt
+    import handler
+
+    class Slot:
+        label = "Tech 30"; course_id = 50; run_id = 9
+        free = 1; capacity = 2
+        start = dt.datetime(2026, 7, 12, 17, 0, tzinfo=dt.timezone.utc)
+        local = dt.datetime(2026, 7, 12, 18, 0)
+
+    r = handler.release_record(Slot(), dt.datetime(2026, 7, 10, 12, 0, tzinfo=dt.timezone.utc))
+    assert r["start"] == "2026-07-12T17:00:00+00:00"   # absolute UTC, for later reachability
+    assert r["startLondon"] == "2026-07-12T18:00"       # unchanged display field
+
+
+def test_run_detects_all_days_within_horizon():
+    import datetime as dt
+    import handler
+    captured = {}
+
+    def fake_find(courses, days_ahead, weekend_only, now):
+        captured["days_ahead"] = days_ahead
+        captured["weekend_only"] = weekend_only
+        return []
+
+    handler.run(read_state=lambda: {}, write_state=lambda f: None, courses=[],
+                now=dt.datetime(2026, 7, 10, 12, 0, tzinfo=dt.timezone.utc),
+                urgent_hours=168, horizon_days=7, find_openings=fake_find)
+    assert captured["days_ahead"] == 7
+    assert captured["weekend_only"] is False

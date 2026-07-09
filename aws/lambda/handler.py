@@ -24,6 +24,7 @@ def release_record(slot, now: dt.datetime) -> dict:
         "courseId": slot.course_id,
         "runId": slot.run_id,
         "startLondon": slot.local.strftime("%Y-%m-%dT%H:%M"),
+        "start": slot.start.isoformat(),
         "free": slot.free,
         "capacity": slot.capacity,
         "leadHours": round(lead, 1),
@@ -37,7 +38,7 @@ def run(read_state, write_state, courses, now, urgent_hours, horizon_days,
     fetch are injected so this is unit-testable. Fetches first, so any fetch/read
     error aborts BEFORE state is written (never baseline-wipe on a transient error).
     """
-    slots = find_openings(courses, days_ahead=horizon_days, weekend_only=True, now=now)
+    slots = find_openings(courses, days_ahead=horizon_days, weekend_only=False, now=now)
     prev = read_state()
     releases = lc.released_within_window(slots, prev, now, urgent_hours)
     write_state({s.key: s.free for s in slots})
