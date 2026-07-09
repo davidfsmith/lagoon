@@ -1,13 +1,13 @@
 import { getTheme, setTheme } from "../theme.js";
-import { APP_VERSION, APP_RELEASE } from "../config.js";
+import { APP_VERSION, APP_RELEASE, COURSES } from "../config.js";
 import { logout } from "../app.js";
 import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
-import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn } from "../store.js";
+import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs } from "../store.js";
 import { accessTier, isOn } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
-import { notifState, subscribe, unsubscribe } from "../push.js";
+import { notifState, subscribe, unsubscribe, syncPrefs } from "../push.js";
 
 // Two tabs: Settings (appearance, reminder, data, log out) and About (what it is,
 // version, help, support). The active tab persists for the session.
@@ -25,6 +25,22 @@ function badgeHtml() {
 // A themed on/off toggle switch (checkbox styled via .switch CSS).
 function switchHtml(id, on) {
   return `<label class="switch"><input type="checkbox" id="${id}"${on ? " checked" : ""}><span class="slider"></span></label>`;
+}
+
+// Notification prefs controls (days/types/travel), shown under the enable toggle.
+const NP_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+function notifPrefsHtml() {
+  const p = getNotifyPrefs();
+  const day = (d) => `<button class="npday${p.days.includes(d) ? " active" : ""}" data-day="${d}">${d}</button>`;
+  const type = (c) => `<button class="nptype${p.types.includes(c.label) ? " active" : ""}" data-type="${c.label}">${c.label}</button>`;
+  return `
+    <div class="np-lbl">Days</div>
+    <div class="np-row">${NP_DAYS.map(day).join("")}</div>
+    <div class="np-lbl">Session types</div>
+    <div class="np-row">${COURSES.map(type).join("")}</div>
+    <div class="np-lbl">Travel time</div>
+    <div class="set-row"><span>Minutes to the lagoon</span>
+      <input id="np-travel" class="np-travel" type="number" min="0" step="5" value="${p.travelMins}"></div>`;
 }
 
 // APP_VERSION is stamped at deploy as "build <sha> · <date>" (just "dev" locally).
@@ -63,7 +79,8 @@ export function renderSettings(view, state, go) {
 
     ${isOn("notifications") ? `<div class="t" style="margin-top:18px">Notifications</div>
     <div class="set-row"><span>Spot-opened alerts</span>${switchHtml("notif-toggle", notifOn)}</div>
-    <div class="set-cap">Get a push when a spot opens. You'll be asked for permission.</div>` : ""}
+    <div class="set-cap">Get a push when a spot opens. You'll be asked for permission.</div>
+    ${notifOn ? notifPrefsHtml() : ""}` : ""}
 
     ${getInternalOptIn() ? `<div class="t" style="margin-top:18px">Developer</div>
     <div class="set-row"><span>Internal features</span>${switchHtml("internal-toggle", getInternalOptIn())}</div>
@@ -135,6 +152,13 @@ export function renderSettings(view, state, go) {
       finally { nt.disabled = false; renderSettings(view, state, go); }
     });
   }
+  const persist = (mut) => { const p = getNotifyPrefs(); mut(p); setNotifyPrefs(p); syncPrefs(); renderSettings(view, state, go); };
+  for (const b of view.querySelectorAll(".npday")) b.addEventListener("click", () =>
+    persist(p => { const d = b.dataset.day; p.days = p.days.includes(d) ? p.days.filter(x => x !== d) : [...p.days, d]; }));
+  for (const b of view.querySelectorAll(".nptype")) b.addEventListener("click", () =>
+    persist(p => { const t = b.dataset.type; p.types = p.types.includes(t) ? p.types.filter(x => x !== t) : [...p.types, t]; }));
+  const tv = view.querySelector("#np-travel");
+  if (tv) tv.addEventListener("change", () => { const p = getNotifyPrefs(); p.travelMins = Math.max(0, parseInt(tv.value, 10) || 0); setNotifyPrefs(p); syncPrefs(); });
   const ver = view.querySelector("#ver-row");
   if (ver) ver.addEventListener("click", () => {
     if (getInternalOptIn()) return;            // already unlocked
@@ -182,6 +206,11 @@ function injectSettingsStyles() {
     .slider{position:absolute;inset:0;background:var(--border);border-radius:24px;cursor:pointer;transition:background .15s}
     .slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .15s}
     .switch input:checked+.slider{background:var(--accent)}
-    .switch input:checked+.slider::before{transform:translateX(18px)}`;
+    .switch input:checked+.slider::before{transform:translateX(18px)}
+    .np-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:14px 2px 8px}
+    .np-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
+    .npday,.nptype{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:18px;padding:5px 13px;font-size:13px;cursor:pointer}
+    .npday.active,.nptype.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+    .np-travel{width:72px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;text-align:right}`;
   document.head.appendChild(s);
 }
