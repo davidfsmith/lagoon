@@ -1,4 +1,4 @@
-import { Stack, StackProps, Duration, RemovalPolicy } from "aws-cdk-lib";
+import { Stack, StackProps, Duration, RemovalPolicy, CfnOutput } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as lambda from "aws-cdk-lib/aws-lambda";
@@ -30,6 +30,24 @@ export class WatcherStack extends Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY, // subscriptions are re-createable from the client
     });
+
+    // Registration endpoint the client POSTs subscriptions to. Its own tiny asset dir
+    // (no tzdata/webpush). Function URL = a plain HTTPS endpoint, no API Gateway.
+    const registerFn = new lambda.Function(this, "RegisterFn", {
+      runtime: lambda.Runtime.PYTHON_3_12,
+      handler: "handler.lambda_handler",
+      code: lambda.Code.fromAsset(path.join(__dirname, "..", "..", "lambda-register")),
+      timeout: Duration.seconds(10),
+      memorySize: 128,
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      environment: { SUBS_TABLE: subsTable.tableName },
+    });
+    subsTable.grantWriteData(registerFn); // put_item + delete_item
+
+    const registerUrl = registerFn.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE, // opaque endpoint; subscription itself is the capability
+    });
+    new CfnOutput(this, "RegisterUrl", { value: registerUrl.url });
 
     // The watcher. Asset is prebuilt by ../lambda/build-lambda.sh (run via npm scripts).
     const fn = new lambda.Function(this, "WatcherFn", {
