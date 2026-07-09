@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fmtWhen, agoText, fmtDateLong, windDirLabel } from "../js/views/format.js";
+import { fmtWhen, agoText, fmtDateLong, windDirLabel, sessionWx, dayWx } from "../js/views/format.js";
 
 const now = new Date("2026-06-20T14:30:00").getTime();
 
@@ -48,4 +48,20 @@ test("windDirLabel: degrees -> 8-point compass, '' when unknown", () => {
   assert.equal(windDirLabel(350), "N");   // wraps back to N
   assert.equal(windDirLabel(null), "");
   assert.equal(windDirLabel(undefined), "");
+});
+
+test("sessionWx: one hour, full field set / no UV / unknown dir / null", () => {
+  const w = { code: 1, temp: 18.4, windSpeed: 15.2, gust: 27.6, windDir: 45, precipProb: 20, uv: 4.1 };
+  assert.equal(sessionWx(w), "🌤 18° · 🌬NE 15(28) · ☔20% · UV 4");
+  assert.equal(sessionWx({ ...w, uv: null }), "🌤 18° · 🌬NE 15(28) · ☔20%"); // UV segment dropped
+  assert.equal(sessionWx({ ...w, windDir: null }), "🌤 18° · 🌬15(28) · ☔20% · UV 4"); // no dir prefix
+  assert.equal(sessionWx(null), "");
+});
+
+test("dayWx: whole-day range, full set / no UV / no sunset / null", () => {
+  const w = { code: 1, tMin: 12.3, tMax: 18.4, windMax: 15.2, gustMax: 27.6, windDir: 45, precipProb: 20, uvMax: 4.1, sunset: "2026-07-09T21:14" };
+  assert.equal(dayWx(w), "🌤 12–18° · 🌬NE 15(28) · ☔20% · UV 4 · 🌇21:14");
+  assert.equal(dayWx({ ...w, uvMax: null }), "🌤 12–18° · 🌬NE 15(28) · ☔20% · 🌇21:14"); // UV dropped
+  assert.equal(dayWx({ ...w, sunset: null }), "🌤 12–18° · 🌬NE 15(28) · ☔20% · UV 4"); // sunset dropped
+  assert.equal(dayWx(null), "");
 });
