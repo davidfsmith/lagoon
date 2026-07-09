@@ -76,7 +76,7 @@ def test_run_calls_send_when_releases_found():
         write_state=lambda free: None,
         courses=[], now=now, urgent_hours=48, horizon_days=14,
         find_openings=lambda *a, **k: [Slot()],
-        send=lambda records: calls.append(records),
+        send=lambda records, slots, when: calls.append(records),
     )
     assert len(calls) == 1 and calls[0][0]["label"] == "Tech"
 
@@ -86,7 +86,7 @@ def test_release_record_includes_utc_start():
     import handler
 
     class Slot:
-        label = "Tech 30"; course_id = 50; run_id = 9
+        key = "50@2026-07-12T17:00:00+00:00"; label = "Tech 30"; course_id = 50; run_id = 9
         free = 1; capacity = 2
         start = dt.datetime(2026, 7, 12, 17, 0, tzinfo=dt.timezone.utc)
         local = dt.datetime(2026, 7, 12, 18, 0)
@@ -111,3 +111,25 @@ def test_run_detects_all_days_within_horizon():
                 urgent_hours=168, horizon_days=7, find_openings=fake_find)
     assert captured["days_ahead"] == 7
     assert captured["weekend_only"] is False
+
+
+def test_run_passes_slots_and_now_to_send():
+    import datetime as dt
+    import handler
+    now = dt.datetime(2026, 7, 13, 12, 0, tzinfo=dt.timezone.utc)
+
+    class Slot:
+        key = "50@2026-07-13T17:00:00+00:00"; label = "Tech 30"; course_id = 50
+        run_id = 9; free = 1; capacity = 2
+        start = dt.datetime(2026, 7, 13, 17, 0, tzinfo=dt.timezone.utc)
+        local = dt.datetime(2026, 7, 13, 18, 0)
+
+    got = {}
+    handler.run(read_state=lambda: {}, write_state=lambda f: None, courses=[],
+                now=now, urgent_hours=168, horizon_days=7,
+                find_openings=lambda *a, **k: [Slot()],
+                send=lambda records, slots, when: got.update(
+                    records=records, slots=slots, when=when))
+    assert got["records"][0]["key"] == Slot.key
+    assert got["slots"][0].key == Slot.key      # full current open set passed
+    assert got["when"] == now

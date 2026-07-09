@@ -13,5 +13,5 @@ docker run --rm --platform linux/amd64 \
   -v "$HERE/requirements.txt":/req.txt:ro -v "$BUILD":/out \
   public.ecr.aws/sam/build-python3.12 \
   pip install -r /req.txt -t /out --quiet --root-user-action=ignore
-cp "$HERE/handler.py" "$HERE/push.py" "$ROOT/lagoon_client.py" "$ROOT/courses.json" "$BUILD/"
+cp "$HERE/handler.py" "$HERE/push.py" "$HERE/notify_filter.py" "$ROOT/lagoon_client.py" "$ROOT/courses.json" "$BUILD/"
 echo "Built Lambda asset at $BUILD:"; ls "$BUILD"

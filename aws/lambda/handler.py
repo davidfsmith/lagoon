@@ -25,11 +25,18 @@ def release_record(slot, now: dt.datetime) -> dict:
         "runId": slot.run_id,
         "startLondon": slot.local.strftime("%Y-%m-%dT%H:%M"),
         "start": slot.start.isoformat(),
+        "key": slot.key,
         "free": slot.free,
         "capacity": slot.capacity,
         "leadHours": round(lead, 1),
         "book": f"{BOOKING_SITE}/book?courseRunId={slot.run_id}",
     }
+
+
+def notify_filter_record(slot, now: dt.datetime) -> dict:
+    """A live Slot, shaped as the record notify_filter expects (for the current
+    open set — same shape as release_record's output)."""
+    return release_record(slot, now)
 
 
 def run(read_state, write_state, courses, now, urgent_hours, horizon_days,
@@ -46,7 +53,7 @@ def run(read_state, write_state, courses, now, urgent_hours, horizon_days,
     for r in records:
         print(json.dumps({"release": r}))
     if records and send:
-        send(records)
+        send(records, slots, now)
     print(json.dumps({"summary": {"released": len(records), "open": len(slots)}}))
     return records
 
@@ -77,24 +84,40 @@ def lambda_handler(event, context):
     subs_table = os.environ.get("SUBS_TABLE")
     vapid_param = os.environ.get("VAPID_PRIVATE_PARAM")
 
-    def send(records):
-        import push
+    def send(records, slots, now):
+        import push, notify_filter
         from pywebpush import webpush
         from py_vapid import Vapid01
         ddb = boto3.resource("dynamodb").Table(subs_table)
-        subs = ddb.scan(ProjectionExpression="subId,endpoint,p256dh,authKey").get("Items", [])
+        subs = ddb.scan().get("Items", [])   # small items; no ProjectionExpression (reserved-word safe)
         if not subs:
             return
+        current = {s.key: notify_filter_record(s, now) for s in slots}
         # SSM stores the VAPID key as PEM; parse it into a Vapid instance. Passing the
         # raw PEM string to webpush fails — it treats a non-file-path string as a
         # base64 DER key (Vapid.from_string), not PEM.
         pem = boto3.client("ssm").get_parameter(
             Name=vapid_param, WithDecryption=True)["Parameter"]["Value"]
         vapid = Vapid01.from_pem(pem.encode())
-        dead = push.send_all(
-            subs, push.build_payload(records), vapid, "mailto:dave@dave-smith.co.uk",
-            poster=webpush, on_gone=lambda s: ddb.delete_item(Key={"subId": s["subId"]}))
-        print(json.dumps({"pushSummary": {"subs": len(subs), "dead": len(dead)}}))
+        sent = 0
+        for sub in subs:
+            to_send, state = notify_filter.filter_for_sub(sub, records, current, now)
+            # Persist server-owned state only (never prefs), aliased (reserved words).
+            # Single-writer: the watcher is the only writer of notifyLog/pending and runs as
+            # one non-overlapping invocation per 10-min tick, so a plain SET is safe here.
+            ddb.update_item(
+                Key={"subId": sub["subId"]},
+                UpdateExpression="SET #nl = :nl, #pd = :pd",
+                ExpressionAttributeNames={"#nl": "notifyLog", "#pd": "pending"},
+                ExpressionAttributeValues={":nl": state["notifyLog"], ":pd": state["pending"]})
+            if not to_send:
+                continue
+            dead = push.send_all(
+                [sub], push.build_payload(to_send), vapid, "mailto:dave@dave-smith.co.uk",
+                poster=webpush, on_gone=lambda s: ddb.delete_item(Key={"subId": s["subId"]}))
+            if not dead:
+                sent += 1
+        print(json.dumps({"pushSummary": {"subs": len(subs), "sent": sent}}))
 
     courses = lc.resolve_courses(lc.load_monitor(CONFIG_PATH))
     records = run(
