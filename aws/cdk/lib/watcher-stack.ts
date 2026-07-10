@@ -61,8 +61,10 @@ export class WatcherStack extends Stack {
       environment: {
         STATE_BUCKET: stateBucket.bucketName,
         STATE_KEY: "state/free.json",
-        URGENT_HOURS: "48",
-        HORIZON_DAYS: "14",
+        // Detect free-count rises across the full 7-day notification horizon (was a
+        // 48h weekend gate in Stage 1); the per-user notify_filter narrows from here.
+        URGENT_HOURS: "168",
+        HORIZON_DAYS: "7",
         SUBS_TABLE: subsTable.tableName,
         VAPID_PRIVATE_PARAM: "/lagoon/push/vapid-private",
       },

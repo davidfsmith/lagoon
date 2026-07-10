@@ -71,3 +71,21 @@ export function getInternalOptIn() {
 export function setInternalOptIn(on) {
   try { localStorage.setItem(INTERNAL_OPTIN_KEY, on ? "1" : "0"); } catch {}
 }
+
+// Push-notification prefs (days/types/travel-time filter): cached locally for the
+// Settings UI and sent to the server by push.js, which applies them server-side.
+const NOTIFY_PREFS_KEY = "lagoon.notifyPrefs";
+const DEFAULT_NOTIFY_PREFS = {
+  days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+  types: ["Air 30", "Tech 30"],
+  travelMins: 30,
+};
+export function getNotifyPrefs() {
+  try {
+    const p = JSON.parse(localStorage.getItem(NOTIFY_PREFS_KEY) || "null");
+    return p && typeof p === "object" ? { ...DEFAULT_NOTIFY_PREFS, ...p } : { ...DEFAULT_NOTIFY_PREFS };
+  } catch { return { ...DEFAULT_NOTIFY_PREFS }; }
+}
+export function setNotifyPrefs(prefs) {
+  try { localStorage.setItem(NOTIFY_PREFS_KEY, JSON.stringify(prefs)); } catch {}
+}

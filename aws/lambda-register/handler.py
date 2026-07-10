@@ -15,8 +15,32 @@ def sub_id(endpoint: str) -> str:
     return hashlib.sha256(endpoint.encode()).hexdigest()
 
 
-def sub_item(subscription: dict, now_iso: str) -> dict:
-    """DynamoDB item for a browser PushSubscription JSON."""
+ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+KNOWN_TYPES = ["Air 30", "Tech 30", "Air 15", "Tech 15", "Taster", "Jam", "Drop-in"]
+DEFAULT_TYPES = ["Air 30", "Tech 30"]
+DEFAULT_TRAVEL = 30
+
+
+def clean_prefs(prefs) -> dict:
+    """Validate client prefs; fall back to defaults. Server-owned state is never here."""
+    prefs = prefs if isinstance(prefs, dict) else {}
+    days = [d for d in prefs.get("days", []) if d in ALL_DAYS]
+    types = [t for t in prefs.get("types", []) if t in KNOWN_TYPES]
+    try:
+        travel = int(prefs.get("travelMins"))
+    except (TypeError, ValueError):
+        travel = DEFAULT_TRAVEL
+    if travel < 0:
+        travel = DEFAULT_TRAVEL
+    return {
+        "days": days or list(ALL_DAYS),
+        "types": types or list(DEFAULT_TYPES),
+        "travelMins": travel,
+    }
+
+
+def sub_item(subscription: dict, now_iso: str, prefs=None) -> dict:
+    """DynamoDB item for a browser PushSubscription JSON + cleaned prefs."""
     keys = subscription.get("keys", {})
     return {
         "subId": sub_id(subscription["endpoint"]),
@@ -24,6 +48,7 @@ def sub_item(subscription: dict, now_iso: str) -> dict:
         "p256dh": keys["p256dh"],
         "authKey": keys["auth"],  # stored under a non-reserved name; source is Web Push "auth"
         "createdAt": now_iso,
+        **clean_prefs(prefs),
     }
 
 
@@ -41,7 +66,7 @@ def parse_request(method: str, body: str):
         keys = sub.get("keys") if isinstance(sub, dict) else None
         if (isinstance(sub, dict) and isinstance(sub.get("endpoint"), str)
                 and isinstance(keys, dict) and keys.get("p256dh") and keys.get("auth")):
-            return ("subscribe", sub)
+            return ("subscribe", {"subscription": sub, "prefs": data.get("prefs")})
         return ("error", "missing subscription")
     if method == "DELETE":
         ep = data.get("endpoint")
@@ -76,7 +101,19 @@ def lambda_handler(event, context):
 
     table = boto3.resource("dynamodb").Table(os.environ["SUBS_TABLE"])
     if action == "subscribe":
-        table.put_item(Item=sub_item(data, dt.datetime.now(dt.timezone.utc).isoformat()))
+        sub = data["subscription"]
+        item = sub_item(sub, dt.datetime.now(dt.timezone.utc).isoformat(), data.get("prefs"))
+        # Upsert prefs only; preserve server-owned notifyLog/pending if the item exists.
+        table.update_item(
+            Key={"subId": item["subId"]},
+            UpdateExpression=("SET endpoint = :e, p256dh = :p, authKey = :a, "
+                              "createdAt = if_not_exists(createdAt, :c), "
+                              "#days = :days, #types = :types, travelMins = :tm"),
+            ExpressionAttributeNames={"#days": "days", "#types": "types"},
+            ExpressionAttributeValues={
+                ":e": item["endpoint"], ":p": item["p256dh"], ":a": item["authKey"],
+                ":c": item["createdAt"], ":days": item["days"], ":types": item["types"],
+                ":tm": item["travelMins"]})
         return _resp(200, {"ok": True})
     if action == "unsubscribe":
         table.delete_item(Key={"subId": sub_id(data)})

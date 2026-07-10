@@ -3,6 +3,7 @@
 // enable toggle lives in Settings. Browser-only APIs (navigator.serviceWorker,
 // PushManager, Notification) — only urlBase64ToUint8Array is pure/unit-tested.
 import { VAPID_PUBLIC_KEY, PUSH_REGISTER_URL } from "./config.js";
+import { getNotifyPrefs } from "./store.js";
 
 // VAPID public key (URL-safe base64) -> Uint8Array for applicationServerKey.
 export function urlBase64ToUint8Array(base64) {
@@ -12,6 +13,11 @@ export function urlBase64ToUint8Array(base64) {
   const out = new Uint8Array(raw.length);
   for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
   return out;
+}
+
+// Body for a subscribe / prefs-sync POST. Pure — unit-tested.
+export function subscribeBody(subscription, prefs) {
+  return JSON.stringify({ subscription, prefs });
 }
 
 // "unsupported" | "denied" | "granted-unsubscribed" | "subscribed"
@@ -37,7 +43,7 @@ export async function subscribe() {
   await fetch(PUSH_REGISTER_URL, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ subscription: sub.toJSON() }),
+    body: subscribeBody(sub.toJSON(), getNotifyPrefs()),
   });
   return true;
 }
@@ -54,4 +60,16 @@ export async function unsubscribe() {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ endpoint }),
   });
+}
+
+// Re-send prefs for the current subscription (upsert). No-op if not subscribed.
+export async function syncPrefs() {
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) return;
+  await fetch(PUSH_REGISTER_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: subscribeBody(sub.toJSON(), getNotifyPrefs()),
+  }).catch(() => {});   // best-effort; ignore offline/transient failures
 }
