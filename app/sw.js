@@ -1,4 +1,4 @@
-const CACHE = "lagoon-v58";
+const CACHE = "lagoon-v59";
 const ASSETS = ["./", "./index.html", "./manifest.json",
   "./icon.svg", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./js/app.js", "./js/config.js", "./js/tz.js", "./js/theme.js", "./js/api.js", "./js/weather.js", "./js/model.js",
@@ -9,7 +9,7 @@ self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (e) => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== "lagoon-deeplink").map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
@@ -46,16 +46,19 @@ self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   const data = e.notification.data || {};
   const { date, key } = data;
-  const url = (date && key) ? `./#day/${date}/${encodeURIComponent(key)}` : (data.url || "./");
-  e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+  e.waitUntil((async () => {
+    const wins = await clients.matchAll({ type: "window", includeUncontrolled: true });
     const w = wins.find((c) => "focus" in c);
     if (w) {
-      // Route via the URL hash — it survives an iOS PWA being re-attached on resume,
-      // unlike a postMessage, which can be dropped and leave the app on its old screen.
-      if (date && key && "navigate" in w) return w.navigate(url).then((c) => (c || w).focus()).catch(() => w.focus());
-      if (date && key) w.postMessage({ type: "open-day", date, key }); // fallback if navigate() unsupported
+      // App is alive (perhaps backgrounded): stash the target in a cache the page reads
+      // when it becomes visible again. A postMessage / client.navigate is dropped when an
+      // iOS PWA is resumed, so the durable cache is the reliable channel.
+      if (date && key) {
+        try { const c = await caches.open("lagoon-deeplink"); await c.put("target", new Response(JSON.stringify({ date, key }))); } catch (_) {}
+      }
       return w.focus();
     }
-    return clients.openWindow(url);
-  }));
+    // Cold start (app not running): launch at the #day hash; the app routes on boot.
+    return clients.openWindow((date && key) ? `./#day/${date}/${encodeURIComponent(key)}` : (data.url || "./"));
+  })());
 });
