@@ -15,9 +15,9 @@ def build_payload(records: list[dict]) -> dict:
     earliest = min(records, key=lambda r: r["start"])
     if n == 1:
         r = records[0]
-        body = f"{r['label']} · {r['startLondon'][11:]} · {r['free']} free — tap to view"
+        body = f"{r['label']} · {r['startLondon'][11:]} · {r['free']} free"
     else:
-        body = f"{n} spots opened — tap to view"
+        body = f"{n} spots opened"
     return {"title": "A spot opened at Hove Lagoon", "body": body, "url": APP_URL,
             "date": earliest["startLondon"][:10], "key": earliest["key"]}
 
