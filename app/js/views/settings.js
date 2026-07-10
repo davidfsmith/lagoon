@@ -142,7 +142,13 @@ export function renderSettings(view, state, go) {
   if (it) it.addEventListener("change", () => { setInternalOptIn(it.checked); renderSettings(view, state, go); });
   const nt = view.querySelector("#notif-toggle");
   if (nt) {
-    notifState().then((s) => { notifOn = s === "subscribed"; nt.checked = notifOn; });
+    notifState().then((s) => {
+      const on = s === "subscribed";
+      nt.checked = on;
+      // If we're actually subscribed but the prefs UI isn't showing yet (state settled
+      // after the toggle's own render), reveal it. Never hide here — that's the toggle-off.
+      if (on && !notifOn) { notifOn = true; renderSettings(view, state, go); }
+    });
     nt.addEventListener("change", async () => {
       nt.disabled = true;
       try {
