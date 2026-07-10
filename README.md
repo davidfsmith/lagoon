@@ -6,8 +6,10 @@ that come up at the last minute (cancellations / released places).
 
 > Status: live. A **PWA web app** (dave-smith.co.uk/lagoon) reads the Lagoon API
 > directly for browsing, and an **AWS Lambda watcher** (`aws/`) polls every 10 min to
-> detect weekend releases. The original local macOS watcher has been decommissioned
-> now the cloud one is live — see [Roadmap](#roadmap).
+> detect openings and now **sends Web Push notifications** — per-rider, filtered by
+> the days/session-types you ride and can reach (in **beta**: opt in via Settings →
+> Beta features). The original local macOS watcher has been decommissioned now the
+> cloud one is live — see [Roadmap](#roadmap).
 
 ## What's here
 
@@ -45,10 +47,19 @@ Gotchas (handled in `lagoon_client.py`):
   `DO NOT USE`/`test`/`closed` decoys) so a renumber fails loudly, not silently.
 - It's an internal API and may change without notice.
 
-The "Ride the Cables" courses are Tech 30, Air 30, Tech 15, Air 15. Each is a
-`monitor` entry in `courses.json` with an `enabled` flag (defaults to true), so a
-session type can be switched off without deleting it. Currently enabled: **Tech 30,
-Air 30** (15-min sessions off).
+Session types come from two lists (kept in sync by label):
+- **`app/js/config.js` COURSES** — what the **app displays** (availability chips): the
+  ride sessions (Air/Tech 30, Air/Tech 15) plus clinics/social (Taster, Jam, Drop-in,
+  **Skills**, **Tantrums** kids, **Clinic**). The type-filter chips always show the full
+  set; a type with no sessions in the 21-day window renders greyed/disabled so it's clear
+  the app *supports* it, just none are open right now.
+- **`courses.json`** — what the **watcher monitors + notifies** on (`monitor` entries,
+  name-resolved at runtime, each with an `enabled` flag). Currently enabled: **Tech 30,
+  Air 30, Skills, Tantrums, Clinic** (Tech/Air 15 present but off).
+
+Adding a *notified* type needs both lists **and** the registration Lambda's `KNOWN_TYPES`,
+with matching labels. Full catalogue survey (bookable-but-omitted ids, decoys, how to
+query) is in the project memory note `lagoon-course-catalogue`.
 
 ## Data flow
 
@@ -75,8 +86,8 @@ free-session list the app shows is computed **in the browser** from a live API r
          │   • drop full, 21-day horizon │     │free.json│
          │   • Europe/London times       │     └───┬────┘
          │   • mark your bookings        │         ▼
-         │      │                        │   release detection / logging
-         │      ▼                        │   (no alerting yet)
+         │      │                        │   detect openings → Web Push
+         │      ▼                        │   (per-rider filtered, beta)
          │  FREE SESSION LIST            │
          │   (shown to user)             │   ── SEPARATE background system;
          │      │                        │      the app never reads S3, and
@@ -100,7 +111,7 @@ The two readers are independent and never feed each other:
 | Reader | Reads | Produces | Used by app? |
 |--------|-------|----------|--------------|
 | **PWA app** | API live, every load | the free-session list (in-browser) | — it *is* the app |
-| **AWS watcher** | API every 10 min (cloud) | `s3://…/free.json` + release logs | no (separate) |
+| **AWS watcher** | API every 10 min (cloud) | `s3://…/free.json` + **per-rider Web Push** on openings | no (separate — push is a *nudge* to open the app, which then reads live) |
 
 ### Freshness: why the app reads live, not our polled data
 
@@ -150,7 +161,39 @@ deploy, and inspect it. The PWA web app is in **`app/`** (see `app/README.md`).
    CloudWatch.
 3. **Web app** — *done* (`app/`, live at dave-smith.co.uk/lagoon). Vanilla-JS PWA that
    calls the public API directly for live browsing.
-4. **Next** — multi-user alerting (push/email) on top of the watcher; in-app booking.
+4. **Multi-user push notifications** — *done, in **beta*** (opt in via Settings → Beta
+   features). Built in three stages on top of the watcher: **Web Push** (VAPID keypair —
+   private in SSM, public in the client) sent from the watcher via `pywebpush`, stored
+   subscriptions + prefs in **DynamoDB**, a **registration Lambda** (function URL) the
+   client subscribes to. Each rider is filtered server-side by their chosen **days /
+   session types / travel-time reachability**, within a 7-day horizon, with dedupe, a
+   daily cap, coalescing and quiet hours (21:00–08:00, held-then-delivered). Tapping a
+   notification **deep-links to the freed slot's Day view**. See `aws/README.md` and the
+   `docs/superpowers/specs|plans/2026-07-*-push-notifications-*` design docs.
+5. **Next** — promote notifications to **GA** (live for everyone, not just beta opt-ins);
+   in-app (no-payment) booking.
+
+## Running costs (AWS)
+
+**Effectively free** — the whole backend is a rounding error. Measured drivers
+(eu-west-1): the watcher runs ~3,400×/month at ~8 s each (256 MB) ≈ **6,700 GB-s**,
+which is ~1.7% of the perpetual Lambda free tier (400,000 GB-s + 1 M requests/month).
+Everything else is negligible: DynamoDB (1 subscription, ~1 KB, pay-per-request), S3
+(state = <1 KB; CloudFront logs ~7 MB with 90-day expiry), CloudWatch Logs (1-month
+retention), and SSM standard SecureString + KMS decrypts. EventBridge scheduling, the
+Lambda function URL, and the Web Push sends themselves cost nothing.
+
+| Component | Cost |
+|-----------|------|
+| Watcher Lambda (every 10 min) | **$0** (well within the free tier) |
+| DynamoDB · S3 · CloudWatch · SSM/KMS | ~**$0.05/month** combined |
+| EventBridge · Function URL · Web Push | **$0** |
+| **Total** | **~$0/month** (≤ ~$0.20 on a mature account with no free tier) |
+
+Going **GA** (notifications for everyone) doesn't move the needle: even ~100 subscribers
+is roughly $0.50/month more of DynamoDB writes — still well under **$1/month** total.
+The site itself (CloudFront/S3 for dave-smith.co.uk) is a separate, pre-existing cost and
+tiny at this traffic. (Site hosting + cache-control specifics live in `app/README.md`.)
 
 ## Notes
 
