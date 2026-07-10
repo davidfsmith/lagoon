@@ -4,7 +4,7 @@ import { logout } from "../app.js";
 import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
-import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs } from "../store.js";
+import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, TRAVEL_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs } from "../store.js";
 import { accessTier, isOn } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
 import { notifState, subscribe, unsubscribe, syncPrefs } from "../push.js";
@@ -40,7 +40,7 @@ function notifPrefsHtml() {
     <div class="np-row">${COURSES.map(type).join("")}</div>
     <div class="np-lbl">Travel time</div>
     <div class="set-row"><span>Minutes to the lagoon</span>
-      <input id="np-travel" class="np-travel" type="number" min="0" step="5" value="${p.travelMins}"></div>`;
+      <select id="np-travel" class="set-select">${TRAVEL_OPTIONS.map(m => `<option value="${m}"${m === p.travelMins ? " selected" : ""}>${m} min</option>`).join("")}</select></div>`;
 }
 
 // APP_VERSION is stamped at deploy as "build <sha> · <date>" (just "dev" locally).
@@ -210,7 +210,6 @@ function injectSettingsStyles() {
     .np-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:14px 2px 8px}
     .np-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
     .npday,.nptype{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:18px;padding:5px 13px;font-size:13px;cursor:pointer}
-    .npday.active,.nptype.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
-    .np-travel{width:72px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;text-align:right}`;
+    .npday.active,.nptype.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}`;
   document.head.appendChild(s);
 }
