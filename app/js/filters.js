@@ -30,13 +30,19 @@ const setActiveTypes = (set) => localStorage.setItem(TYPES_KEY, JSON.stringify([
 
 // Two-row chip bar HTML: "ride" sessions on row 1, "other" on row 2. Empty when
 // there's only one (or no) type present — nothing to filter.
+// Show a chip for EVERY configured type so riders always see the full set the app tracks;
+// a type with no sessions in the loaded (21-day) agenda renders disabled ("supported, none
+// available now") rather than vanishing — so it's clear the app *does* offer it.
 export function filterBarHtml(present, active) {
-  const chip = (l) => `<button class="filterbtn${active.has(l) ? " active" : ""}" data-type="${l}">${l}</button>`;
+  const chip = (l) => {
+    const avail = present.includes(l);
+    return `<button class="filterbtn${active.has(l) ? " active" : ""}" data-type="${l}"${avail ? "" : " disabled"}>${l}</button>`;
+  };
   const rows = FILTER_GROUPS.map(g => {
-    const labels = COURSES.filter(c => c.group === g && present.includes(c.label)).map(c => c.label);
+    const labels = COURSES.filter(c => c.group === g).map(c => c.label);
     return labels.length ? `<div class="filterbar">${labels.map(chip).join("")}</div>` : "";
   }).join("");
-  return present.length > 1 ? `<div class="filters">${rows}</div>` : "";
+  return `<div class="filters">${rows}</div>`;
 }
 
 // Wire chip clicks within `view`: toggle the type, persist, then call rerender().
@@ -59,6 +65,7 @@ export function injectFilterStyles() {
     .filterbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
     .filterbar:last-child{margin-bottom:0}
     .filterbtn{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:18px;padding:5px 15px;font-size:13px;cursor:pointer}
-    .filterbtn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}`;
+    .filterbtn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+    .filterbtn:disabled{opacity:.4;cursor:default}`;
   document.head.appendChild(s);
 }
