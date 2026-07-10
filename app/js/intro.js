@@ -1,6 +1,8 @@
 // First-run walkthrough: a small welcome carousel that explains the basics.
 // Shows once (remembered in localStorage); replayable from Settings via showIntro().
 
+import { isOn } from "./features.js";
+
 const SEEN_KEY = "lagoon.introSeen";
 const VERSION = 2; // bump to re-show the intro after a significant change (v2: conditions slide)
 
@@ -15,6 +17,9 @@ const SLIDES = [
     body: "Each day card packs in the forecast: the sky icon, <b>temp range</b> (°C), <b>☔ chance of rain</b>, <b>UV</b>, and wind as <b>direction speed(gust)</b> in km/h — so <b>🌬 NE 24(45)</b> is a north-easterly wind, 24 gusting 45. The chips below are the sessions: <b>time · type · spaces free</b>." },
   { emoji: "🔥", title: "Grab a last-minute spot",
     body: "The <b>Last-minute</b> tab surfaces sessions happening soon — filter by <b>Today / Tomorrow / Weekend</b>. A <b>“just opened ↑”</b> tag flags spots that freed up since you last looked, so you can pounce on cancellations. Prefer to open here? Set it in Settings → Default page." },
+  { emoji: "🔔", title: "Get a nudge when a spot opens",
+    body: "Turn on <b>spot-opened alerts</b> in Settings and the app will notify you when a session frees up on the days you ride and can reach — even when the app is closed. Choose your days, session types and travel time.",
+    gate: () => isOn("notifications") },
   { emoji: "⬇️", title: "Pull down to refresh",
     body: "Drag down from the top of the list to fetch the latest availability — no need to close and reopen the app." },
   { emoji: "🎟️", title: "Your bookings",
@@ -31,6 +36,7 @@ export function showIntro() {
   injectStyles();
   if (document.getElementById("intro")) return; // already open
   let i = 0;
+  const slides = SLIDES.filter((s) => !s.gate || s.gate());
 
   const el = document.createElement("div");
   el.id = "intro";
@@ -58,24 +64,24 @@ export function showIntro() {
   const back = el.querySelector(".intro-back");
   const next = el.querySelector(".intro-next");
 
-  dots.innerHTML = SLIDES.map(() => `<span class="intro-dot"></span>`).join("");
+  dots.innerHTML = slides.map(() => `<span class="intro-dot"></span>`).join("");
   const dotEls = [...dots.querySelectorAll(".intro-dot")];
 
   function render() {
-    const s = SLIDES[i];
+    const s = slides[i];
     emoji.textContent = s.emoji;
     title.textContent = s.title;
     body.innerHTML = s.body;
     dotEls.forEach((d, n) => d.classList.toggle("on", n === i));
     back.style.visibility = i === 0 ? "hidden" : "visible";
-    next.textContent = i === SLIDES.length - 1 ? "Got it" : "Next ›";
+    next.textContent = i === slides.length - 1 ? "Got it" : "Next ›";
   }
   function close() {
     try { localStorage.setItem(SEEN_KEY, JSON.stringify(VERSION)); } catch { /* ignore */ }
     document.removeEventListener("keydown", onKey);
     el.remove();
   }
-  function nextStep() { if (i < SLIDES.length - 1) { i++; render(); } else close(); }
+  function nextStep() { if (i < slides.length - 1) { i++; render(); } else close(); }
   function prevStep() { if (i > 0) { i--; render(); } }
   function onKey(e) {
     if (e.key === "Escape") close();
