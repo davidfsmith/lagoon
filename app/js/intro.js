@@ -4,7 +4,9 @@
 import { isOn } from "./features.js";
 
 const SEEN_KEY = "lagoon.introSeen";
-const VERSION = 2; // bump to re-show the intro after a significant change (v2: conditions slide)
+// Bump to re-show the intro after a significant change. It's conditional on notification
+// access so only users who can see the new 🔔 slide get the re-show — not everyone.
+const VERSION = isOn("notifications") ? 3 : 2; // v3: notifications slide (beta+)
 
 const SLIDES = [
   { emoji: "🏄", title: "Welcome to Hove Lagoon",
