@@ -1,4 +1,4 @@
-const CACHE = "lagoon-v57";
+const CACHE = "lagoon-v58";
 const ASSETS = ["./", "./index.html", "./manifest.json",
   "./icon.svg", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./js/app.js", "./js/config.js", "./js/tz.js", "./js/theme.js", "./js/api.js", "./js/weather.js", "./js/model.js",
@@ -46,14 +46,16 @@ self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   const data = e.notification.data || {};
   const { date, key } = data;
+  const url = (date && key) ? `./#day/${date}/${encodeURIComponent(key)}` : (data.url || "./");
   e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
-    for (const w of wins) {
-      if ("focus" in w) {
-        if (date && key) w.postMessage({ type: "open-day", date, key });
-        return w.focus();
-      }
+    const w = wins.find((c) => "focus" in c);
+    if (w) {
+      // Route via the URL hash — it survives an iOS PWA being re-attached on resume,
+      // unlike a postMessage, which can be dropped and leave the app on its old screen.
+      if (date && key && "navigate" in w) return w.navigate(url).then((c) => (c || w).focus()).catch(() => w.focus());
+      if (date && key) w.postMessage({ type: "open-day", date, key }); // fallback if navigate() unsupported
+      return w.focus();
     }
-    const url = (date && key) ? `./#day/${date}/${encodeURIComponent(key)}` : (data.url || "./");
     return clients.openWindow(url);
   }));
 });

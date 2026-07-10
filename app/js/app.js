@@ -130,6 +130,12 @@ if ("serviceWorker" in navigator) {
     if (d && d.type === "open-day" && d.date && d.key) openDay({ date: d.date, key: d.key });
   });
 }
+// The SW routes a tap by navigating the app to a #day/… hash (durable across an iOS PWA
+// resume). Catch it here (hashchange) as well as on boot, then strip it.
+window.addEventListener("hashchange", () => {
+  const t = parseDayHash(location.hash);
+  if (t) { history.replaceState(null, "", location.pathname + location.search); openDay(t); }
+});
 
 async function onLoggedIn() { await loadAndRender(); }
 
