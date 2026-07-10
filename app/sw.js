@@ -35,17 +35,25 @@ self.addEventListener("push", (e) => {
     body: d.body || "",
     icon: "./icon-192.png",
     badge: "./icon-192.png",
-    data: { url: d.url || "./" },
+    data: { url: d.url || "./", date: d.date, key: d.key },
     tag: "lagoon-opening", // coalesce onto one notification per device
   }));
 });
 
-// Tap → focus an existing app tab (or open one) at the payload URL.
+// Tap → jump to the freed slot's Day view. Focus an open tab (postMessage the route)
+// or open a new one at a #day/<date>/<key> hash for the app to pick up on boot.
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const url = (e.notification.data && e.notification.data.url) || "./";
+  const data = e.notification.data || {};
+  const { date, key } = data;
   e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
-    for (const w of wins) { if ("focus" in w) return w.focus(); }
+    for (const w of wins) {
+      if ("focus" in w) {
+        if (date && key) w.postMessage({ type: "open-day", date, key });
+        return w.focus();
+      }
+    }
+    const url = (date && key) ? `./#day/${date}/${encodeURIComponent(key)}` : (data.url || "./");
     return clients.openWindow(url);
   }));
 });
