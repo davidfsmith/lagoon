@@ -1,4 +1,4 @@
-const CACHE = "lagoon-v59";
+const CACHE = "lagoon-v60";
 const ASSETS = ["./", "./index.html", "./manifest.json",
   "./icon.svg", "./icon-180.png", "./icon-192.png", "./icon-512.png",
   "./js/app.js", "./js/config.js", "./js/tz.js", "./js/theme.js", "./js/api.js", "./js/weather.js", "./js/model.js",
@@ -46,19 +46,19 @@ self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   const data = e.notification.data || {};
   const { date, key } = data;
+  const url = (date && key) ? `./#day/${date}/${encodeURIComponent(key)}` : (data.url || "./");
   e.waitUntil((async () => {
-    const wins = await clients.matchAll({ type: "window", includeUncontrolled: true });
-    const w = wins.find((c) => "focus" in c);
-    if (w) {
-      // App is alive (perhaps backgrounded): stash the target in a cache the page reads
-      // when it becomes visible again. A postMessage / client.navigate is dropped when an
-      // iOS PWA is resumed, so the durable cache is the reliable channel.
-      if (date && key) {
-        try { const c = await caches.open("lagoon-deeplink"); await c.put("target", new Response(JSON.stringify({ date, key }))); } catch (_) {}
-      }
-      return w.focus();
+    // Durable fallback: the app reads this on resume (focus/pageshow/visibility) in case
+    // openWindow only refocuses the existing screen instead of navigating. postMessage /
+    // client.navigate are both dropped when an iOS PWA is resumed.
+    if (date && key) {
+      try { const c = await caches.open("lagoon-deeplink"); await c.put("target", new Response(JSON.stringify({ date, key }))); } catch (_) {}
     }
-    // Cold start (app not running): launch at the #day hash; the app routes on boot.
-    return clients.openWindow((date && key) ? `./#day/${date}/${encodeURIComponent(key)}` : (data.url || "./"));
+    // Prefer openWindow at the #day hash — on iOS a standalone PWA navigates to it, where a
+    // plain focus() leaves it on the old screen. Fall back to focusing an existing window.
+    try { const c = await clients.openWindow(url); if (c) return; } catch (_) {}
+    const wins = await clients.matchAll({ type: "window", includeUncontrolled: true });
+    const w = wins.find((x) => "focus" in x);
+    if (w) return w.focus();
   })());
 });

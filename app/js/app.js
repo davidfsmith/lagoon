@@ -122,6 +122,15 @@ document.addEventListener("visibilitychange", () => {
   consumeDeeplink(); // a notification tap resumed the app → jump to the freed slot's day
   if (pendingBookingReturn) { pendingBookingReturn = false; refreshAfterBooking(); }
 });
+// iOS can bring a backgrounded PWA forward without a visibilitychange event, so also check
+// the deep-link cache on window focus / pageshow. All idempotent (the entry is deleted on read).
+window.addEventListener("focus", consumeDeeplink);
+window.addEventListener("pageshow", consumeDeeplink);
+// If the SW's openWindow navigated us to a #day/… hash, route on that too, then strip it.
+window.addEventListener("hashchange", () => {
+  const t = parseDayHash(location.hash);
+  if (t) { history.replaceState(null, "", location.pathname + location.search); openDay(t); }
+});
 
 // Durable notification deep-link: the SW stashes the freed slot in a Cache entry (which
 // survives an iOS PWA being suspended/resumed, unlike a postMessage or client.navigate).
