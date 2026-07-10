@@ -118,24 +118,25 @@ document.getElementById("btn-settings").addEventListener("click", () => go("sett
 // without a manual pull. Gated on the flag (not every tab-switch) to spare the API.
 document.addEventListener("click", (e) => { if (e.target.closest("a.bk")) pendingBookingReturn = true; });
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState !== "visible" || !pendingBookingReturn) return;
-  pendingBookingReturn = false;
-  refreshAfterBooking();
+  if (document.visibilityState !== "visible") return;
+  consumeDeeplink(); // a notification tap resumed the app → jump to the freed slot's day
+  if (pendingBookingReturn) { pendingBookingReturn = false; refreshAfterBooking(); }
 });
 
-// A notification tap in an already-open app arrives as a SW message → jump to the day.
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.addEventListener("message", (e) => {
-    const d = e.data;
-    if (d && d.type === "open-day" && d.date && d.key) openDay({ date: d.date, key: d.key });
-  });
+// Durable notification deep-link: the SW stashes the freed slot in a Cache entry (which
+// survives an iOS PWA being suspended/resumed, unlike a postMessage or client.navigate).
+// Read + clear it when the app becomes visible after a tap. Cold-opens route via the boot
+// #day/… hash instead (the app isn't alive to receive a visibility event).
+async function consumeDeeplink() {
+  try {
+    const cache = await caches.open("lagoon-deeplink");
+    const res = await cache.match("target");
+    if (!res) return;
+    await cache.delete("target");
+    const t = await res.json();
+    if (t && t.date && t.key) openDay({ date: t.date, key: t.key });
+  } catch { /* cache unavailable — ignore */ }
 }
-// The SW routes a tap by navigating the app to a #day/… hash (durable across an iOS PWA
-// resume). Catch it here (hashchange) as well as on boot, then strip it.
-window.addEventListener("hashchange", () => {
-  const t = parseDayHash(location.hash);
-  if (t) { history.replaceState(null, "", location.pathname + location.search); openDay(t); }
-});
 
 async function onLoggedIn() { await loadAndRender(); }
 
