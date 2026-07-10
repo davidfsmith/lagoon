@@ -118,3 +118,9 @@ test("notify prefs round-trip with defaults", () => {
   assert.deepEqual(p.types, ["Air 30"]);
   assert.equal(p.travelMins, 45);
 });
+
+test("notify prefs days come back in weekday order regardless of stored order", () => {
+  mem.clear();
+  setNotifyPrefs({ days: ["Sun", "Sat", "Tue", "Thu"], types: ["Tech 30"], travelMins: 60 });
+  assert.deepEqual(getNotifyPrefs().days, ["Tue", "Thu", "Sat", "Sun"]);
+});
