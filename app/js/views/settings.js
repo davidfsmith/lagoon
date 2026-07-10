@@ -43,6 +43,24 @@ function notifPrefsHtml() {
       <select id="np-travel" class="set-select">${TRAVEL_OPTIONS.map(m => `<option value="${m}"${m === p.travelMins ? " selected" : ""}>${m} min</option>`).join("")}</select></div>`;
 }
 
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = () => navigator.standalone === true
+  || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window;
+
+// The Notifications section body: install guidance on iOS-not-installed, else the toggle (+prefs).
+function notifBodyHtml() {
+  if (!pushSupported() && isIOS() && !isStandalone()) {
+    return `<div class="set-cap ios-install">To get spot alerts, add this app to your Home Screen:
+      <span class="ios-step">1. Tap the Share button <b>⬆︎</b></span>
+      <span class="ios-step">2. Tap <b>Add to Home Screen</b></span>
+      <span class="ios-step">Then open it from the Home Screen and turn alerts on here.</span></div>`;
+  }
+  return `<div class="set-row"><span>Spot-opened alerts</span>${switchHtml("notif-toggle", notifOn)}</div>
+    <div class="set-cap">Get a push when a spot opens. You'll be asked for permission.</div>
+    ${notifOn ? notifPrefsHtml() : ""}`;
+}
+
 // APP_VERSION is stamped at deploy as "build <sha> · <date>" (just "dev" locally).
 function buildParts() {
   const m = APP_VERSION.match(/^build (\S+) · (.+)$/);
@@ -78,9 +96,7 @@ export function renderSettings(view, state, go) {
     <div class="set-cap">Try in-progress features early. They may be rough or change.</div>
 
     ${isOn("notifications") ? `<div class="t" style="margin-top:18px">Notifications</div>
-    <div class="set-row"><span>Spot-opened alerts</span>${switchHtml("notif-toggle", notifOn)}</div>
-    <div class="set-cap">Get a push when a spot opens. You'll be asked for permission.</div>
-    ${notifOn ? notifPrefsHtml() : ""}` : ""}
+    ${notifBodyHtml()}` : ""}
 
     ${getInternalOptIn() ? `<div class="t" style="margin-top:18px">Developer</div>
     <div class="set-row"><span>Internal features</span>${switchHtml("internal-toggle", getInternalOptIn())}</div>
@@ -216,6 +232,8 @@ function injectSettingsStyles() {
     .np-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:14px 2px 8px}
     .np-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
     .npday,.nptype{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:18px;padding:5px 13px;font-size:13px;cursor:pointer}
-    .npday.active,.nptype.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}`;
+    .npday.active,.nptype.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+    .ios-install{line-height:1.6}
+    .ios-step{display:block;margin-top:4px;color:var(--text)}`;
   document.head.appendChild(s);
 }

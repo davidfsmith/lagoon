@@ -9,14 +9,17 @@ APP_URL = "https://www.dave-smith.co.uk/lagoon/"
 
 
 def build_payload(records: list[dict]) -> dict:
-    """Notification payload (title/body/url) for a batch of opening records."""
+    """Notification payload for a batch of opening records, plus a deep-link target
+    (the earliest slot's London date + key) so the tap opens that Day view."""
     n = len(records)
+    earliest = min(records, key=lambda r: r["start"])
     if n == 1:
         r = records[0]
         body = f"{r['label']} · {r['startLondon'][11:]} · {r['free']} free — tap to view"
     else:
         body = f"{n} spots opened — tap to view"
-    return {"title": "A spot opened at Hove Lagoon", "body": body, "url": APP_URL}
+    return {"title": "A spot opened at Hove Lagoon", "body": body, "url": APP_URL,
+            "date": earliest["startLondon"][:10], "key": earliest["key"]}
 
 
 def send_all(subs, payload, vapid_private_key, vapid_subject, poster, on_gone=None):

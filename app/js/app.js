@@ -10,6 +10,7 @@ import { justOpenedKeys, sessionsInWindow } from "./model.js";
 import { apply as applyTheme } from "./theme.js";
 import { initPullToRefresh } from "./pullToRefresh.js";
 import { maybeShowIntro } from "./intro.js";
+import { parseDayHash } from "./deeplink.js";
 
 const view = document.getElementById("view");
 const nav = document.getElementById("nav");
@@ -18,7 +19,13 @@ let currentRoute = "login";
 let lmRefreshing = false; // a background Last-minute refresh is in flight
 let lmAutoTimer = null;   // periodic refresh while the Last-minute tab is open
 let pendingBookingReturn = false; // user tapped "Book ↗"; refresh when they come back
+let pendingDay = null; // deep-link target from a notification, applied once state loads
 const LM_REFRESH_AFTER_MS = 300000; // only re-fetch if data is older than this (5 min) — spare the Lagoon API
+
+function openDay(target) {
+  if (!target) return;
+  if (state) go("day", target); else pendingDay = target;
+}
 
 function setActiveNav(route) {
   nav.hidden = false;
@@ -116,6 +123,14 @@ document.addEventListener("visibilitychange", () => {
   refreshAfterBooking();
 });
 
+// A notification tap in an already-open app arrives as a SW message → jump to the day.
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("message", (e) => {
+    const d = e.data;
+    if (d && d.type === "open-day" && d.date && d.key) openDay({ date: d.date, key: d.key });
+  });
+}
+
 async function onLoggedIn() { await loadAndRender(); }
 
 export function logout() { clearToken(); state = null; go("login"); }
@@ -162,6 +177,7 @@ async function reload(target, showLoading) {
 
 async function loadAndRender() {
   await reload(null, true); // null -> getDefaultLanding (Availability unless the user chose otherwise)
+  if (state && pendingDay) { go("day", pendingDay); pendingDay = null; return; } // deep-link wins over intro
   if (state) maybeShowIntro();
 }
 
@@ -174,4 +190,6 @@ async function refresh() {
 // boot
 applyTheme();
 initPullToRefresh({ onRefresh: refresh, canPull: () => !!state && currentRoute !== "login" });
+const bootDay = parseDayHash(location.hash);
+if (bootDay) { pendingDay = bootDay; history.replaceState(null, "", location.pathname + location.search); }
 if (getToken()) loadAndRender(); else go("login");
