@@ -1,7 +1,15 @@
 # Hove Lagoon — PWA
 
 Read-only companion: your bookings, membership, ride-pass tokens, and a weather-aware
-availability agenda for Tech/Air 30 wakeboarding sessions. Static, no build step.
+availability agenda for the cable wakeboarding sessions (Tech/Air 30 & 15, plus clinics —
+Taster, Jam, Drop-in, Skills, Tantrums, Clinic). Type-filter chips always show the full
+set, greyed when nothing's available in the 21-day window. Static, no build step.
+
+**Push notifications (beta)** — opt in via Settings → Beta features to get a Web Push when
+a spot opens on the days / session types you ride and can reach; tapping deep-links to the
+freed slot's Day view. Pick your days / types / travel time in Settings. The server side
+(subscription store + per-user filter + sender) is the AWS watcher — see `../aws/README.md`.
+Bump `CACHE` in `sw.js` **and** `APP_RELEASE` in `js/config.js` together every release.
 
 ## Run
     cd app && python3 -m http.server 8077
