@@ -4,8 +4,9 @@ import push
 import handler
 
 
-def _rec(label="Tech", start="2026-07-12T18:00", free=2):
-    return {"label": label, "startLondon": start, "free": free,
+def _rec(label="Tech", start="2026-07-12T18:00", free=2, key="k1"):
+    return {"key": key, "label": label, "startLondon": start,
+            "start": start + ":00+00:00", "free": free,
             "book": "https://booking.lagoon.co.uk/book?courseRunId=1"}
 
 
@@ -19,6 +20,19 @@ def test_build_payload_single():
 def test_build_payload_coalesces_count():
     p = push.build_payload([_rec(), _rec(start="2026-07-12T19:00")])
     assert "2 spots" in p["body"]
+
+
+def test_build_payload_carries_deeplink_target_single():
+    p = push.build_payload([_rec(start="2026-07-13T18:00")])
+    assert p["date"] == "2026-07-13"
+    assert p["key"] == "k1"
+
+
+def test_build_payload_deeplink_targets_earliest_slot():
+    early = _rec(key="kA", start="2026-07-12T17:00")
+    late = _rec(key="kB", start="2026-07-14T19:00")
+    p = push.build_payload([late, early])   # unordered input
+    assert p["date"] == "2026-07-12" and p["key"] == "kA"
 
 
 def test_send_all_posts_each_and_drops_410():
