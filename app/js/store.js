@@ -18,6 +18,7 @@ export function loadCache() {
 // "Add to calendar" .ics. Settable in Settings; defaults to 20.
 const REMINDER_KEY = "lagoon.reminderMin";
 export const REMINDER_OPTIONS = [10, 20, 30, 40, 50, 60];
+export const TRAVEL_OPTIONS = [5, 10, 15, 20, 30, 45, 60, 90]; // notify travel-time minutes
 const REMINDER_DEFAULT = 20;
 
 export function getReminderMinutes() {
