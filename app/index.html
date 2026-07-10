@@ -65,10 +65,11 @@
     /* Pad the bar by the iOS home-indicator inset (viewport-fit=cover) so the buttons
        sit above the system gesture area — otherwise taps near the bottom can trigger
        the iOS app-switcher/close bar instead of the nav. */
-    /* translateZ(0) promotes the bar to its own compositing layer so iOS Safari keeps
-       it pinned during momentum scroll — without it the fixed bar gets left behind at a
-       stale paint position (floats to mid-screen until the next scroll repaints). */
-    nav { position:fixed; bottom:0; left:0; right:0; display:flex; background:var(--surface-2); border-top:1px solid var(--border); padding-bottom:env(safe-area-inset-bottom); transform:translateZ(0); }
+    /* Keep the bar pinned during iOS momentum scroll. translateZ(0) alone (v51) promoted
+       a compositing layer but was still flaky — iOS intermittently left it at a stale
+       paint position mid-screen. will-change + backface-visibility harden the layer so the
+       compositor keeps repositioning it in step with the scroll. */
+    nav { position:fixed; bottom:0; left:0; right:0; display:flex; background:var(--surface-2); border-top:1px solid var(--border); padding-bottom:env(safe-area-inset-bottom); transform:translateZ(0); will-change:transform; -webkit-backface-visibility:hidden; backface-visibility:hidden; }
     nav[hidden] { display:none; } /* type selector above beats the UA [hidden] rule, so restore it (hidden on the sign-in page) */
     nav button { flex:1; background:none; border:none; color:var(--muted); padding:14px 12px; font-size:13px; }
     nav button.active { color:var(--accent); }
