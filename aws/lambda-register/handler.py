@@ -16,7 +16,8 @@ def sub_id(endpoint: str) -> str:
 
 
 ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-KNOWN_TYPES = ["Air 30", "Tech 30", "Air 15", "Tech 15", "Taster", "Jam", "Drop-in"]
+KNOWN_TYPES = ["Air 30", "Tech 30", "Air 15", "Tech 15", "Taster", "Jam", "Drop-in",
+               "Skills", "Tantrums", "Clinic"]
 DEFAULT_TYPES = ["Air 30", "Tech 30"]
 DEFAULT_TRAVEL = 30
 

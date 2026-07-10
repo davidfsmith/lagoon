@@ -4,6 +4,9 @@
     { "search": "Wakeboard -Tech - Ride Session 30", "label": "Tech 30", "enabled": true },
     { "search": "Wakeboard -Air - Ride Session 30", "label": "Air 30", "enabled": true },
     { "search": "Wakeboard -Tech - Ride Session 15", "label": "Tech 15", "enabled": false },
-    { "search": "Wakeboard -Air - Ride Session 15", "label": "Air 15", "enabled": false }
+    { "search": "Wakeboard -Air - Ride Session 15", "label": "Air 15", "enabled": false },
+    { "search": "Skills Clinic", "label": "Skills", "enabled": true },
+    { "search": "Tantrums", "label": "Tantrums", "enabled": true },
+    { "search": "Clinic - Wakeboard", "label": "Clinic", "enabled": true }
   ]
 }
