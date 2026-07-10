@@ -84,7 +84,10 @@ const DEFAULT_NOTIFY_PREFS = {
 export function getNotifyPrefs() {
   try {
     const p = JSON.parse(localStorage.getItem(NOTIFY_PREFS_KEY) || "null");
-    return p && typeof p === "object" ? { ...DEFAULT_NOTIFY_PREFS, ...p } : { ...DEFAULT_NOTIFY_PREFS };
+    const merged = p && typeof p === "object" ? { ...DEFAULT_NOTIFY_PREFS, ...p } : { ...DEFAULT_NOTIFY_PREFS };
+    // normalise days to weekday order (Mon→Sun), deduped, invalid dropped
+    if (Array.isArray(merged.days)) merged.days = DEFAULT_NOTIFY_PREFS.days.filter(d => merged.days.includes(d));
+    return merged;
   } catch { return { ...DEFAULT_NOTIFY_PREFS }; }
 }
 export function setNotifyPrefs(prefs) {
