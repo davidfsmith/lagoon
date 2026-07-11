@@ -58,8 +58,9 @@ Session types come from two lists (kept in sync by label):
   Air 30, Skills, Tantrums, Clinic** (Tech/Air 15 present but off).
 
 Adding a *notified* type needs both lists **and** the registration Lambda's `KNOWN_TYPES`,
-with matching labels. Full catalogue survey (bookable-but-omitted ids, decoys, how to
-query) is in the project memory note `lagoon-course-catalogue`.
+with matching labels. The Lagoon's **other watersports** (SUP, windsurf, wingfoil, hire/rides)
+— which run a schedule, which don't, and what it'd take to track them — are surveyed in
+[`docs/other-watersports.md`](docs/other-watersports.md).
 
 ## Data flow
 
