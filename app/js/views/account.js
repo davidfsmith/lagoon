@@ -8,6 +8,8 @@ import { BOOKING_LIMIT } from "../config.js";
 import { downloadIcsForBooking } from "../calendar.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
 import { logout } from "../app.js";
+import { isOn } from "../features.js";
+import { renderHistory } from "./history.js";
 
 // Two tabs: Bookings (your upcoming sessions — the important bit) and Extras
 // (membership, ride passes, storage). Active tab persists for the session.
@@ -101,9 +103,15 @@ export function renderAccount(view, state, go) {
   const bookingsTab = `${capsHtml}${cardsHtml}`;
   const extrasTab = `${memHtml}${passHtml}${storageHtml}`;
 
+  const tabs = [{ id: "bookings", label: "Bookings" }, { id: "extras", label: "Extras" }];
+  if (isOn("history")) tabs.push({ id: "history", label: "History" });
+  const tabContent = activeTab === "extras" ? extrasTab
+    : (activeTab === "history" && isOn("history")) ? renderHistory(state)
+    : bookingsTab;
+
   view.innerHTML = `<h2>Bookings</h2>
-    ${tabBarHtml([{ id: "bookings", label: "Bookings" }, { id: "extras", label: "Extras" }], activeTab)}
-    ${activeTab === "bookings" ? bookingsTab : extrasTab}`;
+    ${tabBarHtml(tabs, activeTab)}
+    ${tabContent}`;
 
   for (const t of view.querySelectorAll(".tab")) {
     t.addEventListener("click", () => { activeTab = t.dataset.tab; renderAccount(view, state, go); });
