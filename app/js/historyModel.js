@@ -34,7 +34,7 @@ function mode(values) {
 
 // A real, past, held booking: confirmed, in the past, with at least one active rider.
 function isPastHeld(b, now) {
-  if ((b.status || "").toLowerCase() !== "confirmed") return false;
+  if ((b.status || "").toLowerCase() !== "confirmed" || b.cancelledAt) return false;
   const sd = b.courseRun && b.courseRun.startDate;
   if (!sd || new Date(sd) >= now) return false;
   if (Array.isArray(b.participants) && activeParticipants(b).length === 0) return false;

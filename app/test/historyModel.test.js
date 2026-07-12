@@ -20,6 +20,7 @@ test("past held only: excludes future, cancelled, pending, and zero-rider bookin
     bk("2026-08-01T15:00:00Z"),                          // future -> out
     bk("2026-07-01T15:00:00Z", { status: "cancelled" }), // out
     bk("2026-07-01T15:00:00Z", { status: "pending" }),   // out (confirmed only)
+    { ...bk("2026-07-01T15:00:00Z"), cancelledAt: "2026-06-30T10:00:00Z" }, // out (cancelledAt set)
     { status: "confirmed", courseRun: { startDate: "2026-07-02T15:00:00Z", course: { name: "X" } },
       participants: [{ status: "cancelled", contact: { id: 9720, firstName: "David" } }] }, // 0 active -> out
   ];
