@@ -33,8 +33,10 @@ export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (appro
 export const BOOKING_SITE = "https://booking.lagoon.co.uk";
 // Web Push (see docs/superpowers/specs/2026-07-09-push-notifications-design.md).
 // Public key is safe to ship; the matching private key lives only in SSM
-// (/lagoon/push/vapid-private). PUSH_REGISTER_URL is the registration Lambda's function URL.
+// (/lagoon/push/vapid-private). PUSH_REGISTER_URL is a SAME-ORIGIN path: CloudFront routes
+// /lagoon/push* to the registration Lambda's Function URL. Same-origin (vs the raw
+// *.lambda-url.on.aws host) so content blockers don't kill the fetch and CORS is moot.
 export const VAPID_PUBLIC_KEY = "BIpePuebyYxvD7WotLtp1RWVFAFv8FjwMFyhEsngulnRaKnN0Fbi0H90rXpxs7CxUrOeFKLgFEZobzTK6d9L8js";
-export const PUSH_REGISTER_URL = "https://msmntftysnrezcyfmotfdr4edi0ivehq.lambda-url.eu-west-1.on.aws/";
-export const APP_RELEASE = "v67"; // release/version — bump together with sw.js CACHE
+export const PUSH_REGISTER_URL = "/lagoon/push";
+export const APP_RELEASE = "v68"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"
