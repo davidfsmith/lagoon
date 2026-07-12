@@ -57,7 +57,7 @@ function notifBodyHtml() {
       <span class="ios-step">Then open it from the Home Screen and turn alerts on here.</span></div>`;
   }
   return `<div class="set-row"><span>Spot-opened alerts</span>${switchHtml("notif-toggle", notifOn)}</div>
-    <div class="set-cap">Get a push when a spot opens. You'll be asked for permission.</div>
+    <div class="set-cap">Get a push notification when a spot opens. You'll be asked for permission.</div>
     ${notifOn ? notifPrefsHtml() : ""}`;
 }
 
