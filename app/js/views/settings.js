@@ -91,10 +91,6 @@ export function renderSettings(view, state, go) {
         ${REMINDER_OPTIONS.map(m => `<option value="${m}"${m === getReminderMinutes() ? " selected" : ""}>${m} min</option>`).join("")}
       </select></div>
 
-    <div class="t" style="margin-top:18px">Beta</div>
-    <div class="set-row"><span>Beta features</span>${switchHtml("beta-toggle", getBetaOptIn())}</div>
-    <div class="set-cap">Try in-progress features early. They may be rough or change.</div>
-
     ${isOn("notifications") ? `<div class="t" style="margin-top:18px">Notifications</div>
     ${notifBodyHtml()}` : ""}
 
@@ -105,7 +101,11 @@ export function renderSettings(view, state, go) {
     ${state ? `<div class="t" style="margin-top:18px">Data</div>
     <div class="set-row"><span>Last refreshed</span><span class="muted" id="set-refreshed">${agoText(state.refreshedAt)}${state.stale ? " (saved)" : ""}</span></div>
 
-    <button class="primary" id="logout" style="margin-top:18px">Log out</button>` : ""}`;
+    <button class="primary" id="logout" style="margin-top:18px">Log out</button>` : ""}
+
+    <div class="t" style="margin-top:24px">Beta</div>
+    <div class="set-row"><span>Beta features</span>${switchHtml("beta-toggle", getBetaOptIn())}</div>
+    <div class="set-cap">Try in-progress features early. They may be rough or change.</div>`;
 
   const aboutTab = `
     <div class="t">About</div>
