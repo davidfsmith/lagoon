@@ -36,5 +36,5 @@ export const BOOKING_SITE = "https://booking.lagoon.co.uk";
 // (/lagoon/push/vapid-private). PUSH_REGISTER_URL is the registration Lambda's function URL.
 export const VAPID_PUBLIC_KEY = "BIpePuebyYxvD7WotLtp1RWVFAFv8FjwMFyhEsngulnRaKnN0Fbi0H90rXpxs7CxUrOeFKLgFEZobzTK6d9L8js";
 export const PUSH_REGISTER_URL = "https://msmntftysnrezcyfmotfdr4edi0ivehq.lambda-url.eu-west-1.on.aws/";
-export const APP_RELEASE = "v64"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v65"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"
