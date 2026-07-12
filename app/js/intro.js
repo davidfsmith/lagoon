@@ -1,12 +1,9 @@
 // First-run walkthrough: a small welcome carousel that explains the basics.
 // Shows once (remembered in localStorage); replayable from Settings via showIntro().
 
-import { isOn } from "./features.js";
-
 const SEEN_KEY = "lagoon.introSeen";
-// Bump to re-show the intro after a significant change. It's conditional on notification
-// access so only users who can see the new 🔔 slide get the re-show — not everyone.
-const VERSION = isOn("notifications") ? 3 : 2; // v3: notifications slide (beta+)
+// Bump to re-show the intro after a significant change (e.g. a new slide).
+const VERSION = 3; // v3: added the 🔔 notifications slide
 
 const SLIDES = [
   { emoji: "🏄", title: "Welcome to Hove Lagoon",
@@ -20,8 +17,7 @@ const SLIDES = [
   { emoji: "🔥", title: "Grab a last-minute spot",
     body: "The <b>Last-minute</b> tab surfaces sessions happening soon — filter by <b>Today / Tomorrow / Weekend</b>. A <b>“just opened ↑”</b> tag flags spots that freed up since you last looked, so you can pounce on cancellations. Prefer to open here? Set it in Settings → Default page." },
   { emoji: "🔔", title: "Get a nudge when a spot opens",
-    body: "Turn on <b>spot-opened alerts</b> in Settings and the app will notify you when a session frees up on the days you ride and can reach — even when the app is closed. Choose your days, session types and travel time.",
-    gate: () => isOn("notifications") },
+    body: "Turn on <b>spot-opened alerts</b> in Settings and the app will notify you when a session frees up on the days you ride and can reach — even when the app is closed. Choose your days, session types and travel time." },
   { emoji: "⬇️", title: "Pull down to refresh",
     body: "Drag down from the top of the list to fetch the latest availability — no need to close and reopen the app." },
   { emoji: "🎟️", title: "Your bookings",
