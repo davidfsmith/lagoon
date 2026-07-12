@@ -5,7 +5,7 @@ import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
 import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, TRAVEL_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs } from "../store.js";
-import { accessTier, isOn } from "../features.js";
+import { accessTier } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
 import { notifState, subscribe, unsubscribe, syncPrefs } from "../push.js";
 
@@ -91,8 +91,8 @@ export function renderSettings(view, state, go) {
         ${REMINDER_OPTIONS.map(m => `<option value="${m}"${m === getReminderMinutes() ? " selected" : ""}>${m} min</option>`).join("")}
       </select></div>
 
-    ${isOn("notifications") ? `<div class="t" style="margin-top:18px">Notifications</div>
-    ${notifBodyHtml()}` : ""}
+    <div class="t" style="margin-top:18px">Notifications</div>
+    ${notifBodyHtml()}
 
     ${getInternalOptIn() ? `<div class="t" style="margin-top:18px">Developer</div>
     <div class="set-row"><span>Internal features</span>${switchHtml("internal-toggle", getInternalOptIn())}</div>

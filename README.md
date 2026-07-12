@@ -162,17 +162,18 @@ deploy, and inspect it. The PWA web app is in **`app/`** (see `app/README.md`).
    CloudWatch.
 3. **Web app** — *done* (`app/`, live at dave-smith.co.uk/lagoon). Vanilla-JS PWA that
    calls the public API directly for live browsing.
-4. **Multi-user push notifications** — *done, in **beta*** (opt in via Settings → Beta
-   features). Built in three stages on top of the watcher: **Web Push** (VAPID keypair —
-   private in SSM, public in the client) sent from the watcher via `pywebpush`, stored
-   subscriptions + prefs in **DynamoDB**, a **registration Lambda** (function URL) the
-   client subscribes to. Each rider is filtered server-side by their chosen **days /
-   session types / travel-time reachability**, within a 7-day horizon, with dedupe, a
-   daily cap, coalescing and quiet hours (21:00–08:00, held-then-delivered). Tapping a
-   notification **deep-links to the freed slot's Day view**. See `aws/README.md` and the
+4. **Multi-user push notifications** — *done, **GA** (live for everyone; enable in
+   Settings → Notifications).* Built in three stages on top of the watcher: **Web Push**
+   (VAPID keypair — private in SSM, public in the client) sent from the watcher via
+   `pywebpush`, stored subscriptions + prefs in **DynamoDB**, a **registration Lambda**
+   (function URL) the client subscribes to. Each rider is filtered server-side by their
+   chosen **days / session types / travel-time reachability**, within a 7-day horizon,
+   with dedupe, a daily cap, coalescing and quiet hours (21:00–08:00, held-then-delivered).
+   Tapping a notification **deep-links to the freed slot's Day view**. Shipped internal →
+   beta → GA; the feature flag has been retired. See `aws/README.md` and the
    `docs/superpowers/specs|plans/2026-07-*-push-notifications-*` design docs.
-5. **Next** — promote notifications to **GA** (live for everyone, not just beta opt-ins);
-   in-app (no-payment) booking.
+5. **Next** — in-app (no-payment) booking; reconcile notification prefs app↔server
+   (see `docs/BACKLOG.md`).
 
 ## Running costs (AWS)
 

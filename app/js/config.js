@@ -26,7 +26,7 @@ export const FILTER_GROUPS = ["ride", "other"];
 // Wrap a feature's UI in isOn("flagName"); promote the tier, then delete the flag once
 // it's stable. NOTE: client-side soft gate — code still ships to everyone.
 export const FEATURES = {
-  notifications: "on", // push notifications — GA (live for everyone; enable in Settings → Notifications)
+  // (no active flags — notifications went GA and the flag was retired)
 };
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
@@ -36,5 +36,5 @@ export const BOOKING_SITE = "https://booking.lagoon.co.uk";
 // (/lagoon/push/vapid-private). PUSH_REGISTER_URL is the registration Lambda's function URL.
 export const VAPID_PUBLIC_KEY = "BIpePuebyYxvD7WotLtp1RWVFAFv8FjwMFyhEsngulnRaKnN0Fbi0H90rXpxs7CxUrOeFKLgFEZobzTK6d9L8js";
 export const PUSH_REGISTER_URL = "https://msmntftysnrezcyfmotfdr4edi0ivehq.lambda-url.eu-west-1.on.aws/";
-export const APP_RELEASE = "v65"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v66"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"
