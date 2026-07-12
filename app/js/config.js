@@ -26,7 +26,7 @@ export const FILTER_GROUPS = ["ride", "other"];
 // Wrap a feature's UI in isOn("flagName"); promote the tier, then delete the flag once
 // it's stable. NOTE: client-side soft gate — code still ships to everyone.
 export const FEATURES = {
-  history: "internal", // bookings history tab — dev-only while it's built out
+  history: "beta", // bookings history tab — beta (opt in via Settings → Beta features)
 };
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
@@ -38,5 +38,5 @@ export const BOOKING_SITE = "https://booking.lagoon.co.uk";
 // *.lambda-url.on.aws host) so content blockers don't kill the fetch and CORS is moot.
 export const VAPID_PUBLIC_KEY = "BIpePuebyYxvD7WotLtp1RWVFAFv8FjwMFyhEsngulnRaKnN0Fbi0H90rXpxs7CxUrOeFKLgFEZobzTK6d9L8js";
 export const PUSH_REGISTER_URL = "/lagoon/push";
-export const APP_RELEASE = "v71"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v72"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"
