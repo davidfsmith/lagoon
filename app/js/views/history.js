@@ -17,11 +17,11 @@ export function renderHistory(state) {
   const year = new Date().getFullYear();
   const strip = `
     <div class="hist-strip">
-      <div class="hist-hero"><b>${stats.total}</b> ride${stats.total === 1 ? "" : "s"}
+      <div class="hist-hero"><span class="hist-count"><b>${stats.total}</b> ride${stats.total === 1 ? "" : "s"}</span>
         <span class="hist-year">${stats.thisYear} in ${year}</span></div>
-      ${stats.streak ? `<div class="hist-line hist-streak">🔥 ${stats.streak}-week streak</div>` : ""}
+      ${stats.streak ? `<div class="hist-line hist-streak">🔥 ${stats.streak} week streak</div>` : ""}
       ${stats.perRider.length ? `<div class="hist-line">${stats.perRider.map(r => `${r.name} ${r.count}`).join(" · ")}</div>` : ""}
-      ${stats.favType ? `<div class="hist-line hist-fav">Most: ${stats.favType}${stats.favDay ? ` · ${DAY_FULL[stats.favDay]}` : ""}</div>` : ""}
+      ${stats.favType ? `<div class="hist-line hist-fav">Most booked session: ${stats.favType}${stats.favDay ? `, on ${DAY_FULL[stats.favDay]}` : ""}</div>` : ""}
     </div>`;
 
   // Group into years (list is newest-first, so years descend naturally), then render each
@@ -37,7 +37,7 @@ export function renderHistory(state) {
       <span class="histtype">${e.typeLabel}</span>
       ${e.riders.length ? `<span class="histtag">${e.riders.join(" + ")}</span>` : ""}
     </div>`;
-  const groups = years.map((g, i) => `<details class="hist-yr-group"${i === 0 ? " open" : ""}>
+  const groups = years.map((g) => `<details class="hist-yr-group">
     <summary class="hist-yr-banner">
       <span class="hist-chev">›</span>
       <span class="hist-yr-label">${g.year}</span>
@@ -55,7 +55,8 @@ function injectHistoryStyles() {
   s.textContent = `
     .hist-strip{background:var(--surface);border-radius:12px;padding:12px 14px;margin-bottom:14px}
     .hist-hero{font-size:15px;color:var(--text);display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-    .hist-hero b{font-size:22px;font-weight:700;color:var(--accent)}
+    .hist-hero b{font-size:22px;font-weight:700}
+    .hist-count{color:var(--accent);display:flex;align-items:baseline;gap:6px}
     .hist-year{font-size:12px;color:var(--muted)}
     .hist-line{font-size:13px;color:var(--muted);margin-top:6px}
     .hist-streak{color:var(--accent);font-weight:600}
