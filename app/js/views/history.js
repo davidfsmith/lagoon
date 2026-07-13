@@ -1,5 +1,5 @@
 // The History tab on the Bookings screen: a year-grouped list of past sessions plus a
-// small stats strip. Gated by isOn("history") in account.js. Reads only data already in
+// small stats strip. Rendered as the History tab from account.js. Reads only data already in
 // state (meBookings) — see historyModel.js for the pure derivation.
 import { pastSessions } from "../historyModel.js";
 import { fmtDate } from "./format.js";
