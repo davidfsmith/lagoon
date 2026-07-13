@@ -172,7 +172,13 @@ deploy, and inspect it. The PWA web app is in **`app/`** (see `app/README.md`).
    Tapping a notification **deep-links to the freed slot's Day view**. Shipped internal →
    beta → GA; the feature flag has been retired. See `aws/README.md` and the
    `docs/superpowers/specs|plans/2026-07-*-push-notifications-*` design docs.
-5. **Next** — in-app (no-payment) booking; reconcile notification prefs app↔server
+5. **Bookings history** — *done, **GA** (Bookings → History tab).* A year-grouped,
+   collapsible log of your past sessions computed **client-side** from the bookings the app
+   already loads (no new API/watcher), plus a stats strip: total, this-year, a **ride streak**
+   (consecutive weeks — with a "ride this week to extend it" nudge in the grace week),
+   per-rider split, and most-booked session + day. Shipped internal → beta → GA. See the
+   `docs/superpowers/specs|plans/2026-07-12-bookings-history-*` design docs.
+6. **Next** — in-app (no-payment) booking; reconcile notification prefs app↔server
    (see `docs/BACKLOG.md`).
 
 ## Running costs (AWS)
