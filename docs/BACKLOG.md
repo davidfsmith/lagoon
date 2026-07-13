@@ -13,9 +13,16 @@ just a place to park things so they aren't forgotten.
 
 ## Account & bookings
 
-- **Guest passes remaining.** Show how many guest passes are available on an account
-  (alongside the existing membership / ride-pass readout on Bookings → Extras). Needs the
-  guest-pass count from the Lagoon account/membership API — dig into what field exposes it.
+- **Guest passes remaining.** ~~Show how many guest passes are available on an account
+  (alongside the existing membership / ride-pass readout on Bookings → Extras).~~
+  **BLOCKED — not exposed by the customer API (investigated 2026-07-13).** Probed
+  `me` / `me/memberships` / `me/packages` and guessed endpoints (`me/guest-passes`,
+  `me/vouchers`, `me/credits`, `me/passes`, …) — no "guest" field anywhere and every guess
+  404s. `me/packages` only returns the "Learn to Wakeboard" bundles (packageId 19). Crucially,
+  the **booking website (same `api.lagoon.co.uk`) doesn't show a guest-pass balance either**,
+  even for an account that *has* guest passes — so they're tracked staff/admin-side only and
+  aren't customer-facing. Not buildable until Lagoon exposes it (ask the team), or via a
+  non-API source. Revisit if their API adds it.
 - **In-app booking (investigate — user request).** Dig into whether we could handle
   *booking* a session in-app in future, not just browsing + cancelling. Would need the
   Lagoon booking API's create/reserve endpoints (we already use `api2.lagoon.co.uk` for
