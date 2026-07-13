@@ -14,6 +14,7 @@ import { notifState, subscribe, unsubscribe, syncPrefs, prefsEqual } from "../pu
 let activeTab = "settings";
 let devTaps = 0; // version-row taps this session; 7 reveals the Developer section
 let notifOn = false; // last-read push subscription state, refreshed on render
+let notifPending = false; // a subscribe/unsubscribe is in flight (drives optimistic render)
 let syncState = "idle"; // prefs-save status: idle | saving | saved | error (gated by prefsSync)
 let syncSeq = 0; // guards against a stale sync response clobbering a newer change
 
@@ -34,8 +35,8 @@ function badgeHtml() {
   return "";
 }
 // A themed on/off toggle switch (checkbox styled via .switch CSS).
-function switchHtml(id, on) {
-  return `<label class="switch"><input type="checkbox" id="${id}"${on ? " checked" : ""}><span class="slider"></span></label>`;
+function switchHtml(id, on, disabled = false) {
+  return `<label class="switch"><input type="checkbox" id="${id}"${on ? " checked" : ""}${disabled ? " disabled" : ""}><span class="slider"></span></label>`;
 }
 
 // Notification prefs controls (days/types/travel), shown under the enable toggle.
@@ -67,9 +68,9 @@ function notifBodyHtml() {
       <span class="ios-step">2. Tap <b>Add to Home Screen</b></span>
       <span class="ios-step">Then open it from the Home Screen and turn alerts on here.</span></div>`;
   }
-  return `<div class="set-row"><span>Spot-opened alerts</span>${switchHtml("notif-toggle", notifOn)}</div>
+  return `<div class="set-row"><span>Spot-opened alerts</span>${switchHtml("notif-toggle", notifOn, notifPending)}</div>
     <div class="set-cap">Get a push notification when a spot opens. You'll be asked for permission.</div>
-    ${notifOn ? notifPrefsHtml() + syncStatusHtml() : ""}`;
+    ${notifOn ? notifPrefsHtml() + (notifPending ? `<div class="np-status">Connecting…</div>` : syncStatusHtml()) : ""}`;
 }
 
 // APP_VERSION is stamped at deploy as "build <sha> · <date>" (just "dev" locally).
@@ -170,6 +171,7 @@ export function renderSettings(view, state, go) {
   const nt = view.querySelector("#notif-toggle");
   if (nt) {
     notifState().then((s) => {
+      if (notifPending) return; // don't fight an in-flight toggle (optimistic render owns the state)
       const on = s === "subscribed";
       nt.checked = on;
       // If we're actually subscribed but the prefs UI isn't showing yet (state settled
@@ -177,12 +179,17 @@ export function renderSettings(view, state, go) {
       if (on && !notifOn) { notifOn = true; renderSettings(view, state, go); }
     });
     nt.addEventListener("change", async () => {
-      nt.disabled = true;
+      if (notifPending) return; // ignore re-entry while a subscribe/unsubscribe is running
+      const on = nt.checked;
+      // Optimistic: flip the prefs UI in immediately (subscribing to the push service +
+      // registering can take a few seconds) with a "Connecting…" note; finalise in background.
+      notifPending = true;
+      notifOn = on;
+      renderSettings(view, state, go);
       try {
-        if (nt.checked) { await subscribe(); notifOn = true; }
-        else { await unsubscribe(); notifOn = false; }
-      } catch { notifOn = false; nt.checked = false; }
-      finally { nt.disabled = false; renderSettings(view, state, go); }
+        if (on) await subscribe(); else await unsubscribe();
+      } catch { notifOn = false; } // permission denied / failed
+      finally { notifPending = false; renderSettings(view, state, go); }
     });
   }
   const savePrefs = () => {
