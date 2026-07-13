@@ -97,7 +97,17 @@
     <button data-route="agenda" class="active">Availability</button>
     <button data-route="account">Bookings</button>
   </nav>
-  <script type="module" src="js/app.js"></script>
+  <script>
+    // Load the entry module via JS so its URL resolves against the <base> set above — not
+    // speculatively by the preload scanner, which fetches a static `src` against the raw
+    // document URL and 404s /js/app.js when the app is opened at /lagoon (no trailing slash).
+    (function () {
+      var s = document.createElement("script");
+      s.type = "module";
+      s.src = new URL("js/app.js", document.baseURI).href;
+      document.head.appendChild(s);
+    })();
+  </script>
   <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");</script>
 </body>
 </html>
