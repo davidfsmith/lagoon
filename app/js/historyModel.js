@@ -43,17 +43,19 @@ function isPastHeld(b, now) {
 
 // Consecutive Monday-anchored London weeks with ≥1 ride, counting back from the most
 // recent ride — but only "live" if that ride is this week's or last week's Monday.
+// Returns { weeks, thisWeek }: thisWeek=true if the streak already includes the current
+// week; false when it's live but this week hasn't been ridden yet (the grace week).
 function computeStreak(dates, now) {
-  if (!dates.length) return 0;
+  if (!dates.length) return { weeks: 0, thisWeek: false };
   const weeks = new Set(dates.map(weekMondayKey));
   const nowMonKey = weekMondayKey(londonParts(now.toISOString()).date);
   const lastMonKey = ymd(prevWeek(new Date(nowMonKey + "T12:00:00")));
   const sorted = [...weeks].sort();
   const latest = sorted[sorted.length - 1];
-  if (latest !== nowMonKey && latest !== lastMonKey) return 0;
+  if (latest !== nowMonKey && latest !== lastMonKey) return { weeks: 0, thisWeek: false };
   let count = 0, cur = new Date(latest + "T12:00:00");
   while (weeks.has(ymd(cur))) { count++; cur = prevWeek(cur); }
-  return count;
+  return { weeks: count, thisWeek: latest === nowMonKey };
 }
 
 export function pastSessions(meBookings, me, now) {
@@ -96,5 +98,5 @@ export function pastSessions(meBookings, me, now) {
   const favDay = mode(list.map(e => DAY_NAMES[weekday(e.date)]));
   const streak = computeStreak(list.map(e => e.date), now);
 
-  return { list, stats: { total, thisYear, streak, perRider, favType, favDay } };
+  return { list, stats: { total, thisYear, streak: streak.weeks, streakThisWeek: streak.thisWeek, perRider, favType, favDay } };
 }
