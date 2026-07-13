@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { urlBase64ToUint8Array, subscribeBody } from "../js/push.js";
+import { urlBase64ToUint8Array, subscribeBody, prefsEqual } from "../js/push.js";
 
 test("urlBase64ToUint8Array decodes URL-safe base64 to bytes", () => {
   // "hello" in standard base64 is "aGVsbG8"; URL-safe, unpadded here.
@@ -20,4 +20,13 @@ test("subscribeBody wraps subscription + prefs", () => {
   const body = JSON.parse(subscribeBody(sub, { days: ["Sat"], types: ["Air 30"], travelMins: 20 }));
   assert.deepEqual(body.subscription, sub);
   assert.deepEqual(body.prefs, { days: ["Sat"], types: ["Air 30"], travelMins: 20 });
+});
+
+test("prefsEqual: order-independent days/types, travelMins compared", () => {
+  const a = { days: ["Sat", "Sun"], types: ["Air 30", "Tech 30"], travelMins: 30 };
+  assert.equal(prefsEqual(a, { days: ["Sun", "Sat"], types: ["Tech 30", "Air 30"], travelMins: 30 }), true);
+  assert.equal(prefsEqual(a, { days: ["Sat"], types: ["Air 30", "Tech 30"], travelMins: 30 }), false); // day dropped
+  assert.equal(prefsEqual(a, { days: ["Sat", "Sun"], types: ["Air 30"], travelMins: 30 }), false);     // type stripped
+  assert.equal(prefsEqual(a, { days: ["Sat", "Sun"], types: ["Air 30", "Tech 30"], travelMins: 45 }), false); // travel
+  assert.equal(prefsEqual(a, null), false);
 });

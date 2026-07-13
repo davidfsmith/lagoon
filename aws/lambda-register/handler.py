@@ -53,6 +53,12 @@ def sub_item(subscription: dict, now_iso: str, prefs=None) -> dict:
     }
 
 
+def subscribe_response(item: dict) -> dict:
+    """200 body for a successful subscribe: ok + the prefs we actually STORED (after
+    validation/stripping) so the client can reconcile its local state with the server."""
+    return {"ok": True, "prefs": {"days": item["days"], "types": item["types"], "travelMins": item["travelMins"]}}
+
+
 def parse_request(method: str, body: str):
     """(action, data) from an HTTP method + raw JSON body.
 
@@ -115,7 +121,7 @@ def lambda_handler(event, context):
                 ":e": item["endpoint"], ":p": item["p256dh"], ":a": item["authKey"],
                 ":c": item["createdAt"], ":days": item["days"], ":types": item["types"],
                 ":tm": item["travelMins"]})
-        return _resp(200, {"ok": True})
+        return _resp(200, subscribe_response(item))
     if action == "unsubscribe":
         table.delete_item(Key={"subId": sub_id(data)})
         return _resp(200, {"ok": True})

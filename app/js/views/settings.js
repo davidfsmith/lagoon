@@ -5,15 +5,26 @@ import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
 import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, TRAVEL_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs } from "../store.js";
-import { accessTier } from "../features.js";
+import { accessTier, isOn } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
-import { notifState, subscribe, unsubscribe, syncPrefs } from "../push.js";
+import { notifState, subscribe, unsubscribe, syncPrefs, prefsEqual } from "../push.js";
 
 // Two tabs: Settings (appearance, reminder, data, log out) and About (what it is,
 // version, help, support). The active tab persists for the session.
 let activeTab = "settings";
 let devTaps = 0; // version-row taps this session; 7 reveals the Developer section
 let notifOn = false; // last-read push subscription state, refreshed on render
+let syncState = "idle"; // prefs-save status: idle | saving | saved | error (gated by prefsSync)
+let syncSeq = 0; // guards against a stale sync response clobbering a newer change
+
+// Status line under the notification prefs (only when the prefsSync flag is on).
+function syncStatusHtml() {
+  if (!isOn("prefsSync")) return "";
+  if (syncState === "saving") return `<div class="np-status">Saving…</div>`;
+  if (syncState === "saved") return `<div class="np-status ok">Saved ✓</div>`;
+  if (syncState === "error") return `<div class="np-status err">⚠️ Couldn't save — <button class="np-retry" id="np-retry">Retry</button></div>`;
+  return "";
+}
 
 // Badge for the current access level (DEV outranks BETA).
 function badgeHtml() {
@@ -58,7 +69,7 @@ function notifBodyHtml() {
   }
   return `<div class="set-row"><span>Spot-opened alerts</span>${switchHtml("notif-toggle", notifOn)}</div>
     <div class="set-cap">Get a push notification when a spot opens. You'll be asked for permission.</div>
-    ${notifOn ? notifPrefsHtml() : ""}`;
+    ${notifOn ? notifPrefsHtml() + syncStatusHtml() : ""}`;
 }
 
 // APP_VERSION is stamped at deploy as "build <sha> · <date>" (just "dev" locally).
@@ -174,13 +185,33 @@ export function renderSettings(view, state, go) {
       finally { nt.disabled = false; renderSettings(view, state, go); }
     });
   }
-  const persist = (mut) => { const p = getNotifyPrefs(); mut(p); setNotifyPrefs(p); syncPrefs(); renderSettings(view, state, go); };
+  const savePrefs = () => {
+    if (!isOn("prefsSync")) { syncPrefs(); renderSettings(view, state, go); return; } // flag off: current fire-and-forget
+    const mySeq = ++syncSeq;
+    syncState = "saving";
+    renderSettings(view, state, go);
+    syncPrefs().then((res) => {
+      if (mySeq !== syncSeq) return; // a newer change superseded this response
+      if (res.status === "ok") {
+        if (res.prefs && !prefsEqual(res.prefs, getNotifyPrefs())) setNotifyPrefs(res.prefs); // reconcile local → server
+        syncState = "saved";
+      } else if (res.status === "unsubscribed") {
+        syncState = "idle";
+      } else {
+        syncState = "error";
+      }
+      renderSettings(view, state, go);
+    });
+  };
+  const persist = (mut) => { const p = getNotifyPrefs(); mut(p); setNotifyPrefs(p); savePrefs(); };
   for (const b of view.querySelectorAll(".npday")) b.addEventListener("click", () =>
     persist(p => { const d = b.dataset.day; p.days = p.days.includes(d) ? p.days.filter(x => x !== d) : [...p.days, d]; }));
   for (const b of view.querySelectorAll(".nptype")) b.addEventListener("click", () =>
     persist(p => { const t = b.dataset.type; p.types = p.types.includes(t) ? p.types.filter(x => x !== t) : [...p.types, t]; }));
   const tv = view.querySelector("#np-travel");
-  if (tv) tv.addEventListener("change", () => { const p = getNotifyPrefs(); p.travelMins = Math.max(0, parseInt(tv.value, 10) || 0); setNotifyPrefs(p); syncPrefs(); });
+  if (tv) tv.addEventListener("change", () => { const p = getNotifyPrefs(); p.travelMins = Math.max(0, parseInt(tv.value, 10) || 0); setNotifyPrefs(p); savePrefs(); });
+  const rt = view.querySelector("#np-retry");
+  if (rt) rt.addEventListener("click", () => savePrefs());
   const ver = view.querySelector("#ver-row");
   if (ver) ver.addEventListener("click", () => {
     if (getInternalOptIn()) return;            // already unlocked
@@ -233,6 +264,10 @@ function injectSettingsStyles() {
     .np-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
     .npday,.nptype{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:18px;padding:5px 13px;font-size:13px;cursor:pointer}
     .npday.active,.nptype.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+    .np-status{font-size:12px;margin:12px 2px 0;color:var(--muted)}
+    .np-status.ok{color:var(--accent);font-weight:600}
+    .np-status.err{color:var(--danger)}
+    .np-retry{background:none;border:1px solid var(--danger-border);color:var(--danger);font:inherit;font-size:12px;padding:2px 9px;border-radius:7px;cursor:pointer;margin-left:2px}
     .ios-install{line-height:1.6}
     .ios-step{display:block;margin-top:4px;color:var(--text)}`;
   document.head.appendChild(s);
