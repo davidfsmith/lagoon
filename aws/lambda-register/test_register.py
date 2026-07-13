@@ -66,6 +66,16 @@ def test_clean_prefs_falls_back_when_missing_or_bad():
     assert handler.clean_prefs({"travelMins": -5})["travelMins"] == 30  # negative -> default
 
 
+def test_subscribe_response_echoes_stored_prefs():
+    # The echoed prefs are the STORED (validated/stripped) ones, so the client can reconcile.
+    sub = {"endpoint": "https://push.example/abc", "keys": {"p256dh": "p", "auth": "a"}}
+    item = handler.sub_item(sub, now_iso="2026-07-09T12:00:00Z",
+                            prefs={"days": ["Mon", "Xx"], "types": ["Tech 30", "Bogus"], "travelMins": 40})
+    body = handler.subscribe_response(item)
+    assert body["ok"] is True
+    assert body["prefs"] == {"days": ["Mon"], "types": ["Tech 30"], "travelMins": 40}  # unknowns stripped
+
+
 def test_sub_item_includes_clean_prefs_not_server_state():
     sub = {"endpoint": "https://push.example/abc", "keys": {"p256dh": "P", "auth": "A"}}
     item = handler.sub_item(sub, now_iso="2026-07-13T12:00:00Z",

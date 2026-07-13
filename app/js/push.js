@@ -20,6 +20,15 @@ export function subscribeBody(subscription, prefs) {
   return JSON.stringify({ subscription, prefs });
 }
 
+// True if two prefs objects are equivalent (day/type order-independent). Pure — used to
+// decide whether the server's echoed prefs differ from local (i.e. something was stripped).
+export function prefsEqual(a, b) {
+  if (!a || !b) return false;
+  const sameSet = (x = [], y = []) => x.length === y.length && x.every(v => y.includes(v));
+  return sameSet(a.days, b.days) && sameSet(a.types, b.types) &&
+    (a.travelMins ?? null) === (b.travelMins ?? null);
+}
+
 // "unsupported" | "denied" | "granted-unsubscribed" | "subscribed"
 export async function notifState() {
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window))
@@ -62,14 +71,24 @@ export async function unsubscribe() {
   });
 }
 
-// Re-send prefs for the current subscription (upsert). No-op if not subscribed.
+// Re-send prefs for the current subscription (upsert). Returns a result the caller can act
+// on: { status: "ok", prefs } (server echoes what it stored, for reconciliation),
+// { status: "failed" } (network/transient — surface it, don't swallow), or
+// { status: "unsubscribed" } (no-op). Never rejects.
 export async function syncPrefs() {
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription();
-  if (!sub) return;
-  await fetch(PUSH_REGISTER_URL, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: subscribeBody(sub.toJSON(), getNotifyPrefs()),
-  }).catch(() => {});   // best-effort; ignore offline/transient failures
+  if (!sub) return { status: "unsubscribed" };
+  try {
+    const res = await fetch(PUSH_REGISTER_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: subscribeBody(sub.toJSON(), getNotifyPrefs()),
+    });
+    if (!res.ok) return { status: "failed" };
+    const data = await res.json().catch(() => ({}));
+    return { status: "ok", prefs: data.prefs || null };
+  } catch {
+    return { status: "failed" };
+  }
 }
