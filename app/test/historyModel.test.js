@@ -86,11 +86,13 @@ test("riders excludes you; tags others", () => {
 });
 
 test("streak: consecutive weeks, live when latest is last week (weekend rider mid-week)", () => {
-  assert.equal(pastSessions([
+  const { stats } = pastSessions([
     bk("2026-07-11T15:00:00Z"), // wk Mon 07-06 (last week rel. Wed 15th)
     bk("2026-07-05T15:00:00Z"), // wk Mon 06-29
     bk("2026-06-27T15:00:00Z"), // wk Mon 06-22
-  ], me, NOW).stats.streak, 3);
+  ], me, NOW);
+  assert.equal(stats.streak, 3);
+  assert.equal(stats.streakThisWeek, false); // rode last week, not yet this week -> nudge
 });
 
 test("streak: a one-week gap breaks it", () => {
@@ -114,7 +116,9 @@ test("streak: two rides in the same week count once", () => {
 });
 
 test("streak: a ride in the current week counts and is live", () => {
-  assert.equal(pastSessions([bk("2026-07-14T10:00:00Z")], me, NOW).stats.streak, 1); // Tue 14th, current wk
+  const { stats } = pastSessions([bk("2026-07-14T10:00:00Z")], me, NOW); // Tue 14th, current wk
+  assert.equal(stats.streak, 1);
+  assert.equal(stats.streakThisWeek, true);
 });
 
 test("empty input -> zeroed stats", () => {
@@ -123,6 +127,7 @@ test("empty input -> zeroed stats", () => {
   assert.equal(stats.total, 0);
   assert.equal(stats.thisYear, 0);
   assert.equal(stats.streak, 0);
+  assert.equal(stats.streakThisWeek, false);
   assert.deepEqual(stats.perRider, []);
   assert.equal(stats.favType, null);
   assert.equal(stats.favDay, null);

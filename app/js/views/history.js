@@ -19,7 +19,9 @@ export function renderHistory(state) {
     <div class="hist-strip">
       <div class="hist-hero"><span class="hist-count"><b>${stats.total}</b> ride${stats.total === 1 ? "" : "s"}</span>
         <span class="hist-year">${stats.thisYear} in ${year}</span></div>
-      ${stats.streak ? `<div class="hist-line hist-streak">🔥 ${stats.streak} week streak</div>` : ""}
+      ${stats.streak ? `<div class="hist-line hist-streak">${stats.streakThisWeek
+        ? `🔥 ${stats.streak} week streak`
+        : `Ride this week to extend your ${stats.streak} week streak`}</div>` : ""}
       ${stats.perRider.length ? `<div class="hist-line">${stats.perRider.map(r => `${r.name} ${r.count}`).join(" · ")}</div>` : ""}
       ${stats.favType ? `<div class="hist-line hist-fav">Most booked session: ${stats.favType}${stats.favDay ? `, on ${DAY_FULL[stats.favDay]}` : ""}</div>` : ""}
     </div>`;
