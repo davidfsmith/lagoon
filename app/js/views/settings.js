@@ -5,7 +5,7 @@ import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
 import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, TRAVEL_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs } from "../store.js";
-import { accessTier, isOn } from "../features.js";
+import { accessTier } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
 import { notifState, subscribe, unsubscribe, syncPrefs, prefsEqual } from "../push.js";
 
@@ -15,12 +15,11 @@ let activeTab = "settings";
 let devTaps = 0; // version-row taps this session; 7 reveals the Developer section
 let notifOn = false; // last-read push subscription state, refreshed on render
 let notifPending = false; // a subscribe/unsubscribe is in flight (drives optimistic render)
-let syncState = "idle"; // prefs-save status: idle | saving | saved | error (gated by prefsSync)
+let syncState = "idle"; // prefs-save status: idle | saving | saved | error
 let syncSeq = 0; // guards against a stale sync response clobbering a newer change
 
-// Status line under the notification prefs (only when the prefsSync flag is on).
+// Status line under the notification prefs.
 function syncStatusHtml() {
-  if (!isOn("prefsSync")) return "";
   if (syncState === "saving") return `<div class="np-status">Saving…</div>`;
   if (syncState === "saved") return `<div class="np-status ok">Saved ✓</div>`;
   if (syncState === "error") return `<div class="np-status err">⚠️ Couldn't save — <button class="np-retry" id="np-retry">Retry</button></div>`;
@@ -193,7 +192,6 @@ export function renderSettings(view, state, go) {
     });
   }
   const savePrefs = () => {
-    if (!isOn("prefsSync")) { syncPrefs(); renderSettings(view, state, go); return; } // flag off: current fire-and-forget
     const mySeq = ++syncSeq;
     syncState = "saving";
     renderSettings(view, state, go);
