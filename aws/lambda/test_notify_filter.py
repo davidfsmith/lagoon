@@ -125,3 +125,25 @@ def test_pending_retained_when_cap_blocks_delivery():
                                    [], {"1@a": held}, now)
     assert out is None                     # cap blocked
     assert state["pending"] == ["1@a"]     # still-valid held slot RETAINED, not dropped
+
+
+def test_suppressed_slot_not_sent():
+    # A matching, reachable opening the rider themselves just freed (its key is in `suppress`,
+    # unexpired) must NOT be sent back to them.
+    supp = {"1@a": int(NOW.timestamp()) + 3600}  # suppressed for 1h
+    out, _ = nf.filter_for_sub(sub(suppress=supp), [rec("1@a")], {}, NOW)
+    assert out is None
+
+
+def test_expired_suppress_does_not_block():
+    supp = {"1@a": int(NOW.timestamp()) - 3600}  # expired -> ignored
+    out, _ = nf.filter_for_sub(sub(suppress=supp), [rec("1@a")], {}, NOW)
+    assert out and out[0]["key"] == "1@a"
+
+
+def test_suppress_blocks_and_drops_pending():
+    # A held (pending) slot that is now suppressed is dropped from pending, not delivered.
+    supp = {"1@a": int(NOW.timestamp()) + 3600}
+    out, state = nf.filter_for_sub(sub(pending=["1@a"], suppress=supp), [], {"1@a": rec("1@a")}, NOW)
+    assert out is None
+    assert "1@a" not in state["pending"]
