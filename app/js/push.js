@@ -57,6 +57,21 @@ export async function subscribe() {
   return true;
 }
 
+// Tell the Lambda to suppress notifying THIS device about a slot the rider just freed
+// (self-cancel). Best-effort, fire-and-forget; no-op if not subscribed. Never rejects.
+export async function suppressSlot(key) {
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) return;
+  try {
+    await fetch(PUSH_REGISTER_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ suppress: { endpoint: sub.endpoint, key } }),
+    });
+  } catch { /* best-effort */ }
+}
+
 // Unsubscribe locally and tell the Lambda to drop it.
 export async function unsubscribe() {
   const reg = await navigator.serviceWorker.ready;
