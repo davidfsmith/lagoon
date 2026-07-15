@@ -82,3 +82,14 @@ def test_sub_item_includes_clean_prefs_not_server_state():
                             prefs={"days": ["Sat"], "types": ["Air 30"], "travelMins": 20})
     assert item["days"] == ["Sat"] and item["types"] == ["Air 30"] and item["travelMins"] == 20
     assert "notifyLog" not in item and "pending" not in item  # server owns these
+
+
+def test_parse_request_suppress():
+    ep, k = "https://push.example/abc", "50@2026-07-15T15:00:00+00:00"
+    body = json.dumps({"suppress": {"endpoint": ep, "key": k}})
+    assert handler.parse_request("POST", body) == ("suppress", {"endpoint": ep, "key": k})
+
+
+def test_parse_request_suppress_malformed_is_error():
+    assert handler.parse_request("POST", json.dumps({"suppress": {"endpoint": "x"}}))[0] == "error"  # no key
+    assert handler.parse_request("POST", json.dumps({"suppress": "nope"}))[0] == "error"             # not an object

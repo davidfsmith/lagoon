@@ -62,13 +62,16 @@ def subscribe_response(item: dict) -> dict:
 def parse_request(method: str, body: str):
     """(action, data) from an HTTP method + raw JSON body.
 
-    ('subscribe', subscription) | ('unsubscribe', endpoint) | ('error', reason)
+    ('subscribe', {...}) | ('suppress', {...}) | ('unsubscribe', endpoint) | ('error', reason)
     """
     try:
         data = json.loads(body or "{}")
     except ValueError:
         return ("error", "bad json")
     if method == "POST":
+        supp = data.get("suppress")
+        if isinstance(supp, dict) and isinstance(supp.get("endpoint"), str) and isinstance(supp.get("key"), str):
+            return ("suppress", {"endpoint": supp["endpoint"], "key": supp["key"]})
         sub = data.get("subscription")
         keys = sub.get("keys") if isinstance(sub, dict) else None
         if (isinstance(sub, dict) and isinstance(sub.get("endpoint"), str)
@@ -122,6 +125,22 @@ def lambda_handler(event, context):
                 ":c": item["createdAt"], ":days": item["days"], ":types": item["types"],
                 ":tm": item["travelMins"]})
         return _resp(200, subscribe_response(item))
+    if action == "suppress":
+        # A rider cancelled a slot on their own device — don't notify THEM about the opening
+        # they just created. Add {slotKey: expiryEpoch} to this sub's `suppress` map. Atomic
+        # nested sets (no read → no clobber of the watcher's notifyLog/pending, and vice-versa);
+        # `if_not_exists` first so it works for subs created before this attribute existed.
+        SUPPRESS_TTL_SECS = 6 * 3600
+        key = {"subId": sub_id(data["endpoint"])}
+        exp = int(dt.datetime.now(dt.timezone.utc).timestamp()) + SUPPRESS_TTL_SECS
+        table.update_item(Key=key,
+            UpdateExpression="SET suppress = if_not_exists(suppress, :empty)",
+            ExpressionAttributeValues={":empty": {}})
+        table.update_item(Key=key,
+            UpdateExpression="SET suppress.#k = :exp",
+            ExpressionAttributeNames={"#k": data["key"]},
+            ExpressionAttributeValues={":exp": exp})
+        return _resp(200, {"ok": True})
     if action == "unsubscribe":
         table.delete_item(Key={"subId": sub_id(data)})
         return _resp(200, {"ok": True})
