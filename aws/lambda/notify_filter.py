@@ -97,11 +97,17 @@ def filter_for_sub(sub, new_openings, current_open_by_key, now):
     travel = int(sub["travelMins"]) if sub.get("travelMins") is not None else DEFAULT_TRAVEL
     notify_log = {k: int(v) for k, v in (sub.get("notifyLog") or {}).items()}
     pending = list(sub.get("pending") or [])
+    # Slots the rider themselves just freed (by cancelling) — don't notify THEM about their own
+    # opening. {slotKey: expiryEpoch}; entries past their expiry are ignored (see design doc).
+    suppress = {k: int(v) for k, v in (sub.get("suppress") or {}).items()}
+    now_epoch = int(now.timestamp())
+    suppressed = lambda k: suppress.get(k, 0) > now_epoch
 
     dedupe = _notified_today_keys(notify_log, now)
     fresh = [r for r in new_openings
              if is_candidate(r, days, types, travel, now)
-             and r["key"] not in dedupe and r["key"] not in pending]
+             and r["key"] not in dedupe and r["key"] not in pending
+             and not suppressed(r["key"])]
 
     if in_quiet_hours(now):
         for r in fresh:
@@ -114,7 +120,7 @@ def filter_for_sub(sub, new_openings, current_open_by_key, now):
         still_valid = []
         for key in pending:
             rec = current_open_by_key.get(key)
-            if rec and is_candidate(rec, days, types, travel, now) and key not in dedupe:
+            if rec and is_candidate(rec, days, types, travel, now) and key not in dedupe and not suppressed(key):
                 deliver.append(rec)
                 still_valid.append(key)   # keep unless we actually deliver below
             # else: no longer open / not a candidate -> drop

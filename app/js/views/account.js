@@ -3,7 +3,9 @@ import { londonParts } from "../tz.js";
 import { weatherAt } from "../weather.js";
 import { getToken, saveCache } from "../store.js";
 import { cancelParticipant } from "../api.js";
-import { bookingKeys, activeParticipants, countsTowardLimit } from "../model.js";
+import { bookingKeys, activeParticipants, countsTowardLimit, slotKey } from "../model.js";
+import { isOn } from "../features.js";
+import { suppressSlot } from "../push.js";
 import { BOOKING_LIMIT } from "../config.js";
 import { downloadIcsForBooking } from "../calendar.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
@@ -146,6 +148,11 @@ async function onCancel(btn, view, state, go) {
   btn.textContent = "Cancelling…";
   try {
     await cancelParticipant(pid, getToken());
+    // Ask the watcher not to alert THIS device about the spot we just freed (self-cancel).
+    if (isOn("cancelSuppress")) {
+      const cr = booking.courseRun || {};
+      suppressSlot(slotKey((cr.course || {}).id, cr.startDate));
+    }
     // optimistic local update so the UI reflects the cancellation immediately
     booking.participants = (booking.participants || []).filter(x => x.id !== pid);
     if (!booking.participants.length) {

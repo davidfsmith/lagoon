@@ -198,3 +198,10 @@ test("sessionsInWindow sorts soonest-first and drops full slots", () => {
   assert.deepEqual(out.map(s => s.start),
     ["2026-06-25T16:00:00+00:00", "2026-06-25T18:00:00+00:00"]);
 });
+
+test("slotKey matches the watcher's key format (courseId@startISO) — self-cancel suppression relies on this", () => {
+  // The AWS watcher keys slots as f"{course_id}@{start.isoformat()}"; the API serialises
+  // startDate with a +00:00 offset which Python's isoformat() reproduces byte-for-byte. If this
+  // assertion ever fails (API format drift), self-cancel suppression silently no-ops.
+  assert.equal(slotKey(50, "2026-07-15T15:30:00+00:00"), "50@2026-07-15T15:30:00+00:00");
+});
