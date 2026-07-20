@@ -178,8 +178,10 @@ deploy, and inspect it. The PWA web app is in **`app/`** (see `app/README.md`).
    (consecutive weeks — with a "ride this week to extend it" nudge in the grace week),
    per-rider split, and most-booked session + day. Shipped internal → beta → GA. See the
    `docs/superpowers/specs|plans/2026-07-12-bookings-history-*` design docs.
-6. **Next** — in-app (no-payment) booking; reconcile notification prefs app↔server
-   (see `docs/BACKLOG.md`).
+6. **In progress / next** — *self-cancel notification suppression* is built + deployed,
+   gated `internal`, awaiting a device test then GA (don't ping a rider about a slot they
+   just cancelled). Beyond that: in-app (no-payment) booking. Notification prefs save-status
+   + reconcile shipped GA. See `docs/BACKLOG.md`.
 
 ## Running costs (AWS)
 

@@ -28,7 +28,12 @@ Runs 24/7 on AWS (stack **`LagoonWatcher`**, eu-west-1, deployed via CDK). Two j
 - **gates** — opening is within 7 days, on a chosen weekday, of a chosen session type, and
   **reachable** (`start − now ≥ travelMins + 15 min` buffer);
 - **anti-spam** — dedupe (once/slot/day), daily **cap** (5/day, ≥30 min apart), **coalesce**
-  a run's matches into one push, **quiet hours** 21:00–08:00 (held then delivered at 08:00).
+  a run's matches into one push, **quiet hours** 21:00–08:00 (held then delivered at 08:00);
+- **self-cancel suppression** — skips an opening the rider themselves just freed. On cancel the
+  app posts the slot key to the register Lambda's `suppress` action, which stashes it on that
+  subscription's `suppress` map (`{slotKey: expiryEpoch}`, 6h TTL); the filter skips suppressed,
+  unexpired slots — only that rider, everyone else is still notified. (Gated `internal` in the
+  app via `FEATURES.cancelSuppress` while it's device-tested.)
 
 `handler.py` `send()` scans subs, filters each, sends via `pywebpush` (VAPID from SSM), and
 persists each sub's `notifyLog`/`pending`. Tapping a notification deep-links to the freed
