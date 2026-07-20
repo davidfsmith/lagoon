@@ -5,10 +5,16 @@ availability agenda for the cable wakeboarding sessions (Tech/Air 30 & 15, plus 
 Taster, Jam, Drop-in, Skills, Tantrums, Clinic). Type-filter chips always show the full
 set, greyed when nothing's available in the 21-day window. Static, no build step.
 
-**Push notifications (beta)** — opt in via Settings → Beta features to get a Web Push when
-a spot opens on the days / session types you ride and can reach; tapping deep-links to the
-freed slot's Day view. Pick your days / types / travel time in Settings. The server side
-(subscription store + per-user filter + sender) is the AWS watcher — see `../aws/README.md`.
+**Push notifications** — enable in Settings → Notifications to get a Web Push when a spot
+opens on the days / session types you ride and can reach; tapping deep-links to the freed
+slot's Day view. Pick your days / types / travel time in Settings (the save status shows
+Saving… / Saved ✓, and reconciles against the server). The server side (subscription store
++ per-user filter + sender) is the AWS watcher — see `../aws/README.md`.
+
+**Bookings history** — a **History** tab on the Bookings screen: a year-grouped, collapsible
+log of your past sessions plus a stats strip (total · this year · ride streak · per-rider ·
+most-booked session/day), computed client-side from the bookings the app already loads.
+
 Bump `CACHE` in `sw.js` **and** `APP_RELEASE` in `js/config.js` together every release.
 
 ## Run

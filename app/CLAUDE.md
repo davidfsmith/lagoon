@@ -15,6 +15,10 @@ Lagoon, your bookings, ride-pass tokens, and the weather per session. It reads t
 **public Lagoon booking API directly, live, every time you open it** — there's no
 server of ours in the middle. See `../README.md` for the full data-flow picture.
 
+It also does **push notifications** (a spot opened on your days/types — sent by the AWS
+watcher in `../aws/`), a **Last-minute** tab, and a **History** tab (your past sessions +
+a ride streak). All live/GA. See `../README.md` roadmap for the feature list.
+
 No payments, ever. It's read-only browsing + cancelling your own places (a real
 write). In-app booking may come later, but never card payments.
 
@@ -46,28 +50,36 @@ hit the network. Add tests the same way (see `app/test/api.test.js` for the patt
 
 ```
 app/
-  index.html        — shell: header, bottom nav (Availability · Bookings), theme palette,
-                       registers the service worker
-  sw.js             — service worker: network-first for the app shell/code, never caches
-                       the Lagoon/weather APIs. Has a CACHE name + ASSETS precache list.
+  index.html        — shell: header, bottom nav (Availability · Last-minute · Bookings), theme
+                       palette, injects the <base> + entry module, registers the service worker
+  sw.js             — service worker: network-first for the app shell/code, never caches the
+                       Lagoon/weather APIs; push + notificationclick handlers. CACHE + ASSETS list.
   manifest.json     — PWA manifest (icons, name, standalone)
   js/
-    config.js       — all the knobs: API_BASE, COURSES, BOOKING_LIMIT, HORIZON_DAYS,
-                       APP_RELEASE/APP_VERSION
+    config.js       — all the knobs: API_BASE, COURSES, BOOKING_LIMIT, HORIZON_DAYS, FEATURES,
+                       VAPID_PUBLIC_KEY, PUSH_REGISTER_URL, APP_RELEASE/APP_VERSION
     api.js          — thin Lagoon API client: login, authedGet, getCourseRuns, cancelParticipant
     data.js         — loadEverything(): fetches bookings/memberships/courses/weather, builds the agenda
-    model.js        — pure data logic: runsToSlots, free-count, bookingKeys, activeParticipants, groupByDay
+    model.js        — pure data logic: runsToSlots, slotKey, free-count, bookingKeys, groupByDay
     agendaModel.js  — assembles the day-by-day agenda from runs + bookings + weather
+    historyModel.js — pure past-session history + stats (pastSessions: list, totals, ride streak)
     tz.js           — Europe/London conversion (londonParts). ALWAYS use this for times (see Gotchas)
     weather.js      — Open-Meteo fetch + parse + attach-to-slot
-    store.js        — localStorage: token + the cache fallback
+    store.js        — localStorage: token, cache fallback, notif prefs, feature-flag opt-ins
+    features.js     — feature-flag helpers: isOn / accessTier / isBetaUser (see below)
     theme.js        — light / dark / system
     filters.js      — the per-type filter (chips + selection), SHARED by agenda + day so they agree
+    tabs.js         — shared tab-bar markup/styles (Bookings + Settings sub-tabs)
+    push.js         — Web Push client: subscribe/unsubscribe/syncPrefs/suppressSlot + prefsEqual
+    deeplink.js     — parse a #day/<date>/<key> hash (notification-tap deep-links)
+    calendar.js     — .ics add-to-calendar export for a booking
     pullToRefresh.js— pull-down-to-refresh gesture
+    refreshedTicker.js — live "X ago" ticker for "Last refreshed"
     intro.js        — first-run welcome carousel (shown once; replayable from Settings)
     app.js          — the router: go(route, arg), boot, reload/refresh
     views/          — one file per screen, each exports render<Name>(view, state, go):
-                      login, agenda, day, account (Bookings), settings, format (helpers)
+                      login, agenda, day, lastminute, account (Bookings + Extras + History),
+                      history, settings, format (shared helpers incl. sessionWx/dayWx/prettyCourse)
   test/             — node --test, *.test.js, all mocked
 ```
 
