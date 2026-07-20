@@ -30,24 +30,18 @@ just a place to park things so they aren't forgotten.
   — so this only covers bookings that don't require payment at point of booking; anything
   involving payment stays on the booking site.
 
-## Notifications — reliability
+## Notifications
 
-- **Reconcile notification prefs between app and server.** `syncPrefs` currently swallows
-  failures silently (`.catch`), so if a POST fails — or the registration Lambda strips a
-  label its `KNOWN_TYPES` doesn't yet recognise — the Settings UI and the DynamoDB item
-  drift apart with no warning: the app shows a day/type as selected while the server never
-  stored it, so no push is ever sent for it. (Seen live: Skills/Clinic ticked on-device but
-  absent server-side after being added during a stale-Lambda deploy window.) Fix options:
-  (a) have the register Lambda **return the stored prefs** and reconcile/warn on next load
-  if they differ from local; and/or (b) surface a "couldn't save preferences" toast instead
-  of failing quietly. Low urgency (self-heals on any successful re-save) but it's a silent
-  correctness gap.
-
-## Next up
-
-- **Push notifications (Phase 2).** Notify when a spot opens on a rider's chosen days that
-  they can still reach, while the app is closed: extend the AWS watcher with Web Push (VAPID,
-  a DynamoDB subscription/prefs store, a registration Lambda, and the watcher sending via
-  `pywebpush`). Now in active design — see
-  `docs/superpowers/specs/2026-07-09-push-notifications-design.md` (umbrella; phased build,
-  gated `internal` → `beta` → GA). The in-app Last-minute surfacing (Phase 1) is the interim.
+- **Self-cancel suppression — needs device testing, then promote.** *Built, reviewed clean,
+  and fully deployed 2026-07-15 (v80: app + watcher/register Lambdas), gated
+  `FEATURES.cancelSuppress = "internal"`.* Stops a rider being notified about a slot **they
+  themselves just cancelled**: on cancel the app posts the freed slot key to the register
+  Lambda, which stashes it on that subscription's `suppress` map (6h TTL); `notify_filter`
+  skips it — only the canceller, everyone else still gets notified. **NOT yet device-tested.**
+  To verify (dev mode): subscribe on a reachable watched day/type, book then cancel a session,
+  confirm no self-notification on the next watcher run (≤10 min). Then promote
+  `internal → GA → retire flag`. Spec:
+  `docs/superpowers/specs/2026-07-15-notif-self-cancel-suppression-design.md`.
+- **Reconcile notification prefs between app and server** — *done (v76→v79, GA, flag retired).*
+  `syncPrefs` now surfaces failures (Saving…/Saved ✓/Retry) and the register Lambda echoes the
+  stored prefs so the client reconciles local ↔ server. Kept here as a record.
