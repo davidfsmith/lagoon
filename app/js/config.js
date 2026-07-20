@@ -31,6 +31,10 @@ export const FEATURES = {
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
 export const BOOKING_SITE = "https://booking.lagoon.co.uk";
+// Guest WiFi at the Lagoon Café (public, shared on WhatsApp). Single source of truth —
+// the Café tab shows these and wifi-qr.svg encodes the same values as WIFI:T:WPA;S:…;P:…;;.
+// If you change ssid/password/security here, regenerate wifi-qr.svg to match.
+export const CAFE_WIFI = { ssid: "HoveLagoonGuest", password: "topsecretgoonies", security: "WPA" };
 // Web Push (see docs/superpowers/specs/2026-07-09-push-notifications-design.md).
 // Public key is safe to ship; the matching private key lives only in SSM
 // (/lagoon/push/vapid-private). PUSH_REGISTER_URL is a SAME-ORIGIN path: CloudFront routes
@@ -38,5 +42,5 @@ export const BOOKING_SITE = "https://booking.lagoon.co.uk";
 // *.lambda-url.on.aws host) so content blockers don't kill the fetch and CORS is moot.
 export const VAPID_PUBLIC_KEY = "BIpePuebyYxvD7WotLtp1RWVFAFv8FjwMFyhEsngulnRaKnN0Fbi0H90rXpxs7CxUrOeFKLgFEZobzTK6d9L8js";
 export const PUSH_REGISTER_URL = "/lagoon/push";
-export const APP_RELEASE = "v80"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v81"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"
