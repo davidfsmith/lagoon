@@ -27,6 +27,7 @@ export const FILTER_GROUPS = ["ride", "other"];
 // it's stable. NOTE: client-side soft gate — code still ships to everyone.
 export const FEATURES = {
   cancelSuppress: "internal", // don't self-notify about a slot you just cancelled (dev-only while built out)
+  cafeWifi: "internal", // Café WiFi tab — dev-only until the network security type is confirmed on-site
 };
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)

@@ -52,8 +52,15 @@ gives the WiFi its own space (room to grow into other venue info later).
 - **Test** — a smoke test that `cafeTabHtml()` renders the SSID and password, following
   the existing mocked `*.test.js` pattern.
 
+## Gating
+
+Shipped **dev-only** behind the `cafeWifi: "internal"` feature flag (Café tab appears
+only for the internal/developer opt-in). This is temporary: the network **security
+type** (`CAFE_WIFI.security`, currently `WPA`) is unconfirmed, and a wrong value makes
+the QR's "join" prompt fail. Once confirmed on-site, promote the flag to `on` (and
+regenerate `wifi-qr.svg` if the security type changes).
+
 ## Out of scope (YAGNI)
 
-- No feature-flag gating — simple public info, ships straight to GA.
 - No clipboard polyfill — the PWA runs over HTTPS where `navigator.clipboard` exists.
 - No auto-connect — web pages can't join WiFi programmatically; the QR is the fast path.

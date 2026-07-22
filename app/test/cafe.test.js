@@ -1,7 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CAFE_WIFI } from "../js/config.js";
+import { CAFE_WIFI, FEATURES } from "../js/config.js";
 import { cafeTabHtml } from "../js/views/cafe.js";
+
+test("Café tab is gated to the internal (dev-only) tier", () => {
+  // Off for everyone until the on-site network security type is confirmed.
+  assert.equal(FEATURES.cafeWifi, "internal");
+});
 
 test("Café tab renders the SSID and password", () => {
   const html = cafeTabHtml();
