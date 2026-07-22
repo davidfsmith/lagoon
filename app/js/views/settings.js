@@ -5,9 +5,10 @@ import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
 import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, TRAVEL_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs } from "../store.js";
-import { accessTier } from "../features.js";
+import { accessTier, isOn } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
 import { notifState, subscribe, unsubscribe, syncPrefs, prefsEqual } from "../push.js";
+import { cafeTabHtml, wireCafeTab } from "./cafe.js";
 
 // Two tabs: Settings (appearance, reminder, data, log out) and About (what it is,
 // version, help, support). The active tab persists for the session.
@@ -81,6 +82,8 @@ function buildParts() {
 export function renderSettings(view, state, go) {
   const theme = getTheme();
   const { build, date } = buildParts();
+  const cafeOn = isOn("cafeWifi"); // Café tab is dev-only for now
+  if (activeTab === "cafe" && !cafeOn) activeTab = "settings"; // opted out mid-session
   const seg = (val, label) =>
     `<button class="seg${val === theme ? " active" : ""}" data-theme="${val}">${label}</button>`;
 
@@ -145,8 +148,8 @@ export function renderSettings(view, state, go) {
   view.innerHTML = `
     <button class="link" id="back">‹ Back</button>
     <h2>Settings</h2>
-    ${tabBarHtml([{ id: "settings", label: "Settings" }, { id: "about", label: "About" }], activeTab)}
-    ${activeTab === "settings" ? settingsTab : aboutTab}`;
+    ${tabBarHtml([{ id: "settings", label: "Settings" }, ...(cafeOn ? [{ id: "cafe", label: "Café" }] : []), { id: "about", label: "About" }], activeTab)}
+    ${activeTab === "settings" ? settingsTab : activeTab === "cafe" ? cafeTabHtml() : aboutTab}`;
 
   view.querySelector("#back").addEventListener("click", () => go(state ? "agenda" : "login"));
   for (const t of view.querySelectorAll(".tab")) {
@@ -222,6 +225,7 @@ export function renderSettings(view, state, go) {
     if (getInternalOptIn()) return;            // already unlocked
     if (++devTaps >= 7) { devTaps = 0; setInternalOptIn(true); renderSettings(view, state, go); }
   });
+  if (activeTab === "cafe") wireCafeTab(view);
   injectTabStyles();
   injectSettingsStyles();
   // Keep the Data → Last refreshed value live too (no "Last refreshed" prefix here —
