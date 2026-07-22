@@ -237,7 +237,7 @@ function injectSettingsStyles() {
   if (document.getElementById("settings-css")) return;
   const s = document.createElement("style"); s.id = "settings-css";
   s.textContent = `
-    .link{position:sticky;top:50px;z-index:5;display:inline-flex;align-items:center;
+    .link{position:sticky;top:0;z-index:5;display:inline-flex;align-items:center;
       background:var(--surface);border:1px solid var(--border);color:var(--accent);font-size:14px;
       padding:6px 14px;border-radius:20px;margin-bottom:10px;cursor:pointer;box-shadow:0 2px 8px var(--shadow)}
     .t{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
