@@ -11,6 +11,10 @@ const RESIST = 0.5;     // finger travel -> indicator travel
 
 export function initPullToRefresh({ onRefresh, canPull }) {
   injectStyles();
+  // <main id="view"> is the scroll container (the document itself no longer scrolls — see
+  // the app-shell note in index.html), so "am I at the top?" reads its scrollTop, not window.
+  const scroller = document.getElementById("view");
+  const atTop = () => (scroller ? scroller.scrollTop : window.scrollY) <= 0;
   const el = document.createElement("div");
   el.id = "ptr";
   el.setAttribute("aria-hidden", "true");
@@ -30,14 +34,14 @@ export function initPullToRefresh({ onRefresh, canPull }) {
   reset();
 
   document.addEventListener("touchstart", (e) => {
-    if (refreshing || !canPull() || window.scrollY > 0 || e.touches.length !== 1) return;
+    if (refreshing || !canPull() || !atTop() || e.touches.length !== 1) return;
     startY = e.touches[0].clientY;
     pulling = true;
   }, { passive: true });
 
   document.addEventListener("touchmove", (e) => {
     if (!pulling || refreshing) return;
-    if (window.scrollY > 0) { reset(); return; }
+    if (!atTop()) { reset(); return; }
     const dy = e.touches[0].clientY - startY;
     if (dy <= 0) { reset(); return; }
     e.preventDefault();                 // take over from native rubber-band
