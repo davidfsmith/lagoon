@@ -54,11 +54,13 @@ gives the WiFi its own space (room to grow into other venue info later).
 
 ## Gating
 
-Shipped **dev-only** behind the `cafeWifi: "internal"` feature flag (Café tab appears
-only for the internal/developer opt-in). This is temporary: the network **security
-type** (`CAFE_WIFI.security`, currently `WPA`) is unconfirmed, and a wrong value makes
-the QR's "join" prompt fail. Once confirmed on-site, promote the flag to `on` (and
-regenerate `wifi-qr.svg` if the security type changes).
+Shipped dev-only first (`cafeWifi: "internal"`), then **promoted to GA (`"on"`) in v83**
+to gather real feedback. Copy/paste was verified on-device; the **QR auto-join was not
+testable on-site**, so it's shipping feedback-driven — a wrong `CAFE_WIFI.security`
+(assumed `WPA`) would only make the QR's join prompt fail, and the copy/paste + manual
+steps remain a full fallback. The flag stays in place as a quick revert lever; retire it
+(and the `isOn` guard in `settings.js`) once it's proven stable. If the security type
+turns out wrong, fix `CAFE_WIFI.security` and regenerate `wifi-qr.svg`.
 
 ## Out of scope (YAGNI)
 
