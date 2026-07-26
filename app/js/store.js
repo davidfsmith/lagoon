@@ -73,6 +73,17 @@ export function setInternalOptIn(on) {
   try { localStorage.setItem(INTERNAL_OPTIN_KEY, on ? "1" : "0"); } catch {}
 }
 
+// Active discipline: "wake" (default) | "sup". Drives which course set the availability
+// pipeline loads (see features.js activeCourses). Only reachable via the dev-gated
+// discipline switch; unknown/absent → "wake" so it's safe when the flag is off.
+const DISCIPLINE_KEY = "lagoon.discipline";
+export function getDiscipline() {
+  try { return localStorage.getItem(DISCIPLINE_KEY) === "sup" ? "sup" : "wake"; } catch { return "wake"; }
+}
+export function setDiscipline(d) {
+  try { localStorage.setItem(DISCIPLINE_KEY, d === "sup" ? "sup" : "wake"); } catch {}
+}
+
 // Push-notification prefs (days/types/travel-time filter): cached locally for the
 // Settings UI and sent to the server by push.js, which applies them server-side.
 const NOTIFY_PREFS_KEY = "lagoon.notifyPrefs";

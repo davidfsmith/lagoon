@@ -2,31 +2,38 @@
 // always show the same selection. One toggle chip per session type; core types
 // (30-min ride sessions) are on by default, `extra` types are off until tapped.
 // Selection persists in localStorage under one key, so it's consistent everywhere.
-import { COURSES, FILTER_GROUPS } from "./config.js";
+import { activeCourses } from "./features.js";
+import { getDiscipline } from "./store.js";
 
-const TYPES_KEY = "lagoon.types";
-const ALL_LABELS = COURSES.map(c => c.label);
-const DEFAULT_LABELS = COURSES.filter(c => !c.extra).map(c => c.label);
+// Selection persists PER DISCIPLINE, so wake and SUP chip selections don't clobber each
+// other (switching discipline swaps the whole course set). Labels/groups come from the
+// ACTIVE discipline's courses, computed at call-time (not module load) so the discipline
+// switch applies live.
+// Wake keeps the legacy key (so existing users' selections survive the SUP change);
+// SUP gets its own so the two disciplines don't clobber each other.
+const typesKey = () => getDiscipline() === "sup" ? "lagoon.types.sup" : "lagoon.types";
+const allLabels = () => activeCourses().map(c => c.label);
+const defaultLabels = () => activeCourses().filter(c => !c.extra).map(c => c.label);
 
 // Labels present in a list of slots, returned in config (chip) order.
 export function presentTypes(slots) {
   const set = new Set((slots || []).map(s => s.label));
-  return ALL_LABELS.filter(l => set.has(l));
+  return allLabels().filter(l => set.has(l));
 }
 
 // The set of currently-active type labels, limited to those present in the data.
 export function getActiveTypes(present) {
   let stored = null;
-  try { stored = JSON.parse(localStorage.getItem(TYPES_KEY) || "null"); } catch { stored = null; }
-  const base = Array.isArray(stored) ? stored.filter(l => ALL_LABELS.includes(l)) : DEFAULT_LABELS;
+  try { stored = JSON.parse(localStorage.getItem(typesKey()) || "null"); } catch { stored = null; }
+  const base = Array.isArray(stored) ? stored.filter(l => allLabels().includes(l)) : defaultLabels();
   const active = new Set(base.filter(l => present.includes(l)));
   if (!active.size && !Array.isArray(stored)) {            // first run → core defaults
-    for (const l of DEFAULT_LABELS) if (present.includes(l)) active.add(l);
+    for (const l of defaultLabels()) if (present.includes(l)) active.add(l);
   }
   return active;
 }
 
-const setActiveTypes = (set) => localStorage.setItem(TYPES_KEY, JSON.stringify([...set]));
+const setActiveTypes = (set) => localStorage.setItem(typesKey(), JSON.stringify([...set]));
 
 // Two-row chip bar HTML: "ride" sessions on row 1, "other" on row 2. Empty when
 // there's only one (or no) type present — nothing to filter.
@@ -38,8 +45,10 @@ export function filterBarHtml(present, active) {
     const avail = present.includes(l);
     return `<button class="filterbtn${active.has(l) ? " active" : ""}" data-type="${l}"${avail ? "" : " disabled"}>${l}</button>`;
   };
-  const rows = FILTER_GROUPS.map(g => {
-    const labels = COURSES.filter(c => c.group === g).map(c => c.label);
+  const courses = activeCourses();
+  const groups = [...new Set(courses.map(c => c.group))]; // ride/other for wake, paddle for SUP
+  const rows = groups.map(g => {
+    const labels = courses.filter(c => c.group === g).map(c => c.label);
     return labels.length ? `<div class="filterbar">${labels.map(chip).join("")}</div>` : "";
   }).join("");
   return `<div class="filters">${rows}</div>`;
