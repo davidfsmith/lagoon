@@ -48,12 +48,11 @@ just a place to park things so they aren't forgotten.
 
 ## Café / venue
 
-- **Café WiFi tab** — *done (GA v83, 2026-07-25).* Settings → **Café** tab with the guest
-  network name + password (tap-to-copy), a scannable WiFi QR, and manual connect steps.
-  Shipped dev-only first (`cafeWifi:"internal"`, v81/v82), then promoted to GA
-  (`cafeWifi:"on"`). Copy/paste verified on-device; the **QR auto-join is untested on-site**
-  (feedback-driven — a wrong `CAFE_WIFI.security`, assumed `WPA`, would only break the QR's
-  join prompt, with copy/paste as a full fallback). The `cafeWifi` flag is kept as a quick
-  revert lever — **retire it (+ the `isOn` guard in `settings.js`) once stable**; if QR
-  feedback is bad, fix `CAFE_WIFI.security` and regenerate `wifi-qr.svg`. Spec:
-  `docs/superpowers/specs/2026-07-20-cafe-wifi-design.md`.
+- **Café WiFi tab** — *done (GA v83, flag retired v84; 2026-07-25/26).* Settings → **Café**
+  tab with the guest network name + password (tap-to-copy), a scannable WiFi QR, and manual
+  connect steps. Shipped dev-only first (`cafeWifi:"internal"`, v81/v82), promoted to GA
+  (`cafeWifi:"on"`, v83), then the flag was **retired (v84)** so the tab is unconditional.
+  Copy/paste verified on-device; the **QR auto-join is untested on-site** (feedback-driven —
+  a wrong `CAFE_WIFI.security`, assumed `WPA`, would only break the QR's join prompt, with
+  copy/paste as a full fallback). If QR feedback is bad, fix `CAFE_WIFI.security` and
+  regenerate `wifi-qr.svg`. Spec: `docs/superpowers/specs/2026-07-20-cafe-wifi-design.md`.
