@@ -11,9 +11,11 @@ import { apply as applyTheme } from "./theme.js";
 import { initPullToRefresh } from "./pullToRefresh.js";
 import { maybeShowIntro } from "./intro.js";
 import { parseDayHash } from "./deeplink.js";
+import { isOn } from "./features.js";
 
 const view = document.getElementById("view");
 const nav = document.getElementById("nav");
+const discToggle = document.getElementById("disc-toggle");
 let state = null; // { me, meBookings, memberships, packages, agenda, stale }
 let currentRoute = "login";
 let lmRefreshing = false; // a background Last-minute refresh is in flight
@@ -34,11 +36,23 @@ function setActiveNav(route) {
 
 // After each load, reveal the Last-minute tab only for gated users and set its icon.
 function afterLoad() {
+  updateDisciplineToggle();
   const btn = nav.querySelector('button[data-route="lastminute"]');
   if (!btn) return;
   // Last-minute is a wake-only spot-watching feature (like notifications) — hide it in SUP mode.
   btn.hidden = getDiscipline() === "sup";
   if (!btn.hidden) setLastMinuteIcon();
+}
+
+// Header discipline switch: shown only for dev users (isOn) once logged in; segments
+// reflect the current discipline. Wired once at boot (buttons persist across renders).
+function updateDisciplineToggle() {
+  if (!discToggle) return;
+  const show = isOn("supBooking") && !!state;
+  discToggle.hidden = !show;
+  if (!show) return;
+  const d = getDiscipline();
+  for (const b of discToggle.querySelectorAll(".disc-seg")) b.classList.toggle("active", b.dataset.disc === d);
 }
 
 // 🔥 when something's free in the user's SELECTED Last-minute window, 🌊 when not.
@@ -96,7 +110,7 @@ async function refreshAfterBooking() {
 export function go(route, arg) {
   if (route === "lastminute" && getDiscipline() === "sup") route = "agenda"; // Last-minute is wake-only
   currentRoute = route;
-  if (route === "login") { nav.hidden = true; renderLogin(view, onLoggedIn); return; }
+  if (route === "login") { nav.hidden = true; if (discToggle) discToggle.hidden = true; renderLogin(view, onLoggedIn); return; }
   if (route === "settings") { renderSettings(view, state, go); return; } // works pre/post login
   if (!state) return;
   if (route === "lastminute") {
@@ -114,6 +128,8 @@ nav.addEventListener("click", (e) => {
   if (r === "lastminute" && currentRoute === "lastminute") refreshLastMinute(); // fresh data on entry
 });
 document.getElementById("btn-settings").addEventListener("click", () => go("settings"));
+if (discToggle) for (const b of discToggle.querySelectorAll(".disc-seg"))
+  b.addEventListener("click", () => switchDiscipline(b.dataset.disc));
 
 // Tapping a "Book ↗" link opens the Lagoon booking site in a new tab. Flag it, and when
 // the app returns to the foreground refresh once so a new booking shows on Bookings
@@ -193,11 +209,18 @@ async function reload(target, showLoading) {
   }
 }
 
-// Switch riding discipline (wake ⇄ SUP) and reload that discipline's availability with the
-// full-page spinner. Exported for the discipline switch on the Availability view (dev-gated).
+// Switch riding discipline (wake ⇄ SUP) and reload the CURRENT screen with the new
+// discipline's data — so it works from any tab (header toggle) or from Settings (Default
+// activity). Exported + dev-gated. Landing on Availability if on the now-hidden Last-minute;
+// Settings reloads quietly so its dropdown stays put.
 export async function switchDiscipline(disc) {
+  if (disc === getDiscipline()) return;
   setDiscipline(disc);
-  await reload("agenda", true);
+  updateDisciplineToggle();
+  let t = currentRoute === "day" ? "agenda" : currentRoute;
+  if (t === "lastminute" && disc === "sup") t = "agenda";
+  if (!["agenda", "account", "lastminute", "settings"].includes(t)) t = "agenda";
+  await reload(t, t !== "settings");
 }
 
 async function loadAndRender() {

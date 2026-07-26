@@ -9,7 +9,7 @@ global.localStorage = {
   removeItem: (k) => mem.delete(k),
 };
 
-const { activeCourses } = await import("../js/features.js");
+const { activeCourses, isSupCourse, inActiveDiscipline } = await import("../js/features.js");
 const { setInternalOptIn, setDiscipline } = await import("../js/store.js");
 const { COURSES, SUP_COURSES, FEATURES } = await import("../js/config.js");
 
@@ -39,4 +39,27 @@ test("activeCourses: flag on → follows the discipline", () => {
   assert.equal(activeCourses(), COURSES);
   setDiscipline("sup");
   assert.equal(activeCourses(), SUP_COURSES);
+});
+
+test("isSupCourse: SUP ids yes, wake ids no", () => {
+  assert.equal(isSupCourse(73), true);   // SUP Yoga
+  assert.equal(isSupCourse(51), false);  // Air 30 (wake)
+  assert.equal(isSupCourse(undefined), false);
+});
+
+test("inActiveDiscipline: flag off → everything shows (no filtering)", () => {
+  mem.clear(); // no opt-in
+  assert.equal(inActiveDiscipline(51), true);  // wake
+  assert.equal(inActiveDiscipline(73), true);  // SUP booked on the website still shows
+});
+
+test("inActiveDiscipline: flag on → filters to the active discipline", () => {
+  mem.clear();
+  setInternalOptIn(true);
+  setDiscipline("wake");
+  assert.equal(inActiveDiscipline(51), true);   // wake shows wake
+  assert.equal(inActiveDiscipline(73), false);  // wake hides SUP
+  setDiscipline("sup");
+  assert.equal(inActiveDiscipline(73), true);   // SUP shows SUP
+  assert.equal(inActiveDiscipline(51), false);  // SUP hides wake
 });

@@ -4,7 +4,8 @@ import { weatherAt } from "../weather.js";
 import { getToken, saveCache } from "../store.js";
 import { cancelParticipant } from "../api.js";
 import { bookingKeys, activeParticipants, countsTowardLimit, slotKey } from "../model.js";
-import { isOn } from "../features.js";
+import { isOn, inActiveDiscipline } from "../features.js";
+import { getDiscipline } from "../store.js";
 import { suppressSlot } from "../push.js";
 import { BOOKING_LIMIT } from "../config.js";
 import { downloadIcsForBooking } from "../calendar.js";
@@ -21,6 +22,11 @@ const riderName = (p, me) =>
 
 export function renderAccount(view, state, go) {
   const me = state.me || {};
+  // In SUP mode, wake-only account content is hidden: booking-limit caps and the Extras
+  // (membership / ride passes / storage — all cable products). Bookings + History remain,
+  // filtered to the active discipline.
+  const supMode = isOn("supBooking") && getDiscipline() === "sup";
+  if (supMode && activeTab === "extras") activeTab = "bookings";
 
   const m = (state.memberships || [])[0];
   const memHtml = `<div class="t">Membership</div>` + (m
@@ -42,7 +48,8 @@ export function renderAccount(view, state, go) {
 
   const upcoming = (state.meBookings || [])
     .filter(b => (b.status || "").toLowerCase() === "confirmed" && b.courseRun && new Date(b.courseRun.startDate) >= new Date()
-      && (!Array.isArray(b.participants) || activeParticipants(b).length > 0)) // hide bookings cancelled down to no riders
+      && (!Array.isArray(b.participants) || activeParticipants(b).length > 0) // hide bookings cancelled down to no riders
+      && inActiveDiscipline((b.courseRun.course || {}).id)) // show only the active discipline's bookings
     .sort((a, b) => a.courseRun.startDate < b.courseRun.startDate ? -1 : 1);
   // Split the cable sessions from optional extras (board store / hire), which get
   // their own section like membership/passes rather than a session card.
@@ -73,12 +80,12 @@ export function renderAccount(view, state, go) {
   addRider(me.id, "You");
   for (const mem of (m && m.members) || []) addRider(mem.id, mem.firstName || "Rider");
   for (const b of upcoming) for (const p of activeParticipants(b)) addRider((p.contact || {}).id, (p.contact || {}).firstName || "Rider");
-  const capsHtml = roster.length
-    ? `<div class="caps">` + roster.map(r => {
+  // Caps are a wake booking-limit concept — hidden in SUP mode.
+  const capsHtml = (supMode || !roster.length) ? ""
+    : `<div class="caps">` + roster.map(r => {
         const n = counts[r.id] || 0;
         return `<div class="cap${n >= BOOKING_LIMIT ? " full" : ""}"><span>${r.name}</span><span class="capn">${n} / ${BOOKING_LIMIT}</span></div>`;
-      }).join("") + `</div>`
-    : "";
+      }).join("") + `</div>`;
 
   const hourly = (state.weather && state.weather.hourly) || [];
   const cardsHtml = sessions.length
@@ -104,7 +111,9 @@ export function renderAccount(view, state, go) {
   const bookingsTab = `${capsHtml}${cardsHtml}`;
   const extrasTab = `${memHtml}${passHtml}${storageHtml}`;
 
-  const tabs = [{ id: "bookings", label: "Bookings" }, { id: "extras", label: "Extras" }, { id: "history", label: "History" }];
+  const tabs = supMode // Extras (membership/passes/storage) are wake-only
+    ? [{ id: "bookings", label: "Bookings" }, { id: "history", label: "History" }]
+    : [{ id: "bookings", label: "Bookings" }, { id: "extras", label: "Extras" }, { id: "history", label: "History" }];
   const tabContent = activeTab === "extras" ? extrasTab
     : activeTab === "history" ? renderHistory(state)
     : bookingsTab;

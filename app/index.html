@@ -66,6 +66,10 @@
     header { flex:none; display:flex; justify-content:space-between; align-items:center; padding:14px 16px; font-weight:600; font-size:17px; border-bottom:1px solid var(--border); background:var(--bg); }
     header .accent { color:var(--accent); }
     .icon-btn { background:none; border:none; color:var(--muted); font-size:19px; line-height:1; cursor:pointer; padding:4px 6px; }
+    .disc-toggle { display:flex; gap:2px; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:2px; }
+    .disc-toggle[hidden] { display:none; }
+    .disc-seg { background:none; border:none; border-radius:7px; padding:3px 9px; font-size:16px; line-height:1; cursor:pointer; opacity:.5; }
+    .disc-seg.active { background:var(--accent); opacity:1; }
     /* The only scroll container. min-height:0 lets the flex item shrink so it scrolls
        internally instead of growing the body; overscroll-behavior stops rubber-band chaining. */
     main { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain;
@@ -95,6 +99,12 @@
 <body>
   <header>
     <span>🏄 <span class="accent">Hove Lagoon</span></span>
+    <!-- Discipline switch (wake ⇄ SUP). Hidden by default; app.js reveals + wires it only
+         for dev users (isOn("supBooking")) once logged in. -->
+    <div id="disc-toggle" class="disc-toggle" role="group" aria-label="Activity" hidden>
+      <button class="disc-seg" data-disc="wake" aria-label="Wakeboard" title="Wakeboard">🏄</button>
+      <button class="disc-seg" data-disc="sup" aria-label="SUP" title="Paddle boarding">🏄‍♂️</button>
+    </div>
     <button id="btn-settings" class="icon-btn" aria-label="Settings" title="Settings">⚙</button>
   </header>
   <main id="view"></main>

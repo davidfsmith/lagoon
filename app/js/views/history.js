@@ -3,12 +3,17 @@
 // state (meBookings) — see historyModel.js for the pure derivation.
 import { pastSessions } from "../historyModel.js";
 import { fmtDate } from "./format.js";
+import { isOn, inActiveDiscipline } from "../features.js";
+import { getDiscipline } from "../store.js";
 
 const DAY_FULL = { Sun: "Sundays", Mon: "Mondays", Tue: "Tuesdays", Wed: "Wednesdays", Thu: "Thursdays", Fri: "Fridays", Sat: "Saturdays" };
 
 export function renderHistory(state) {
   injectHistoryStyles();
-  const { list, stats } = pastSessions(state.meBookings, state.me, new Date());
+  const supMode = isOn("supBooking") && getDiscipline() === "sup";
+  // Filter past sessions to the active discipline (no-op when the flag is off).
+  const bookings = (state.meBookings || []).filter(b => inActiveDiscipline(((b.courseRun || {}).course || {}).id));
+  const { list, stats } = pastSessions(bookings, state.me, new Date());
 
   if (!list.length) {
     return `<div class="histrow muted">No past sessions yet — they'll show here after you've ridden.</div>`;
@@ -19,7 +24,7 @@ export function renderHistory(state) {
     <div class="hist-strip">
       <div class="hist-hero"><span class="hist-count"><b>${stats.total}</b> ride${stats.total === 1 ? "" : "s"}</span>
         <span class="hist-year">${stats.thisYear} in ${year}</span></div>
-      ${stats.streak ? `<div class="hist-line hist-streak">${stats.streakThisWeek
+      ${(!supMode && stats.streak) ? `<div class="hist-line hist-streak">${stats.streakThisWeek
         ? `🔥 ${stats.streak} week streak`
         : `Ride this week to extend your ${stats.streak} week streak`}</div>` : ""}
       ${stats.perRider.length ? `<div class="hist-line">${stats.perRider.map(r => `${r.name} ${r.count}`).join(" · ")}</div>` : ""}
