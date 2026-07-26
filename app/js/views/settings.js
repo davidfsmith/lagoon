@@ -105,6 +105,7 @@ export function renderSettings(view, state, go) {
       </select></div>
 
     <div class="t" style="margin-top:18px">Notifications</div>
+    ${isOn("supBooking") ? `<div class="set-cap" style="margin:0 2px 6px">🏄 Wakeboarding sessions only.</div>` : ""}
     ${notifBodyHtml()}
 
     ${getInternalOptIn() ? `<div class="t" style="margin-top:18px">Developer</div>
