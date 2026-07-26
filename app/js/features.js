@@ -4,8 +4,8 @@
 //   internal = developer opt-in (hidden, version-tap) — features mid-build
 //   beta     = public opt-in (Settings toggle) — features that work but aren't GA
 // internal sees everything beta does.
-import { FEATURES } from "./config.js";
-import { getBetaOptIn, getInternalOptIn } from "./store.js";
+import { FEATURES, COURSES, SUP_COURSES } from "./config.js";
+import { getBetaOptIn, getInternalOptIn, getDiscipline } from "./store.js";
 
 // Whether an audience tier is allowed for this user. Exported for testing.
 export function tierAllows(tier) {
@@ -20,6 +20,13 @@ export function tierAllows(tier) {
 // Is a given feature flag enabled for this user?
 export function isOn(flag) {
   return tierAllows(FEATURES[flag]);
+}
+
+// The course set the availability pipeline should load, per the active discipline.
+// SUP only when the dev flag is on AND the user has switched to it; otherwise wake.
+// So with the flag off this is always COURSES — non-dev users run unchanged.
+export function activeCourses() {
+  return isOn("supBooking") && getDiscipline() === "sup" ? SUP_COURSES : COURSES;
 }
 
 // Does this user have any beta access at all?

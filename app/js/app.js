@@ -1,4 +1,4 @@
-import { getToken, clearToken, saveCache, loadCache, getDefaultLanding, getLastMinuteWindow } from "./store.js";
+import { getToken, clearToken, saveCache, loadCache, getDefaultLanding, getLastMinuteWindow, setDiscipline } from "./store.js";
 import { loadEverything } from "./data.js";
 import { renderLogin } from "./views/login.js";
 import { renderAgenda } from "./views/agenda.js";
@@ -189,6 +189,13 @@ async function reload(target, showLoading) {
     if (showLoading) view.innerHTML = `<p class="err">Couldn't load: ${e.message}</p>`;
     // on a pull-to-refresh failure with no cache + existing state, keep what's on screen
   }
+}
+
+// Switch riding discipline (wake ⇄ SUP) and reload that discipline's availability with the
+// full-page spinner. Exported for the discipline switch on the Availability view (dev-gated).
+export async function switchDiscipline(disc) {
+  setDiscipline(disc);
+  await reload("agenda", true);
 }
 
 async function loadAndRender() {
