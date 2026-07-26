@@ -40,11 +40,16 @@ export const SUP_COURSES = [
 // it's stable. NOTE: client-side soft gate — code still ships to everyone.
 export const FEATURES = {
   cancelSuppress: "internal", // don't self-notify about a slot you just cancelled (dev-only while built out)
+  shareApp: "internal", // "Share this app" section on the About tab (dev-only while built out)
   supBooking: "internal", // paddle-boarding discipline switch + SUP availability (dev-only while built out)
 };
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
 export const BOOKING_SITE = "https://booking.lagoon.co.uk";
+// Canonical public URL of the app — hardcoded (not derived from location) so a shared link
+// or QR generated on a locally-served dev build still points at production. share-qr.svg
+// encodes this exact string; regenerate it if this changes.
+export const APP_URL = "https://dave-smith.co.uk/lagoon";
 // Guest WiFi at the Lagoon Café (public, shared on WhatsApp). Single source of truth —
 // the Café tab shows these and wifi-qr.svg encodes the same values as WIFI:T:WPA;S:…;P:…;;.
 // If you change ssid/password/security here, regenerate wifi-qr.svg to match.
@@ -56,5 +61,5 @@ export const CAFE_WIFI = { ssid: "HoveLagoonGuest", password: "topsecretgoonies"
 // *.lambda-url.on.aws host) so content blockers don't kill the fetch and CORS is moot.
 export const VAPID_PUBLIC_KEY = "BIpePuebyYxvD7WotLtp1RWVFAFv8FjwMFyhEsngulnRaKnN0Fbi0H90rXpxs7CxUrOeFKLgFEZobzTK6d9L8js";
 export const PUSH_REGISTER_URL = "/lagoon/push";
-export const APP_RELEASE = "v85"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v86"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"
