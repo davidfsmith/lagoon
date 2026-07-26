@@ -1,4 +1,4 @@
-import { getToken, clearToken, saveCache, loadCache, getDefaultLanding, getLastMinuteWindow, setDiscipline } from "./store.js";
+import { getToken, clearToken, saveCache, loadCache, getDefaultLanding, getLastMinuteWindow, getDiscipline, setDiscipline } from "./store.js";
 import { loadEverything } from "./data.js";
 import { renderLogin } from "./views/login.js";
 import { renderAgenda } from "./views/agenda.js";
@@ -36,8 +36,9 @@ function setActiveNav(route) {
 function afterLoad() {
   const btn = nav.querySelector('button[data-route="lastminute"]');
   if (!btn) return;
-  btn.hidden = false;
-  setLastMinuteIcon();
+  // Last-minute is a wake-only spot-watching feature (like notifications) — hide it in SUP mode.
+  btn.hidden = getDiscipline() === "sup";
+  if (!btn.hidden) setLastMinuteIcon();
 }
 
 // 🔥 when something's free in the user's SELECTED Last-minute window, 🌊 when not.
@@ -93,6 +94,7 @@ async function refreshAfterBooking() {
 }
 
 export function go(route, arg) {
+  if (route === "lastminute" && getDiscipline() === "sup") route = "agenda"; // Last-minute is wake-only
   currentRoute = route;
   if (route === "login") { nav.hidden = true; renderLogin(view, onLoggedIn); return; }
   if (route === "settings") { renderSettings(view, state, go); return; } // works pre/post login
