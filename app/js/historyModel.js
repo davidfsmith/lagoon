@@ -65,11 +65,13 @@ export function pastSessions(meBookings, me, now) {
   const list = held.map(b => {
     const startDate = b.courseRun.startDate;
     const date = londonParts(startDate).date; // London calendar date
-    const riders = (b.participants || [])
-      .map(p => p.contact || {})
-      .filter(c => c.id !== meId)
-      .map(c => c.firstName)
-      .filter(Boolean);
+    // Active riders on this booking (cancelled places excluded), with "You" for the signed-in
+    // rider and listed first — so a shared session reads "You + Hamish", not just "Hamish".
+    const riders = activeParticipants(b)
+      .map(p => (p.contact || {}))
+      .map(c => (c.id === meId ? "You" : c.firstName))
+      .filter(Boolean)
+      .sort((a, b) => (a === "You" ? -1 : b === "You" ? 1 : 0));
     return { year: Number(date.slice(0, 4)), date, startDate, typeLabel: prettyCourse((b.courseRun.course || {}).name), riders };
   }).sort((a, b) => (a.startDate < b.startDate ? 1 : -1)); // newest first
 
@@ -81,7 +83,7 @@ export function pastSessions(meBookings, me, now) {
   const riderCounts = new Map();
   for (const b of held) {
     const seen = new Set();
-    for (const p of (b.participants || [])) {
+    for (const p of activeParticipants(b)) { // count actual rides, not cancelled places
       const c = p.contact || {};
       const key = c.id != null ? `id:${c.id}` : `n:${c.firstName || "?"}`;
       if (seen.has(key)) continue;
