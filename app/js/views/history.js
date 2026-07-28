@@ -39,11 +39,15 @@ export function renderHistory(state) {
     if (!g || g.year !== e.year) { g = { year: e.year, rows: [] }; years.push(g); }
     g.rows.push(e);
   }
-  const rowHtml = (e) => `<div class="histrow">
+  const rowHtml = (e) => {
+    // Bare for your solo rides; show the chip when there's a co-rider (or it's someone else's).
+    const soloYou = e.riders.length === 1 && e.riders[0] === "You";
+    return `<div class="histrow">
       <span class="histwhen">${fmtDate(e.date)}</span>
       <span class="histtype">${e.typeLabel}</span>
-      ${e.riders.length ? `<span class="histtag">${e.riders.join(" + ")}</span>` : ""}
+      ${(e.riders.length && !soloYou) ? `<span class="histtag">${e.riders.join(" + ")}</span>` : ""}
     </div>`;
+  };
   const groups = years.map((g) => `<details class="hist-yr-group">
     <summary class="hist-yr-banner">
       <span class="hist-chev">›</span>

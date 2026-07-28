@@ -39,15 +39,25 @@ test("total and thisYear (London year)", () => {
   assert.equal(stats.thisYear, 2);
 });
 
-test("per-rider counts; a two-rider booking counts for both", () => {
+test("per-rider counts over YOUR rides; a two-rider booking counts for both", () => {
   const { stats } = pastSessions([
     bk("2026-07-05T15:00:00Z", { riders: [{ id: 9720, firstName: "David" }] }),
-    bk("2026-07-06T15:00:00Z", { riders: [{ id: 48114, firstName: "Hamish" }] }),
+    bk("2026-07-06T15:00:00Z", { riders: [{ id: 48114, firstName: "Hamish" }] }),  // Hamish solo — not your ride
     bk("2026-07-07T15:00:00Z", { riders: [{ id: 9720, firstName: "David" }, { id: 48114, firstName: "Hamish" }] }),
   ], me, NOW);
   const by = Object.fromEntries(stats.perRider.map(r => [r.name, r.count]));
+  assert.equal(stats.total, 2);   // your two rides; Hamish's solo is excluded
   assert.equal(by["You"], 2);
-  assert.equal(by["Hamish"], 2);
+  assert.equal(by["Hamish"], 1);  // only the session you rode together
+});
+
+test("sessions you didn't ride (a co-member's solo booking) are excluded", () => {
+  const { stats, list } = pastSessions([
+    bk("2026-07-05T15:00:00Z", { riders: [{ id: 9720, firstName: "David" }] }),   // yours
+    bk("2026-07-06T15:00:00Z", { riders: [{ id: 48114, firstName: "Hamish" }] }), // Hamish only
+  ], me, NOW);
+  assert.equal(stats.total, 1);
+  assert.deepEqual(list.map(e => e.date), ["2026-07-05"]);
 });
 
 test("favType uses prettyCourse; favDay is the modal London weekday", () => {
@@ -75,14 +85,30 @@ test("list is newest-first", () => {
   assert.deepEqual(list.map(e => e.date), ["2026-07-05", "2026-06-20", "2026-06-01"]);
 });
 
-test("riders excludes you; tags others", () => {
+test("riders: active riders with You first (so shared reads 'You + Hamish')", () => {
   const { list } = pastSessions([
     bk("2026-07-05T15:00:00Z", { riders: [{ id: 9720, firstName: "David" }] }),
-    bk("2026-07-06T15:00:00Z", { riders: [{ id: 48114, firstName: "Hamish" }] }),
+    bk("2026-07-07T15:00:00Z", { riders: [{ id: 48114, firstName: "Hamish" }, { id: 9720, firstName: "David" }] }),
   ], me, NOW);
   const by = Object.fromEntries(list.map(e => [e.date, e.riders]));
-  assert.deepEqual(by["2026-07-05"], []);
-  assert.deepEqual(by["2026-07-06"], ["Hamish"]);
+  assert.deepEqual(by["2026-07-05"], ["You"]);           // your solo
+  assert.deepEqual(by["2026-07-07"], ["You", "Hamish"]); // both rode — You first even if listed 2nd
+});
+
+test("cancelled co-rider is dropped from riders and per-rider counts", () => {
+  const b = {
+    status: "confirmed",
+    courseRun: { startDate: "2026-07-05T15:00:00Z", course: { name: "2026 Wakeboard -Tech - Ride Session 30" } },
+    participants: [
+      { status: "confirmed", contact: { id: 9720, firstName: "David" } },
+      { status: "cancelled", contact: { id: 48114, firstName: "Hamish" } }, // pulled out — didn't ride
+    ],
+  };
+  const { list, stats } = pastSessions([b], me, NOW);
+  assert.deepEqual(list[0].riders, ["You"]);
+  const by = Object.fromEntries(stats.perRider.map(r => [r.name, r.count]));
+  assert.equal(by["You"], 1);
+  assert.equal(by["Hamish"], undefined);
 });
 
 test("streak: consecutive weeks, live when latest is last week (weekend rider mid-week)", () => {
