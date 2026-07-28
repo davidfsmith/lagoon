@@ -60,7 +60,11 @@ function computeStreak(dates, now) {
 
 export function pastSessions(meBookings, me, now) {
   const meId = me && me.id;
-  const held = (meBookings || []).filter(b => isPastHeld(b, now));
+  // Your rides only: past, held bookings where YOU are an active participant. Sessions ridden
+  // solely by others on the account (a co-member's solo booking) aren't yours, so they don't
+  // count toward your totals or appear in your history.
+  const youRode = (b) => activeParticipants(b).some(p => (p.contact || {}).id === meId);
+  const held = (meBookings || []).filter(b => isPastHeld(b, now) && youRode(b));
 
   const list = held.map(b => {
     const startDate = b.courseRun.startDate;
