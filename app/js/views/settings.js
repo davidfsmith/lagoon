@@ -1,10 +1,10 @@
 import { getTheme, setTheme } from "../theme.js";
 import { APP_VERSION, APP_RELEASE, COURSES } from "../config.js";
-import { logout } from "../app.js";
+import { logout, switchDiscipline } from "../app.js";
 import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
-import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, TRAVEL_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs } from "../store.js";
+import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, TRAVEL_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs, getDiscipline } from "../store.js";
 import { accessTier, isOn } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
 import { notifState, subscribe, unsubscribe, syncPrefs, prefsEqual } from "../push.js";
@@ -94,6 +94,13 @@ export function renderSettings(view, state, go) {
     <div class="t">Appearance</div>
     <div class="segbar">${seg("system", "System")}${seg("light", "Light")}${seg("dark", "Dark")}</div>
 
+    ${isOn("supBooking") ? `<div class="t" style="margin-top:18px">Default activity</div>
+    <div class="set-row"><span>Wakeboard or SUP</span>
+      <select id="discipline" class="set-select">
+        <option value="wake"${getDiscipline() === "wake" ? " selected" : ""}>🏄 Wakeboard</option>
+        <option value="sup"${getDiscipline() === "sup" ? " selected" : ""}>🏄‍♂️ SUP</option>
+      </select></div>` : ""}
+
     <div class="t" style="margin-top:18px">Default page</div>
     <div class="set-row"><span>Open the app on</span>
       <select id="landing" class="set-select">${landingOptions}</select></div>
@@ -164,6 +171,8 @@ export function renderSettings(view, state, go) {
   if (rem) rem.addEventListener("change", () => setReminderMinutes(parseInt(rem.value, 10)));
   const ld = view.querySelector("#landing");
   if (ld) ld.addEventListener("change", () => setDefaultLanding(ld.value));
+  const dz = view.querySelector("#discipline");
+  if (dz) dz.addEventListener("change", () => switchDiscipline(dz.value)); // sets + reloads in place
   const lo = view.querySelector("#logout");
   if (lo) lo.addEventListener("click", () => logout());
   const ri = view.querySelector("#replay-intro");

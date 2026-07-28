@@ -29,6 +29,19 @@ export function activeCourses() {
   return isOn("supBooking") && getDiscipline() === "sup" ? SUP_COURSES : COURSES;
 }
 
+// Is this course id one of the paddle-boarding sessions?
+export function isSupCourse(id) {
+  return SUP_COURSES.some(c => c.id === id);
+}
+
+// Does a booking/session of this course id belong to the currently-shown discipline?
+// Used to filter Bookings + History app-wide. IMPORTANT: with the flag off this is always
+// true — non-dev users see every booking unfiltered (even a SUP one booked on the website).
+export function inActiveDiscipline(courseId) {
+  if (!isOn("supBooking")) return true;
+  return getDiscipline() === "sup" ? isSupCourse(courseId) : !isSupCourse(courseId);
+}
+
 // Does this user have any beta access at all?
 export function isBetaUser() {
   return getBetaOptIn() || getInternalOptIn();

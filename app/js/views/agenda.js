@@ -2,18 +2,6 @@ import { fmtDate, fmtWhen, agoText, dayWx } from "./format.js";
 import { londonParts } from "../tz.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
-import { isOn } from "../features.js";
-import { getDiscipline } from "../store.js";
-import { switchDiscipline } from "../app.js";
-
-// Dev-only discipline switch (wake ⇄ SUP). Absent unless isOn("supBooking"), so the
-// wake-only view is unchanged for everyone else.
-function disciplineBarHtml() {
-  if (!isOn("supBooking")) return "";
-  const d = getDiscipline();
-  const seg = (val, label) => `<button class="disc${val === d ? " active" : ""}" data-disc="${val}">${label}</button>`;
-  return `<div class="discbar">${seg("wake", "🏄 Wakeboard")}${seg("sup", "🏄‍♂️ SUP")}</div>`;
-}
 
 export function renderAgenda(view, state, go) {
   const days = state.agenda || [];
@@ -45,12 +33,9 @@ export function renderAgenda(view, state, go) {
       }).join("")
     : `<p class="muted">${active.size ? "No free sessions in the selected types in the next 21 days." : "Tap a session type above to show sessions."}</p>`;
 
-  view.innerHTML = `${disciplineBarHtml()}${stale}<h2>Free sessions</h2>
+  view.innerHTML = `${stale}<h2>Free sessions</h2>
     <p class="refreshed" id="ag-refreshed">Last refreshed ${agoText(state.refreshedAt)}</p>${filterBar}${body}`;
 
-  for (const b of view.querySelectorAll(".disc")) b.addEventListener("click", () => {
-    if (b.dataset.disc !== getDiscipline()) switchDiscipline(b.dataset.disc);
-  });
   wireFilterChips(view, active, () => renderAgenda(view, state, go));
   for (const el of view.querySelectorAll(".day")) {
     el.addEventListener("click", (e) => {
@@ -67,10 +52,6 @@ function injectAgendaStyles() {
   if (document.getElementById("agenda-css")) return;
   const s = document.createElement("style"); s.id = "agenda-css";
   s.textContent = `
-    .discbar{display:flex;gap:8px;margin-bottom:14px}
-    .disc{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--muted);
-      border-radius:10px;padding:9px;font-size:14px;cursor:pointer}
-    .disc.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
     .refreshed{font-size:12px;color:var(--muted);margin:-6px 0 14px}
     .day{display:block;width:100%;text-align:left;background:var(--surface);border:none;border-radius:14px;padding:12px;margin-bottom:10px;color:inherit}
     .day-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-weight:600}
