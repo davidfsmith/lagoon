@@ -17,9 +17,17 @@ def test_build_payload_single():
     assert p["url"].endswith("/lagoon/")
 
 
+def test_build_payload_single_shows_date():
+    # The body must name the session's date so a future-week opening can't be mistaken
+    # for an imminent one (2026-07-12 is a Sunday).
+    p = push.build_payload([_rec(start="2026-07-12T18:00")])
+    assert "Sun 12 Jul" in p["body"]
+
+
 def test_build_payload_coalesces_count():
     p = push.build_payload([_rec(), _rec(start="2026-07-12T19:00")])
     assert "2 spots" in p["body"]
+    assert "Sun 12 Jul" in p["body"]  # earliest slot's date, so "now vs later" is clear
 
 
 def test_build_payload_carries_deeplink_target_single():
