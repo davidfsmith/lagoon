@@ -23,8 +23,8 @@ export function isOn(flag) {
 }
 
 // The course set the availability pipeline should load, per the active discipline.
-// SUP only when the dev flag is on AND the user has switched to it; otherwise wake.
-// So with the flag off this is always COURSES — non-dev users run unchanged.
+// SUP only when the flag is on AND the user has switched to it; otherwise wake.
+// So with the flag off this is always COURSES — non-opted-in users run unchanged.
 export function activeCourses() {
   return isOn("supBooking") && getDiscipline() === "sup" ? SUP_COURSES : COURSES;
 }
