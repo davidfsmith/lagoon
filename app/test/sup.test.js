@@ -10,11 +10,18 @@ global.localStorage = {
 };
 
 const { activeCourses, isSupCourse, inActiveDiscipline } = await import("../js/features.js");
-const { setInternalOptIn, setDiscipline } = await import("../js/store.js");
+const { setInternalOptIn, setBetaOptIn, setDiscipline } = await import("../js/store.js");
 const { COURSES, SUP_COURSES, FEATURES } = await import("../js/config.js");
 
-test("supBooking flag is internal (dev-only)", () => {
-  assert.equal(FEATURES.supBooking, "internal");
+test("supBooking flag is beta (public opt-in)", () => {
+  assert.equal(FEATURES.supBooking, "beta");
+});
+
+test("activeCourses: beta opt-in (not internal) enables SUP", () => {
+  mem.clear();
+  setBetaOptIn(true);                         // public beta toggle, no dev opt-in
+  setDiscipline("sup");
+  assert.equal(activeCourses(), SUP_COURSES);
 });
 
 test("SUP_COURSES: 6 live types, all group 'paddle', all default-on", () => {
