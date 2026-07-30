@@ -79,10 +79,10 @@ export class WatcherStack extends Stack {
       resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/lagoon/push/vapid-private`],
     }));
 
-    // Every 10 min, 06:00–23:50 UTC, daily. EventBridge cron is UTC (no DST).
+    // Every 5 min, 06:00–23:55 UTC, daily. EventBridge cron is UTC (no DST).
     new events.Rule(this, "Schedule", {
-      description: "Lagoon watcher — every 10 min, 06:00–00:00 UTC",
-      schedule: events.Schedule.cron({ minute: "0/10", hour: "6-23" }),
+      description: "Lagoon watcher — every 5 min, 06:00–00:00 UTC",
+      schedule: events.Schedule.cron({ minute: "0/5", hour: "6-23" }),
       targets: [new targets.LambdaFunction(fn)],
     });
   }

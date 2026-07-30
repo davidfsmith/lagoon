@@ -9,7 +9,7 @@ Runs 24/7 on AWS (stack **`LagoonWatcher`**, eu-west-1, deployed via CDK). Two j
    filtered by that rider's prefs, and stores subscriptions in DynamoDB.
 
 ## Components
-- **Watcher Lambda** (`WatcherFn`, 256 MB) — `lambda/handler.py`. Every 10 min it detects
+- **Watcher Lambda** (`WatcherFn`, 256 MB) — `lambda/handler.py`. Every 5 min it detects
   openings then, for each subscription, runs the pure per-user filter and sends.
 - **Registration Lambda** (`RegisterFn`, 128 MB) — `lambda-register/handler.py`, exposed as
   a **function URL** (no auth — the opaque push endpoint is the capability). The client
@@ -40,7 +40,7 @@ persists each sub's `notifyLog`/`pending`. Tapping a notification deep-links to 
 slot's Day view (client-side; see `app/sw.js` + `app/js/app.js`).
 
 ## Live config
-- Schedule: **every 10 min, 06:00–00:00 UTC** (`cron(0/10 6-23 ? * * *)`). Cron is UTC; the
+- Schedule: **every 5 min, 06:00–00:00 UTC** (`cron(0/5 6-23 ? * * *)`). Cron is UTC; the
   filter interprets session times in Europe/London.
 - Env: `HORIZON_DAYS=7`, `URGENT_HOURS=168` (detect across the full notify horizon),
   `SUBS_TABLE`, `VAPID_PRIVATE_PARAM`, `STATE_BUCKET`.
@@ -88,7 +88,7 @@ Reset the state so current free slots read as new, then invoke:
     python3 -m unittest discover -s ../tests   # legacy handler/client tests
 
 ## Cost
-**Effectively free.** The watcher (~3,400 runs/mo × ~8 s × 256 MB ≈ 6,700 GB-s) sits well
+**Effectively free.** The watcher (~6,800 runs/mo × ~8 s × 256 MB ≈ 13,600 GB-s) sits well
 inside the perpetual Lambda free tier; DynamoDB / S3 / CloudWatch / SSM+KMS are ~$0.05/mo
 combined; EventBridge, the function URL, and the Web Push sends cost nothing. Total ~$0/mo
 (≤ ~$0.20 with no free tier). GA (everyone) stays under ~$1/mo even at ~100 subscribers.
