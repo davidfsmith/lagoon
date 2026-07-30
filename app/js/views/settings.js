@@ -94,12 +94,12 @@ export function renderSettings(view, state, go) {
     <div class="t">Appearance</div>
     <div class="segbar">${seg("system", "System")}${seg("light", "Light")}${seg("dark", "Dark")}</div>
 
-    ${isOn("supBooking") ? `<div class="t" style="margin-top:18px">Default activity</div>
+    <div class="t" style="margin-top:18px">Default activity</div>
     <div class="set-row"><span>Wakeboard or SUP</span>
       <select id="discipline" class="set-select">
         <option value="wake"${getDiscipline() === "wake" ? " selected" : ""}>🏄 Wakeboard</option>
-        <option value="sup"${getDiscipline() === "sup" ? " selected" : ""}>🏄‍♂️ SUP</option>
-      </select></div>` : ""}
+        <option value="sup"${getDiscipline() === "sup" ? " selected" : ""}>🛶 SUP</option>
+      </select></div>
 
     <div class="t" style="margin-top:18px">Default page</div>
     <div class="set-row"><span>Open the app on</span>
@@ -112,7 +112,7 @@ export function renderSettings(view, state, go) {
       </select></div>
 
     <div class="t" style="margin-top:18px">Notifications</div>
-    ${isOn("supBooking") ? `<div class="set-cap" style="margin:0 2px 6px">🏄 Wakeboarding sessions only.</div>` : ""}
+    <div class="set-cap" style="margin:0 2px 6px">🏄 Wakeboarding sessions only.</div>
     ${notifBodyHtml()}
 
     ${getInternalOptIn() ? `<div class="t" style="margin-top:18px">Developer</div>

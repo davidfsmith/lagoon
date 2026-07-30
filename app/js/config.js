@@ -21,9 +21,9 @@ export const COURSES = [
 ];
 export const FILTER_GROUPS = ["ride", "other"];
 
-// Paddle boarding (SUP) session types — a separate discipline, shown via the discipline
-// switch when isOn("supBooking"). Verified as having scheduled runs on 2026-07-26. All
-// group "paddle", all default-on (no `extra`) so switching to SUP shows everything.
+// Paddle boarding (SUP) session types — a separate discipline, shown via the header
+// discipline switch. Verified as having scheduled runs on 2026-07-26. All group "paddle",
+// all default-on (no `extra`) so switching to SUP shows everything.
 // Availability + Book only — deliberately NOT wired into notifications (see settings.js).
 export const SUP_COURSES = [
   { id: 37,  label: "Ready to Ride", group: "paddle" }, // 2026 SUP - Ready to Ride
@@ -41,7 +41,6 @@ export const SUP_COURSES = [
 export const FEATURES = {
   cancelSuppress: "internal", // don't self-notify about a slot you just cancelled (dev-only while built out)
   shareApp: "internal", // "Share this app" section on the About tab (dev-only while built out)
-  supBooking: "on", // paddle-boarding discipline switch + SUP availability (GA — everyone)
 };
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
@@ -61,5 +60,5 @@ export const CAFE_WIFI = { ssid: "HoveLagoonGuest", password: "topsecretgoonies"
 // *.lambda-url.on.aws host) so content blockers don't kill the fetch and CORS is moot.
 export const VAPID_PUBLIC_KEY = "BIpePuebyYxvD7WotLtp1RWVFAFv8FjwMFyhEsngulnRaKnN0Fbi0H90rXpxs7CxUrOeFKLgFEZobzTK6d9L8js";
 export const PUSH_REGISTER_URL = "/lagoon/push";
-export const APP_RELEASE = "v92"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v93"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"

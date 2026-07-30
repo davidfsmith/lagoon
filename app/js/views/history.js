@@ -3,15 +3,15 @@
 // state (meBookings) — see historyModel.js for the pure derivation.
 import { pastSessions } from "../historyModel.js";
 import { fmtDate } from "./format.js";
-import { isOn, inActiveDiscipline } from "../features.js";
+import { inActiveDiscipline } from "../features.js";
 import { getDiscipline } from "../store.js";
 
 const DAY_FULL = { Sun: "Sundays", Mon: "Mondays", Tue: "Tuesdays", Wed: "Wednesdays", Thu: "Thursdays", Fri: "Fridays", Sat: "Saturdays" };
 
 export function renderHistory(state) {
   injectHistoryStyles();
-  const supMode = isOn("supBooking") && getDiscipline() === "sup";
-  // Filter past sessions to the active discipline (no-op when the flag is off).
+  const supMode = getDiscipline() === "sup";
+  // Filter past sessions to the active discipline (SUP sessions hidden in wake mode, and vice-versa).
   const bookings = (state.meBookings || []).filter(b => inActiveDiscipline(((b.courseRun || {}).course || {}).id));
   const { list, stats } = pastSessions(bookings, state.me, new Date());
 
