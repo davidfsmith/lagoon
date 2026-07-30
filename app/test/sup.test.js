@@ -10,18 +10,11 @@ global.localStorage = {
 };
 
 const { activeCourses, isSupCourse, inActiveDiscipline } = await import("../js/features.js");
-const { setInternalOptIn, setBetaOptIn, setDiscipline } = await import("../js/store.js");
+const { setDiscipline } = await import("../js/store.js");
 const { COURSES, SUP_COURSES, FEATURES } = await import("../js/config.js");
 
-test("supBooking flag is beta (public opt-in)", () => {
-  assert.equal(FEATURES.supBooking, "beta");
-});
-
-test("activeCourses: beta opt-in (not internal) enables SUP", () => {
-  mem.clear();
-  setBetaOptIn(true);                         // public beta toggle, no dev opt-in
-  setDiscipline("sup");
-  assert.equal(activeCourses(), SUP_COURSES);
+test("supBooking flag is on (GA — everyone)", () => {
+  assert.equal(FEATURES.supBooking, "on");
 });
 
 test("SUP_COURSES: 6 live types, all group 'paddle', all default-on", () => {
@@ -33,15 +26,9 @@ test("SUP_COURSES: 6 live types, all group 'paddle', all default-on", () => {
   }
 });
 
-test("activeCourses: flag off → always wake, whatever the discipline", () => {
+// GA: SUP is on for everyone (no opt-in), so the course set just follows the discipline.
+test("activeCourses: follows the discipline with no opt-in", () => {
   mem.clear();
-  setDiscipline("sup");                       // even asking for SUP...
-  assert.equal(activeCourses(), COURSES);     // ...flag off → wake
-});
-
-test("activeCourses: flag on → follows the discipline", () => {
-  mem.clear();
-  setInternalOptIn(true);
   setDiscipline("wake");
   assert.equal(activeCourses(), COURSES);
   setDiscipline("sup");
@@ -54,15 +41,9 @@ test("isSupCourse: SUP ids yes, wake ids no", () => {
   assert.equal(isSupCourse(undefined), false);
 });
 
-test("inActiveDiscipline: flag off → everything shows (no filtering)", () => {
-  mem.clear(); // no opt-in
-  assert.equal(inActiveDiscipline(51), true);  // wake
-  assert.equal(inActiveDiscipline(73), true);  // SUP booked on the website still shows
-});
-
-test("inActiveDiscipline: flag on → filters to the active discipline", () => {
+// GA: Bookings/History filter to the active discipline for everyone (no opt-in).
+test("inActiveDiscipline: filters to the active discipline", () => {
   mem.clear();
-  setInternalOptIn(true);
   setDiscipline("wake");
   assert.equal(inActiveDiscipline(51), true);   // wake shows wake
   assert.equal(inActiveDiscipline(73), false);  // wake hides SUP
