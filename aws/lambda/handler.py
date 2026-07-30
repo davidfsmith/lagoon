@@ -104,7 +104,7 @@ def lambda_handler(event, context):
             to_send, state = notify_filter.filter_for_sub(sub, records, current, now)
             # Persist server-owned state only (never prefs), aliased (reserved words).
             # Single-writer: the watcher is the only writer of notifyLog/pending and runs as
-            # one non-overlapping invocation per 10-min tick, so a plain SET is safe here.
+            # one non-overlapping invocation per 5-min tick, so a plain SET is safe here.
             ddb.update_item(
                 Key={"subId": sub["subId"]},
                 UpdateExpression="SET #nl = :nl, #pd = :pd",
