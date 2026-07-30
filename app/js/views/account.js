@@ -25,7 +25,7 @@ export function renderAccount(view, state, go) {
   // In SUP mode, wake-only account content is hidden: booking-limit caps and the Extras
   // (membership / ride passes / storage — all cable products). Bookings + History remain,
   // filtered to the active discipline.
-  const supMode = isOn("supBooking") && getDiscipline() === "sup";
+  const supMode = getDiscipline() === "sup";
   if (supMode && activeTab === "extras") activeTab = "bookings";
 
   const m = (state.memberships || [])[0];

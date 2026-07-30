@@ -22,11 +22,10 @@ export function isOn(flag) {
   return tierAllows(FEATURES[flag]);
 }
 
-// The course set the availability pipeline should load, per the active discipline.
-// SUP only when the flag is on AND the user has switched to it; otherwise wake.
-// So with the flag off this is always COURSES — non-opted-in users run unchanged.
+// The course set the availability pipeline should load, per the active discipline:
+// SUP when the user has switched to it, otherwise the wake courses.
 export function activeCourses() {
-  return isOn("supBooking") && getDiscipline() === "sup" ? SUP_COURSES : COURSES;
+  return getDiscipline() === "sup" ? SUP_COURSES : COURSES;
 }
 
 // Is this course id one of the paddle-boarding sessions?
@@ -35,10 +34,9 @@ export function isSupCourse(id) {
 }
 
 // Does a booking/session of this course id belong to the currently-shown discipline?
-// Used to filter Bookings + History app-wide. IMPORTANT: with the flag off this is always
-// true — non-dev users see every booking unfiltered (even a SUP one booked on the website).
+// Used to filter Bookings + History app-wide: in wake mode SUP sessions are hidden (and
+// vice-versa), so a SUP session booked on the website shows under the SUP switch.
 export function inActiveDiscipline(courseId) {
-  if (!isOn("supBooking")) return true;
   return getDiscipline() === "sup" ? isSupCourse(courseId) : !isSupCourse(courseId);
 }
 

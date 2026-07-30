@@ -11,7 +11,6 @@ import { apply as applyTheme } from "./theme.js";
 import { initPullToRefresh } from "./pullToRefresh.js";
 import { maybeShowIntro } from "./intro.js";
 import { parseDayHash } from "./deeplink.js";
-import { isOn } from "./features.js";
 
 const view = document.getElementById("view");
 const nav = document.getElementById("nav");
@@ -44,11 +43,11 @@ function afterLoad() {
   if (!btn.hidden) setLastMinuteIcon();
 }
 
-// Header discipline switch: shown to all logged-in users (isOn("supBooking") is GA/"on");
-// segments reflect the current discipline. Wired once at boot (buttons persist across renders).
+// Header discipline switch: shown to all logged-in users; segments reflect the current
+// discipline. Wired once at boot (buttons persist across renders).
 function updateDisciplineToggle() {
   if (!discToggle) return;
-  const show = isOn("supBooking") && !!state;
+  const show = !!state;
   discToggle.hidden = !show;
   if (!show) return;
   const d = getDiscipline();

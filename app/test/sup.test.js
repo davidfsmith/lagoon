@@ -11,11 +11,7 @@ global.localStorage = {
 
 const { activeCourses, isSupCourse, inActiveDiscipline } = await import("../js/features.js");
 const { setDiscipline } = await import("../js/store.js");
-const { COURSES, SUP_COURSES, FEATURES } = await import("../js/config.js");
-
-test("supBooking flag is on (GA — everyone)", () => {
-  assert.equal(FEATURES.supBooking, "on");
-});
+const { COURSES, SUP_COURSES } = await import("../js/config.js");
 
 test("SUP_COURSES: 6 live types, all group 'paddle', all default-on", () => {
   assert.deepEqual(SUP_COURSES.map(c => c.id), [37, 38, 71, 72, 73, 415]);
