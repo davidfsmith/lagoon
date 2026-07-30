@@ -44,8 +44,8 @@ function afterLoad() {
   if (!btn.hidden) setLastMinuteIcon();
 }
 
-// Header discipline switch: shown only to opted-in users (isOn — beta or internal) once
-// logged in; segments reflect the current discipline. Wired once at boot (buttons persist).
+// Header discipline switch: shown to all logged-in users (isOn("supBooking") is GA/"on");
+// segments reflect the current discipline. Wired once at boot (buttons persist across renders).
 function updateDisciplineToggle() {
   if (!discToggle) return;
   const show = isOn("supBooking") && !!state;
