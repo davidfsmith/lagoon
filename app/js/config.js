@@ -40,7 +40,6 @@ export const SUP_COURSES = [
 // it's stable. NOTE: client-side soft gate — code still ships to everyone.
 export const FEATURES = {
   cancelSuppress: "internal", // don't self-notify about a slot you just cancelled (dev-only while built out)
-  shareApp: "internal", // "Share this app" section on the About tab (dev-only while built out)
   rum: "internal", // first-party cookieless usage analytics (dev-only while validated)
 };
 
@@ -61,5 +60,5 @@ export const CAFE_WIFI = { ssid: "HoveLagoonGuest", password: "topsecretgoonies"
 // *.lambda-url.on.aws host) so content blockers don't kill the fetch and CORS is moot.
 export const VAPID_PUBLIC_KEY = "BIpePuebyYxvD7WotLtp1RWVFAFv8FjwMFyhEsngulnRaKnN0Fbi0H90rXpxs7CxUrOeFKLgFEZobzTK6d9L8js";
 export const PUSH_REGISTER_URL = "/lagoon/push";
-export const APP_RELEASE = "v94"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v95"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"

@@ -1,7 +1,7 @@
 // "Share this app" section on the About tab: a native share-sheet button (where
-// supported), a copy-link button, and a scannable QR of the app URL. Dev-only —
-// gated by isOn("shareApp") at the call site (settings.js). shareSectionHtml() is
-// pure (testable); wireShareSection() wires the buttons + injects CSS.
+// supported), a copy-link button, and a scannable QR of the app URL. GA — shown to
+// everyone on the About tab (settings.js). shareSectionHtml() is pure (testable);
+// wireShareSection() wires the buttons + injects CSS.
 import { APP_URL } from "../config.js";
 
 const canNativeShare = () => typeof navigator !== "undefined" && !!navigator.share;

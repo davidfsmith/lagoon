@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { APP_URL, FEATURES } from "../js/config.js";
 import { shareSectionHtml } from "../js/views/share.js";
 
-test("Share section is gated to the internal (dev-only) tier", () => {
-  assert.equal(FEATURES.shareApp, "internal");
+test("Share section is GA — no feature flag", () => {
+  assert.equal(FEATURES.shareApp, undefined);
 });
 
 test("Share section carries the app URL (copy button + QR)", () => {
