@@ -34,3 +34,47 @@ def test_parse_client_reads_headers_case_insensitively():
 def test_parse_client_falls_back_to_xff():
     ip, _, _ = h.parse_client({"X-Forwarded-For": "198.51.100.7, 70.0.0.1"})
     assert ip == "198.51.100.7"
+
+
+def _payload(**kw):
+    base = {"sid": "sess-1", "meta": {"ver": "v94", "theme": "dark", "disc": "wake",
+            "standalone": True, "ref": "https://wa.me"}, "events": [{"t": "route", "route": "agenda"}]}
+    base.update(kw)
+    return base
+
+
+def test_clean_events_happy_path():
+    sid, meta, events = h.clean_events(_payload())
+    assert sid == "sess-1"
+    assert meta["theme"] == "dark" and meta["disc"] == "wake" and meta["standalone"] is True
+    assert events == [{"t": "route", "route": "agenda"}]
+
+
+def test_clean_events_drops_offlist_routes_and_events():
+    p = _payload(events=[{"t": "route", "route": "hacker"},
+                         {"t": "event", "name": "evil"},
+                         {"t": "route", "route": "settings"}])
+    sid, meta, events = h.clean_events(p)
+    assert events == [{"t": "route", "route": "settings"}]
+
+
+def test_clean_events_keeps_discipline_switch_to_prop_only():
+    p = _payload(events=[{"t": "event", "name": "discipline_switch", "props": {"to": "sup", "x": "drop"}}])
+    _, _, events = h.clean_events(p)
+    assert events == [{"t": "event", "name": "discipline_switch", "to": "sup"}]
+
+
+def test_clean_events_none_when_no_valid_events():
+    assert h.clean_events(_payload(events=[{"t": "route", "route": "nope"}])) is None
+    assert h.clean_events(_payload(events=[])) is None
+    assert h.clean_events({"events": [{"t": "route", "route": "agenda"}]}) is None  # no sid
+    assert h.clean_events("notadict") is None
+
+
+def test_clean_events_sanitises_bad_meta_and_caps_count():
+    p = _payload(meta={"theme": "rainbow", "disc": "surf", "standalone": "yes", "ver": "x" * 99},
+                 events=[{"t": "route", "route": "agenda"}] * 100)
+    sid, meta, events = h.clean_events(p)
+    assert meta["theme"] is None and meta["disc"] is None and meta["standalone"] is True
+    assert len(meta["ver"]) <= 16
+    assert len(events) <= h.MAX_EVENTS

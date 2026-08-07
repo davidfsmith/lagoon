@@ -47,3 +47,40 @@ def parse_client(headers: dict) -> tuple[str, str, str]:
     ua = h.get("user-agent") or ""
     country = (h.get("cloudfront-viewer-country") or "").upper()[:2]
     return ip, ua, country
+
+
+def _clamp(s, n=MAX_STR):
+    return str(s)[:n] if s is not None else None
+
+
+def clean_events(payload):
+    """(sid, meta, events) or None. Drops anything off the allowlists."""
+    if not isinstance(payload, dict):
+        return None
+    sid = _clamp(payload.get("sid"), 40)
+    raw = payload.get("events")
+    if not sid or not isinstance(raw, list):
+        return None
+    mi = payload.get("meta") or {}
+    meta = {
+        "ver": _clamp(mi.get("ver"), 16),
+        "theme": mi.get("theme") if mi.get("theme") in ("light", "dark") else None,
+        "disc": mi.get("disc") if mi.get("disc") in ("wake", "sup") else None,
+        "standalone": bool(mi.get("standalone")),
+        "ref": _clamp(mi.get("ref"), 128),
+    }
+    out = []
+    for e in raw[:MAX_EVENTS]:
+        if not isinstance(e, dict):
+            continue
+        if e.get("t") == "route" and e.get("route") in ROUTES:
+            out.append({"t": "route", "route": e["route"]})
+        elif e.get("t") == "event" and e.get("name") in EVENTS:
+            rec = {"t": "event", "name": e["name"]}
+            props = e.get("props")
+            if e["name"] == "discipline_switch" and isinstance(props, dict) and props.get("to") in ("wake", "sup"):
+                rec["to"] = props["to"]
+            out.append(rec)
+    if not out:
+        return None
+    return sid, meta, out
