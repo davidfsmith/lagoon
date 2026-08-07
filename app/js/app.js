@@ -11,6 +11,7 @@ import { apply as applyTheme } from "./theme.js";
 import { initPullToRefresh } from "./pullToRefresh.js";
 import { maybeShowIntro } from "./intro.js";
 import { parseDayHash } from "./deeplink.js";
+import * as rum from "./rum.js";
 
 const view = document.getElementById("view");
 const nav = document.getElementById("nav");
@@ -109,6 +110,7 @@ async function refreshAfterBooking() {
 export function go(route, arg) {
   if (route === "lastminute" && getDiscipline() === "sup") route = "agenda"; // Last-minute is wake-only
   currentRoute = route;
+  rum.route(route);
   if (route === "login") { nav.hidden = true; if (discToggle) discToggle.hidden = true; renderLogin(view, onLoggedIn); return; }
   if (route === "settings") { renderSettings(view, state, go); return; } // works pre/post login
   if (!state) return;
@@ -133,7 +135,7 @@ if (discToggle) for (const b of discToggle.querySelectorAll(".disc-seg"))
 // Tapping a "Book ↗" link opens the Lagoon booking site in a new tab. Flag it, and when
 // the app returns to the foreground refresh once so a new booking shows on Bookings
 // without a manual pull. Gated on the flag (not every tab-switch) to spare the API.
-document.addEventListener("click", (e) => { if (e.target.closest("a.bk")) pendingBookingReturn = true; });
+document.addEventListener("click", (e) => { if (e.target.closest("a.bk")) { pendingBookingReturn = true; rum.event("book_click"); } });
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
   consumeDeeplink(); // a notification tap resumed the app → jump to the freed slot's day
@@ -164,7 +166,7 @@ async function consumeDeeplink() {
   } catch { /* cache unavailable — ignore */ }
 }
 
-async function onLoggedIn() { await loadAndRender(); }
+async function onLoggedIn() { await loadAndRender(); rum.event("login_success"); }
 
 export function logout() { clearToken(); state = null; go("login"); }
 
@@ -215,6 +217,7 @@ async function reload(target, showLoading) {
 export async function switchDiscipline(disc) {
   if (disc === getDiscipline()) return;
   setDiscipline(disc);
+  rum.event("discipline_switch", { to: disc });
   updateDisciplineToggle();
   let t = currentRoute === "day" ? "agenda" : currentRoute;
   if (t === "lastminute" && disc === "sup") t = "agenda";
@@ -236,6 +239,7 @@ async function refresh() {
 
 // boot
 applyTheme();
+rum.init();
 initPullToRefresh({ onRefresh: refresh, canPull: () => !!state && currentRoute !== "login" });
 const bootDay = parseDayHash(location.hash);
 if (bootDay) { pendingDay = bootDay; history.replaceState(null, "", location.pathname + location.search); }

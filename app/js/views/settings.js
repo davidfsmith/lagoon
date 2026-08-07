@@ -4,10 +4,11 @@ import { logout, switchDiscipline } from "../app.js";
 import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
-import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, TRAVEL_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs, getDiscipline } from "../store.js";
+import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, TRAVEL_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs, getDiscipline, getRumOptOut, setRumOptOut } from "../store.js";
 import { accessTier, isOn } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
 import { notifState, subscribe, unsubscribe, syncPrefs, prefsEqual } from "../push.js";
+import * as rum from "../rum.js";
 import { cafeTabHtml, wireCafeTab } from "./cafe.js";
 import { shareSectionHtml, wireShareSection } from "./share.js";
 
@@ -115,6 +116,10 @@ export function renderSettings(view, state, go) {
     <div class="set-cap" style="margin:0 2px 6px">🏄 Wakeboarding sessions only.</div>
     ${notifBodyHtml()}
 
+    ${isOn("rum") ? `<div class="t" style="margin-top:18px">Privacy</div>
+    <div class="set-row"><span>Anonymous usage analytics</span>${switchHtml("rum-optout", !getRumOptOut())}</div>
+    <div class="set-cap" style="margin:0 2px 6px">🍪 No cookies — anonymous, and nothing leaves Hove Lagoon.</div>` : ""}
+
     ${getInternalOptIn() ? `<div class="t" style="margin-top:18px">Developer</div>
     <div class="set-row"><span>Internal features</span>${switchHtml("internal-toggle", getInternalOptIn())}</div>
     <div class="set-cap">Unreleased, in-progress features. Expect breakage. Includes beta features.</div>` : ""}
@@ -179,6 +184,8 @@ export function renderSettings(view, state, go) {
   if (ri) ri.addEventListener("click", () => showIntro());
   const bt = view.querySelector("#beta-toggle");
   if (bt) bt.addEventListener("change", () => { setBetaOptIn(bt.checked); renderSettings(view, state, go); });
+  const ro = view.querySelector("#rum-optout");
+  if (ro) ro.addEventListener("change", () => setRumOptOut(!ro.checked)); // checked = analytics ON
   const it = view.querySelector("#internal-toggle");
   if (it) it.addEventListener("change", () => { setInternalOptIn(it.checked); renderSettings(view, state, go); });
   const nt = view.querySelector("#notif-toggle");
@@ -201,6 +208,7 @@ export function renderSettings(view, state, go) {
       renderSettings(view, state, go);
       try {
         if (on) await subscribe(); else await unsubscribe();
+        rum.event(on ? "notify_enable" : "notify_disable");
       } catch { notifOn = false; } // permission denied / failed
       finally { notifPending = false; renderSettings(view, state, go); }
     });
