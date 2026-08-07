@@ -157,7 +157,7 @@ export function renderSettings(view, state, go) {
     <a class="set-row support" href="mailto:dave@dave-smith.co.uk?subject=Lagoon%20App%20Support">
       <span>Email support</span><span class="muted">dave@dave-smith.co.uk ›</span></a>
 
-    ${isOn("shareApp") ? shareSectionHtml() : ""}`;
+    ${shareSectionHtml()}`;
 
   view.innerHTML = `
     <button class="link" id="back">‹ Back</button>
@@ -245,7 +245,7 @@ export function renderSettings(view, state, go) {
     if (++devTaps >= 7) { devTaps = 0; setInternalOptIn(true); renderSettings(view, state, go); }
   });
   if (activeTab === "cafe") wireCafeTab(view);
-  if (activeTab === "about" && isOn("shareApp")) wireShareSection(view);
+  if (activeTab === "about") wireShareSection(view);
   injectTabStyles();
   injectSettingsStyles();
   // Keep the Data → Last refreshed value live too (no "Last refreshed" prefix here —
