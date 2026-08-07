@@ -85,5 +85,32 @@ export class WatcherStack extends Stack {
       schedule: events.Schedule.cron({ minute: "0/5", hour: "6-23" }),
       targets: [new targets.LambdaFunction(fn)],
     });
+
+    // RUM analytics: raw NDJSON events, dt-partitioned, expired after 90 days.
+    const rumBucket = new s3.Bucket(this, "RumBucket", {
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      removalPolicy: RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      lifecycleRules: [{ prefix: "rum/", expiration: Duration.days(90) }],
+    });
+
+    // Stdlib-only ingest Lambda (no Docker). Salt lives in SSM (create it once — see plan).
+    const rumFn = new lambda.Function(this, "RumFn", {
+      runtime: lambda.Runtime.PYTHON_3_12,
+      handler: "handler.lambda_handler",
+      code: lambda.Code.fromAsset(path.join(__dirname, "..", "..", "lambda-rum")),
+      timeout: Duration.seconds(10),
+      memorySize: 128,
+      logRetention: logs.RetentionDays.ONE_MONTH,
+      environment: { RUM_BUCKET: rumBucket.bucketName, SALT_PARAM: "/lagoon/rum/salt" },
+    });
+    rumBucket.grantPut(rumFn);
+    rumFn.addToRolePolicy(new iam.PolicyStatement({
+      actions: ["ssm:GetParameter"],
+      resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/lagoon/rum/salt`],
+    }));
+    const rumUrl = rumFn.addFunctionUrl({ authType: lambda.FunctionUrlAuthType.NONE });
+    new CfnOutput(this, "RumUrl", { value: rumUrl.url });
   }
 }
