@@ -84,3 +84,43 @@ def clean_events(payload):
     if not out:
         return None
     return sid, meta, out
+
+
+def build_records(sid, meta, events, visitor_id, country, device, os_, now):
+    base = {"ts": now.isoformat(), "dt": now.strftime("%Y-%m-%d"),
+            "visitorId": visitor_id, "sid": sid,
+            "ver": meta.get("ver"), "theme": meta.get("theme"), "disc": meta.get("disc"),
+            "standalone": meta.get("standalone"), "ref": meta.get("ref"),
+            "country": country, "device": device, "os": os_}
+    recs = []
+    for e in events:
+        r = dict(base, type=e["t"])
+        if e["t"] == "route":
+            r["route"] = e["route"]
+        else:
+            r["name"] = e["name"]
+            if "to" in e:
+                r["to"] = e["to"]
+        recs.append(r)
+    return recs
+
+
+def ingest_request(body, headers, secret, now):
+    """Pure: raw body (str|bytes) + headers -> (status, records). No AWS."""
+    if body is None:
+        return 400, []
+    b = body.encode() if isinstance(body, str) else body
+    if len(b) > MAX_BYTES:
+        return 413, []
+    try:
+        payload = json.loads(b)
+    except Exception:
+        return 400, []
+    cleaned = clean_events(payload)
+    if not cleaned:
+        return 400, []
+    sid, meta, events = cleaned
+    ip, ua, country = parse_client(headers)
+    vid = visitor_hash(secret, now.strftime("%Y-%m-%d"), ip, ua)
+    device, os_ = device_os(ua)
+    return 200, build_records(sid, meta, events, vid, country, device, os_, now)

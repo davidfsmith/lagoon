@@ -1,3 +1,6 @@
+import datetime as dt
+import json
+
 import handler as h
 
 
@@ -78,3 +81,36 @@ def test_clean_events_sanitises_bad_meta_and_caps_count():
     assert meta["theme"] is None and meta["disc"] is None and meta["standalone"] is True
     assert len(meta["ver"]) <= 16
     assert len(events) <= h.MAX_EVENTS
+
+
+NOW = dt.datetime(2026, 8, 7, 12, 0, tzinfo=dt.timezone.utc)
+HEADERS = {"CloudFront-Viewer-Address": "203.0.113.5:443", "User-Agent": "Mozilla/5.0 (iPhone)",
+           "CloudFront-Viewer-Country": "GB"}
+
+
+def test_build_records_flattens_events_with_shared_context():
+    recs = h.build_records("s1", {"ver": "v94", "theme": "dark", "disc": "wake",
+                                  "standalone": True, "ref": None},
+                           [{"t": "route", "route": "agenda"},
+                            {"t": "event", "name": "discipline_switch", "to": "sup"}],
+                           "vid123", "GB", "mobile", "iOS", NOW)
+    assert len(recs) == 2
+    assert recs[0]["dt"] == "2026-08-07" and recs[0]["visitorId"] == "vid123"
+    assert recs[0]["type"] == "route" and recs[0]["route"] == "agenda"
+    assert recs[1]["type"] == "event" and recs[1]["name"] == "discipline_switch" and recs[1]["to"] == "sup"
+    assert recs[0]["country"] == "GB" and recs[0]["device"] == "mobile" and recs[0]["os"] == "iOS"
+
+
+def test_ingest_request_end_to_end_no_raw_pii():
+    body = json.dumps({"sid": "s1", "meta": {"ver": "v94"}, "events": [{"t": "route", "route": "agenda"}]})
+    status, recs = h.ingest_request(body, HEADERS, "secret", NOW)
+    assert status == 200 and len(recs) == 1
+    blob = json.dumps(recs)
+    assert "203.0.113.5" not in blob and "iPhone" not in blob   # raw IP/UA never stored
+    assert recs[0]["visitorId"] == h.visitor_hash("secret", "2026-08-07", "203.0.113.5", "Mozilla/5.0 (iPhone)")
+
+
+def test_ingest_request_rejects_oversize_and_garbage():
+    assert h.ingest_request("x" * (h.MAX_BYTES + 1), HEADERS, "s", NOW) == (413, [])
+    assert h.ingest_request("not json", HEADERS, "s", NOW) == (400, [])
+    assert h.ingest_request(json.dumps({"sid": "s", "events": []}), HEADERS, "s", NOW) == (400, [])
