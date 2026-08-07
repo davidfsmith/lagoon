@@ -30,6 +30,7 @@ jobs:
           python -m pip install --quiet pytest
           PYTHONPATH="$PWD" python -m pytest aws/lambda/test_push.py aws/lambda/test_notify_filter.py -q
           python -m pytest aws/lambda-register/test_register.py -q
+          python -m pytest aws/lambda-rum/test_rum.py -q
       - name: JS unit tests
         run: node --test app/test/*.test.js
 

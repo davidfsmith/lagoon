@@ -124,3 +124,38 @@ def ingest_request(body, headers, secret, now):
     vid = visitor_hash(secret, now.strftime("%Y-%m-%d"), ip, ua)
     device, os_ = device_os(ua)
     return 200, build_records(sid, meta, events, vid, country, device, os_, now)
+
+
+_SALT = None
+
+
+def _salt():
+    global _SALT
+    if _SALT is None:
+        import os
+        import boto3
+        _SALT = boto3.client("ssm").get_parameter(
+            Name=os.environ["SALT_PARAM"], WithDecryption=True)["Parameter"]["Value"]
+    return _SALT
+
+
+def lambda_handler(event, context):
+    import os
+    import base64
+    import boto3
+    method = ((event.get("requestContext") or {}).get("http") or {}).get("method", "")
+    if method != "POST":
+        return {"statusCode": 405, "body": ""}
+    body = event.get("body") or ""
+    if event.get("isBase64Encoded"):
+        body = base64.b64decode(body)
+    now = dt.datetime.now(dt.timezone.utc)
+    status, records = ingest_request(body, event.get("headers") or {}, _salt(), now)
+    if status == 200 and records:
+        boto3.client("s3").put_object(
+            Bucket=os.environ["RUM_BUCKET"],
+            Key=f"rum/dt={records[0]['dt']}/{uuid.uuid4().hex}.ndjson",
+            Body=("\n".join(json.dumps(r) for r in records) + "\n").encode(),
+            ContentType="application/x-ndjson")
+    return {"statusCode": 204 if status == 200 else status,
+            "headers": {"access-control-allow-origin": "*"}, "body": ""}
