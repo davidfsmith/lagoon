@@ -20,6 +20,7 @@ def test_visitor_hash_differs_by_ip_and_secret():
 
 def test_device_os():
     assert h.device_os("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)") == ("mobile", "iOS")
+    assert h.device_os("Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X)") == ("mobile", "iOS")
     assert h.device_os("Mozilla/5.0 (Linux; Android 14)") == ("mobile", "Android")
     assert h.device_os("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)") == ("desktop", "macOS")
     assert h.device_os("") == ("desktop", "Other")

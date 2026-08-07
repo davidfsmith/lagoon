@@ -107,7 +107,9 @@ export function setNotifyPrefs(prefs) {
 
 // Anonymous-analytics opt-out (a user preference, NOT a tracking identifier). Default in.
 const RUM_OPTOUT_KEY = "lagoon.rumOptOut";
-export function getRumOptOut() { return localStorage.getItem(RUM_OPTOUT_KEY) === "1"; }
+export function getRumOptOut() {
+  try { return localStorage.getItem(RUM_OPTOUT_KEY) === "1"; } catch { return false; }
+}
 export function setRumOptOut(v) {
-  if (v) localStorage.setItem(RUM_OPTOUT_KEY, "1"); else localStorage.removeItem(RUM_OPTOUT_KEY);
+  try { if (v) localStorage.setItem(RUM_OPTOUT_KEY, "1"); else localStorage.removeItem(RUM_OPTOUT_KEY); } catch {}
 }

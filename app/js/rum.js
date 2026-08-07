@@ -40,7 +40,8 @@ function buildMeta() {
   const m = {
     ver: APP_RELEASE,
     theme: document.documentElement.classList.contains("light") ? "light"
-      : document.documentElement.classList.contains("dark") ? "dark" : undefined,
+      : document.documentElement.classList.contains("dark") ? "dark"
+      : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
     disc: getDiscipline(),
     standalone: matchMedia("(display-mode: standalone)").matches,
   };

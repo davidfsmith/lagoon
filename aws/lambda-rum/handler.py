@@ -32,7 +32,7 @@ def device_os(ua: str) -> tuple[str, str]:
         os_ = "Windows"
     else:
         os_ = "Other"
-    device = "mobile" if ("mobile" in u or "iphone" in u or "android" in u) else "desktop"
+    device = "mobile" if ("mobile" in u or "iphone" in u or "ipad" in u or "android" in u) else "desktop"
     return device, os_
 
 
@@ -145,7 +145,7 @@ def lambda_handler(event, context):
     import boto3
     method = ((event.get("requestContext") or {}).get("http") or {}).get("method", "")
     if method != "POST":
-        return {"statusCode": 405, "body": ""}
+        return {"statusCode": 405, "headers": {"access-control-allow-origin": "*"}, "body": ""}
     body = event.get("body") or ""
     if event.get("isBase64Encoded"):
         body = base64.b64decode(body)
