@@ -63,7 +63,7 @@ function updateDisciplineToggle() {
 export function setLastMinuteIcon() {
   const em = nav.querySelector('button[data-route="lastminute"] .nav-emoji');
   if (!em || !state) return;
-  em.textContent = sessionsInWindow(state.agenda, getLastMinuteWindow(), new Date()).length > 0 ? "🔥" : "🌊";
+  em.textContent = sessionsInWindow(state.agenda, getLastMinuteWindow(), new Date()).filter(s => s.free > 0).length > 0 ? "🔥" : "🌊";
 }
 
 // True while a background Last-minute refresh is in flight (drives the "Refreshing…"

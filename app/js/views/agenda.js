@@ -14,7 +14,7 @@ export function renderAgenda(view, state, go) {
   const filterBar = filterBarHtml(present, active);
 
   const shownDays = days
-    .map(d => ({ ...d, slots: d.slots.filter(s => active.has(s.label)) }))
+    .map(d => ({ ...d, slots: d.slots.filter(s => s.booked || active.has(s.label)) }))
     .filter(d => d.slots.length);
 
   const body = shownDays.length
