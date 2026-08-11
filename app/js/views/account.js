@@ -3,7 +3,7 @@ import { londonParts } from "../tz.js";
 import { weatherAt } from "../weather.js";
 import { getToken, saveCache } from "../store.js";
 import { cancelParticipant } from "../api.js";
-import { bookingKeys, activeParticipants, countsTowardLimit, slotKey } from "../model.js";
+import { bookingKeys, activeParticipants, countsTowardLimit, slotKey, pruneDefunctBookedSlots } from "../model.js";
 import { isOn, inActiveDiscipline } from "../features.js";
 import { getDiscipline } from "../store.js";
 import { suppressSlot } from "../push.js";
@@ -170,6 +170,7 @@ async function onCancel(btn, view, state, go) {
     // keep the agenda's "booked" flags consistent without a full reload
     const keys = bookingKeys(state.meBookings || []);
     for (const d of state.agenda || []) for (const s of d.slots) s.booked = keys.has(s.key);
+    pruneDefunctBookedSlots(state.agenda); // remove a now-cancelled synthesized (free:0) row
     saveCache(state); // persist so the cancellation survives a later cache fallback
     renderAccount(view, state, go);
   } catch (e) {

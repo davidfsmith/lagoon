@@ -24,6 +24,6 @@ export async function loadEverything(token, now = new Date()) {
   }));
   if (results.every(r => !r.ok)) throw new Error("courseRuns unavailable");
   for (const r of results) runsByCourse[r.id] = r.runs;
-  const agenda = buildAgenda({ runsByCourse, courses, meBookings, meMemberships: memberships, weather, now, horizonDays: HORIZON_DAYS });
+  const agenda = buildAgenda({ runsByCourse, courses, meBookings, meMemberships: memberships, weather, now, horizonDays: HORIZON_DAYS, meId: me && me.id });
   return { me, meBookings, memberships, packages, agenda, weather };
 }

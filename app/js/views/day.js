@@ -1,4 +1,4 @@
-import { fmtDate, sessionWx, dayWx } from "./format.js";
+import { fmtDate, sessionWx, dayWx, bookedLabel } from "./format.js";
 import { londonParts } from "../tz.js";
 import { BOOKING_SITE } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
@@ -18,12 +18,12 @@ export function renderDay(view, state, arg, go) {
   const present = presentTypes((state.agenda || []).flatMap(d => d.slots));
   const active = getActiveTypes(present);
   const filterBar = filterBarHtml(present, active);
-  const slots = day.slots.filter(s => active.has(s.label));
+  const slots = day.slots.filter(s => s.booked || active.has(s.label));
 
   const rows = slots.length ? slots.map(s => {
     const wx = sessionWx(s.weather);
     const right = s.booked
-      ? `<span class="tag">✓ You're booked</span>`
+      ? `<span class="tag">${bookedLabel(s.riders)}</span>`
       : `<span class="free">${s.free} free</span>${s.freeWithMembership ? '<span class="mem">free w/ membership</span>' : ''}<a class="bk" target="_blank" rel="noopener" href="${s.runId ? `${BOOKING_SITE}/book?courseRunId=${s.runId}` : BOOKING_SITE}">Book ↗</a>`;
     return `<div class="srow${s.booked ? " booked" : ""}" data-key="${s.key}">
       <div><div class="tm">${londonParts(s.start).time} <b>${s.label}</b></div><div class="muted small">${wx}</div></div>

@@ -1,4 +1,4 @@
-import { fmtWhen, fmtDate, agoText, sessionWx } from "./format.js";
+import { fmtWhen, fmtDate, agoText, sessionWx, bookedLabel } from "./format.js";
 import { londonParts } from "../tz.js";
 import { BOOKING_SITE } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
@@ -27,7 +27,7 @@ export function renderLastMinute(view, state, go) {
   const filterBar = filterBarHtml(present, active);
 
   const justOpened = state.justOpened || new Set();
-  const slots = sessionsInWindow(state.agenda, win, new Date()).filter(s => active.has(s.label));
+  const slots = sessionsInWindow(state.agenda, win, new Date()).filter(s => s.booked || active.has(s.label));
 
   const seg = WINDOWS.map(w =>
     `<button class="lmseg${w.id === win ? " active" : ""}" data-win="${w.id}">${w.label}</button>`
@@ -38,7 +38,7 @@ export function renderLastMinute(view, state, go) {
     const wx = sessionWx(s.weather);
     const opened = justOpened.has(s.key) ? `<span class="lmnew">just opened ↑</span>` : "";
     const right = s.booked
-      ? `<span class="tag">✓ You're booked</span>`
+      ? `<span class="tag">${bookedLabel(s.riders)}</span>`
       : `<span class="free">${s.free} free</span><a class="bk" target="_blank" rel="noopener" href="${s.runId ? `${BOOKING_SITE}/book?courseRunId=${s.runId}` : BOOKING_SITE}">Book ↗</a>`;
     return `<div class="srow${s.booked ? " booked" : ""}">
       <div><div class="tm">${fmtDate(lp.date)} ${lp.time} <b>${s.label}</b> ${opened}</div>

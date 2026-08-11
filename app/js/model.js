@@ -73,6 +73,63 @@ export function markBooked(slots, keys) {
   return slots;
 }
 
+// Overlay the roster's held bookings onto the availability slots so a session anyone on
+// the account is booked on always shows — even when it's full and thus absent from the
+// free-slot feed. Pure: the discipline filter, label resolver and current-user id are
+// injected, so this needs no store/view imports.
+//   slots        - free slots from runsToSlots (active discipline); mutated in place
+//   meBookings   - raw /me/bookings (whole roster)
+//   inDiscipline - (courseId) => bool: is this course in the shown discipline?
+//   labelFor     - (courseId, courseName) => string: chip label (config label or prettyCourse)
+//   meId         - logged-in contact id, rendered as "You"
+// Existing slots the roster is booked on gain booked + riders; booked sessions with no
+// availability row are synthesized as free:0 rows. Returns the combined list.
+export function mergeBookings(slots, meBookings, { inDiscipline, labelFor, meId, now, horizonDays = 21 } = {}) {
+  const start = now instanceof Date ? now : new Date(now);
+  const horizon = new Date(start.getTime() + horizonDays * 86400000);
+  const byKey = new Map(); // slotKey -> { courseId, runId, start, end, label, riders[], _ids:Set }
+  for (const b of meBookings || []) {
+    if (!bookingIsHeld(b)) continue;
+    if (!countsTowardLimit(b)) continue;          // skip board-store / hire add-ons
+    const cr = b.courseRun || {};
+    const courseId = cr.course && cr.course.id;
+    if (courseId == null || !cr.startDate) continue;
+    if (!inDiscipline(courseId)) continue;        // wake vs SUP
+    const s = new Date(cr.startDate);
+    if (s < start || s > horizon) continue;       // upcoming, within horizon
+    const key = slotKey(courseId, cr.startDate);
+    let e = byKey.get(key);
+    if (!e) {
+      e = { courseId, runId: cr.id, start: cr.startDate, end: cr.endDate,
+            label: labelFor(courseId, (cr.course || {}).name), riders: [], _ids: new Set() };
+      byKey.set(key, e);
+    }
+    for (const p of activeParticipants(b)) {
+      const cid = (p.contact || {}).id;
+      if (cid != null && e._ids.has(cid)) continue;
+      if (cid != null) e._ids.add(cid);
+      const you = cid != null && cid === meId;
+      e.riders.push({ name: you ? "You" : ((p.contact || {}).firstName || "Rider"), you });
+    }
+  }
+  const ridersOf = (e) => [
+    ...e.riders.filter(r => r.you).map(r => r.name),   // "You" first
+    ...e.riders.filter(r => !r.you).map(r => r.name),  // then others, in encounter order
+  ];
+  const present = new Set();
+  for (const slot of slots) {
+    const e = byKey.get(slot.key);
+    if (e) { slot.booked = true; slot.riders = ridersOf(e); present.add(slot.key); }
+  }
+  for (const [key, e] of byKey) {
+    if (present.has(key)) continue;
+    slots.push({ courseId: e.courseId, label: e.label, runId: e.runId,
+      start: e.start, end: e.end, free: 0, capacity: null, key,
+      booked: true, riders: ridersOf(e), freeWithMembership: false, weather: null });
+  }
+  return slots;
+}
+
 export function membershipFreeCourseIds(meMemberships) {
   const ids = new Set();
   for (const m of meMemberships || []) {
@@ -86,6 +143,15 @@ export function membershipFreeCourseIds(meMemberships) {
 export function applyMembershipFree(slots, freeIds) {
   for (const s of slots) s.freeWithMembership = freeIds.has(s.courseId);
   return slots;
+}
+
+// After a cancellation, drop synthesized booked rows (free:0) that are no longer booked,
+// so a cancelled-to-empty full session doesn't linger on Availability until the next
+// reload. A real availability row always has free>0, so free===0 && !booked is uniquely
+// a defunct booked row.
+export function pruneDefunctBookedSlots(agenda) {
+  for (const d of agenda || []) d.slots = (d.slots || []).filter(s => !(s.free === 0 && !s.booked));
+  return agenda;
 }
 
 export function groupByDay(slots, daily = {}) {
@@ -117,7 +183,7 @@ export function justOpenedKeys(prevAgenda, curAgenda) {
   for (const d of prevAgenda) for (const s of d.slots || []) prev.set(s.key, s.free);
   const out = new Set();
   for (const d of curAgenda || []) for (const s of d.slots || []) {
-    if (!prev.has(s.key) || s.free > prev.get(s.key)) out.add(s.key);
+    if (s.free > 0 && (!prev.has(s.key) || s.free > prev.get(s.key))) out.add(s.key);
   }
   return out;
 }
@@ -155,7 +221,7 @@ function londonDatePlus(now, days) {
 export function sessionsInWindow(agenda, window, now) {
   const nowMs = now.getTime();
   const soon = (agenda || []).flatMap(d => d.slots || [])
-    .filter(s => s.free > 0 && new Date(s.start).getTime() > nowMs);
+    .filter(s => (s.free > 0 || s.booked) && new Date(s.start).getTime() > nowMs);
   let inWindow;
   if (window === "weekend") {
     const wknd = comingWeekendDates(now);

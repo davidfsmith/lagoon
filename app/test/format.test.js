@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fmtWhen, agoText, fmtDateLong, windDirLabel, sessionWx, dayWx } from "../js/views/format.js";
+import { fmtWhen, agoText, fmtDateLong, windDirLabel, sessionWx, dayWx, bookedLabel } from "../js/views/format.js";
 
 const now = new Date("2026-06-20T14:30:00").getTime();
 
@@ -64,4 +64,13 @@ test("dayWx: whole-day range, full set / no UV / no sunset / null", () => {
   assert.equal(dayWx({ ...w, uvMax: null }), "🌤 12–18° · 🌬NE 15(28) · ☔20% · 🌇21:14"); // UV dropped
   assert.equal(dayWx({ ...w, sunset: null }), "🌤 12–18° · 🌬NE 15(28) · ☔20% · UV 4"); // sunset dropped
   assert.equal(dayWx(null), "");
+});
+
+test("bookedLabel names who's booked, You first, sensible fallbacks", () => {
+  assert.equal(bookedLabel(["You"]), "✓ You're booked");
+  assert.equal(bookedLabel(["You", "Hamish"]), "✓ You, Hamish");
+  assert.equal(bookedLabel(["Hamish"]), "✓ Hamish");
+  assert.equal(bookedLabel(["Hamish", "Immy"]), "✓ Hamish, Immy");
+  assert.equal(bookedLabel([]), "✓ Booked");
+  assert.equal(bookedLabel(undefined), "✓ Booked");
 });

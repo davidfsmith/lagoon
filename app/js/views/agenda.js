@@ -14,7 +14,7 @@ export function renderAgenda(view, state, go) {
   const filterBar = filterBarHtml(present, active);
 
   const shownDays = days
-    .map(d => ({ ...d, slots: d.slots.filter(s => active.has(s.label)) }))
+    .map(d => ({ ...d, slots: d.slots.filter(s => s.booked || active.has(s.label)) }))
     .filter(d => d.slots.length);
 
   const body = shownDays.length
@@ -28,7 +28,7 @@ export function renderAgenda(view, state, go) {
           <div class="day-hd"><span>${fmtDate(d.date)}</span>${d.weekend ? '<span class="wknd-tag">WEEKEND</span>' : ''}</div>
           ${wx ? `<div class="day-wx muted">${wx}</div>` : ""}
           <div class="chips">${chips}</div>
-          ${bookable.length ? "" : '<div class="muted small">all booked / full</div>'}
+          ${bookable.length ? "" : `<div class="muted small">You're booked — nothing else free</div>`}
         </button>`;
       }).join("")
     : `<p class="muted">${active.size ? "No free sessions in the selected types in the next 21 days." : "Tap a session type above to show sessions."}</p>`;
