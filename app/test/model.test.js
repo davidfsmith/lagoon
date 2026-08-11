@@ -233,6 +233,17 @@ test("mergeBookings synthesizes a free:0 row for a full/absent booked session", 
   assert.equal(out[0].booked, true);
   assert.equal(out[0].label, "Clinic");
   assert.equal(out[0].key, slotKey(66, "2026-06-18T17:00:00+00:00"));
+  assert.equal(out[0].capacity, null);
+  assert.equal(out[0].weather, null);
+  assert.equal(out[0].freeWithMembership, false);
+});
+
+test("mergeBookings skips malformed bookings (missing course id or startDate)", () => {
+  const noCourse = { status: "confirmed", participants: [rider(100, "Dave")],
+    courseRun: { id: 1, startDate: "2026-06-18T17:00:00+00:00", course: {} } };
+  const noStart = { status: "confirmed", participants: [rider(100, "Dave")],
+    courseRun: { id: 2, course: { id: 66, name: "Clinic" } } };
+  assert.equal(mb([], [noCourse, noStart]).length, 0);
 });
 
 test("mergeBookings labels an untracked course via labelFor fallback", () => {
