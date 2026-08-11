@@ -31,3 +31,20 @@ test("buildAgenda merges slots, weather, bookings and membership flags", () => {
   assert.equal(tech.freeWithMembership, true);
   assert.equal(tech.weather.temp, 18);
 });
+
+test("buildAgenda overlays a full/absent booked session as a synthesized row", () => {
+  const now2 = new Date("2026-06-14T08:00:00+00:00");
+  // No runs for course 66 (Clinic) -> not in the free feed; but the roster is booked on it.
+  const bookings = [{ status: "confirmed",
+    participants: [{ id: 1, status: "confirmed", contact: { id: 7, firstName: "Dave" } }],
+    courseRun: { id: 555, startDate: "2026-06-21T17:00:00+00:00", endDate: "2026-06-21T17:30:00+00:00",
+      course: { id: 66, name: "2026 Wakeboard - Skills Clinic" } } }];
+  const days = buildAgenda({ runsByCourse: {}, courses: [{ id: 66, label: "Clinic" }],
+    meBookings: bookings, meMemberships: [], weather: null, now: now2, horizonDays: 21, meId: 7 });
+  assert.equal(days.length, 1);
+  const s = days[0].slots[0];
+  assert.equal(s.booked, true);
+  assert.equal(s.free, 0);
+  assert.equal(s.label, "Clinic");
+  assert.deepEqual(s.riders, ["You"]);
+});
