@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runsToSlots, slotKey, bookingKeys, activeParticipants, bookingIsHeld, countsTowardLimit, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay, justOpenedKeys, sessionsInWindow } from "../js/model.js";
+import { runsToSlots, slotKey, bookingKeys, activeParticipants, bookingIsHeld, countsTowardLimit, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay, justOpenedKeys, sessionsInWindow, mergeBookings } from "../js/model.js";
 
 test("countsTowardLimit excludes equipment add-ons (board store), counts real sessions", () => {
   const session = { courseRun: { course: { name: "2026 Wakeboard -Tech - Ride Session 30" } } };
@@ -204,4 +204,69 @@ test("slotKey matches the watcher's key format (courseId@startISO) — self-canc
   // startDate with a +00:00 offset which Python's isoformat() reproduces byte-for-byte. If this
   // assertion ever fails (API format drift), self-cancel suppression silently no-ops.
   assert.equal(slotKey(50, "2026-07-15T15:30:00+00:00"), "50@2026-07-15T15:30:00+00:00");
+});
+
+// ---- mergeBookings ----
+const mb = (slots, bookings, opts = {}) => mergeBookings(slots, bookings, {
+  inDiscipline: () => true,                                  // wake-everything by default
+  labelFor: (id, name) => ({ 50: "Tech 30", 51: "Air 30" }[id] || `pretty:${name}`),
+  meId: 100, now: new Date("2026-06-14T12:00:00+00:00"), horizonDays: 21, ...opts,
+});
+const bk = (courseId, startDate, participants, extra = {}) => ({
+  status: "confirmed", participants,
+  courseRun: { id: 900 + courseId, startDate, endDate: startDate, course: { id: courseId, name: `Course ${courseId}` }, ...extra },
+});
+const rider = (id, firstName) => ({ id, status: "confirmed", contact: { id, firstName } });
+
+test("mergeBookings annotates an existing free slot the roster is booked on", () => {
+  const slots = [{ courseId: 50, label: "Tech 30", key: slotKey(50, "2026-06-20T13:00:00+00:00"), free: 2, booked: false }];
+  const out = mb(slots, [bk(50, "2026-06-20T13:00:00+00:00", [rider(100, "Dave")])]);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].booked, true);
+  assert.deepEqual(out[0].riders, ["You"]);
+});
+
+test("mergeBookings synthesizes a free:0 row for a full/absent booked session", () => {
+  const out = mb([], [bk(66, "2026-06-18T17:00:00+00:00", [rider(100, "Dave")])], { labelFor: () => "Clinic" });
+  assert.equal(out.length, 1);
+  assert.equal(out[0].free, 0);
+  assert.equal(out[0].booked, true);
+  assert.equal(out[0].label, "Clinic");
+  assert.equal(out[0].key, slotKey(66, "2026-06-18T17:00:00+00:00"));
+});
+
+test("mergeBookings labels an untracked course via labelFor fallback", () => {
+  const out = mb([], [bk(415, "2026-06-19T10:00:00+00:00", [rider(100, "Dave")])]);
+  assert.equal(out[0].label, "pretty:Course 415");
+});
+
+test("mergeBookings excludes the wrong discipline", () => {
+  const out = mb([], [bk(66, "2026-06-18T17:00:00+00:00", [rider(100, "Dave")])], { inDiscipline: (id) => id === 999 });
+  assert.equal(out.length, 0);
+});
+
+test("mergeBookings excludes past and beyond-horizon bookings", () => {
+  const past = bk(66, "2026-06-10T17:00:00+00:00", [rider(100, "Dave")]);
+  const far = bk(66, "2026-09-01T17:00:00+00:00", [rider(100, "Dave")]);
+  assert.equal(mb([], [past, far]).length, 0);
+});
+
+test("mergeBookings excludes non-held and board-store add-ons", () => {
+  const cancelled = { status: "cancelled", courseRun: { course: { id: 66 }, startDate: "2026-06-18T17:00:00+00:00" } };
+  const emptied = bk(66, "2026-06-18T17:00:00+00:00", []); // held check: participants present but empty -> not held
+  const store = bk(50, "2026-06-18T17:00:00+00:00", [rider(100, "Dave")], { course: { id: 50, name: "Wakeboard Board Store" } });
+  assert.equal(mb([], [cancelled, emptied, store]).length, 0);
+});
+
+test("mergeBookings merges riders across bookings, You first, de-duped", () => {
+  const b1 = bk(66, "2026-06-18T17:00:00+00:00", [rider(200, "Hamish")]);
+  const b2 = bk(66, "2026-06-18T17:00:00+00:00", [rider(100, "Dave"), rider(200, "Hamish")]);
+  const out = mb([], [b1, b2]);
+  assert.equal(out.length, 1);
+  assert.deepEqual(out[0].riders, ["You", "Hamish"]);
+});
+
+test("mergeBookings names other riders when You are not on the session", () => {
+  const out = mb([], [bk(66, "2026-06-18T17:00:00+00:00", [rider(200, "Hamish"), rider(300, "Immy")])]);
+  assert.deepEqual(out[0].riders, ["Hamish", "Immy"]);
 });
