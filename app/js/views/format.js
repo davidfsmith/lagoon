@@ -83,3 +83,12 @@ export function prettyCourse(name) {
   const m = n.match(/^(Tech|Air)\s*-\s*Ride Session\s*(\d+)/i);
   return m ? `${m[1]} ${m[2]}` : n;
 }
+
+// Right-hand tag for a booked session row. Names who's on it (roster-wide): "You" when
+// you're on it, otherwise just the other riders. `riders` is an array of display names.
+export function bookedLabel(riders) {
+  const r = riders || [];
+  if (r.length === 0) return "✓ Booked";
+  if (r.length === 1 && r[0] === "You") return "✓ You're booked";
+  return "✓ " + r.join(", ");
+}
