@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runsToSlots, slotKey, bookingKeys, activeParticipants, bookingIsHeld, countsTowardLimit, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay, justOpenedKeys, sessionsInWindow, mergeBookings } from "../js/model.js";
+import { runsToSlots, slotKey, bookingKeys, activeParticipants, bookingIsHeld, countsTowardLimit, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay, justOpenedKeys, sessionsInWindow, mergeBookings, pruneDefunctBookedSlots } from "../js/model.js";
 
 test("countsTowardLimit excludes equipment add-ons (board store), counts real sessions", () => {
   const session = { courseRun: { course: { name: "2026 Wakeboard -Tech - Ride Session 30" } } };
@@ -280,4 +280,32 @@ test("mergeBookings merges riders across bookings, You first, de-duped", () => {
 test("mergeBookings names other riders when You are not on the session", () => {
   const out = mb([], [bk(66, "2026-06-18T17:00:00+00:00", [rider(200, "Hamish"), rider(300, "Immy")])]);
   assert.deepEqual(out[0].riders, ["Hamish", "Immy"]);
+});
+
+test("sessionsInWindow includes booked-full rows in the window, still excludes past", () => {
+  const t = (h) => `2026-06-14T${h}:00:00+00:00`;
+  const agenda = [{ date: "2026-06-14", slots: [
+    { key: "a", start: t("18"), free: 0, booked: true, label: "Clinic" }, // full, booked, future
+    { key: "b", start: t("07"), free: 0, booked: true, label: "Jam" },    // booked but already passed
+    { key: "c", start: t("19"), free: 2, booked: false, label: "Air 30" },
+  ] }];
+  const out = sessionsInWindow(agenda, "today", new Date("2026-06-14T12:00:00+00:00"));
+  assert.deepEqual(out.map(s => s.key), ["a", "c"]);
+});
+
+test("justOpenedKeys ignores newly-present free:0 booked rows", () => {
+  const prev = [{ slots: [{ key: "x", free: 1 }] }];
+  const cur = [{ slots: [{ key: "x", free: 1 }, { key: "booked", free: 0 }] }];
+  const out = justOpenedKeys(prev, cur);
+  assert.equal(out.has("booked"), false);
+});
+
+test("pruneDefunctBookedSlots drops free:0 unbooked rows, keeps the rest", () => {
+  const agenda = [{ date: "d", slots: [
+    { key: "ghost", free: 0, booked: false },  // cancelled-to-empty synthetic row
+    { key: "still", free: 0, booked: true },   // still booked
+    { key: "free", free: 2, booked: false },   // real availability
+  ] }];
+  pruneDefunctBookedSlots(agenda);
+  assert.deepEqual(agenda[0].slots.map(s => s.key), ["still", "free"]);
 });

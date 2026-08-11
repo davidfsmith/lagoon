@@ -145,6 +145,15 @@ export function applyMembershipFree(slots, freeIds) {
   return slots;
 }
 
+// After a cancellation, drop synthesized booked rows (free:0) that are no longer booked,
+// so a cancelled-to-empty full session doesn't linger on Availability until the next
+// reload. A real availability row always has free>0, so free===0 && !booked is uniquely
+// a defunct booked row.
+export function pruneDefunctBookedSlots(agenda) {
+  for (const d of agenda || []) d.slots = (d.slots || []).filter(s => !(s.free === 0 && !s.booked));
+  return agenda;
+}
+
 export function groupByDay(slots, daily = {}) {
   const byDate = new Map();
   for (const s of slots) {
@@ -174,7 +183,7 @@ export function justOpenedKeys(prevAgenda, curAgenda) {
   for (const d of prevAgenda) for (const s of d.slots || []) prev.set(s.key, s.free);
   const out = new Set();
   for (const d of curAgenda || []) for (const s of d.slots || []) {
-    if (!prev.has(s.key) || s.free > prev.get(s.key)) out.add(s.key);
+    if (s.free > 0 && (!prev.has(s.key) || s.free > prev.get(s.key))) out.add(s.key);
   }
   return out;
 }
@@ -212,7 +221,7 @@ function londonDatePlus(now, days) {
 export function sessionsInWindow(agenda, window, now) {
   const nowMs = now.getTime();
   const soon = (agenda || []).flatMap(d => d.slots || [])
-    .filter(s => s.free > 0 && new Date(s.start).getTime() > nowMs);
+    .filter(s => (s.free > 0 || s.booked) && new Date(s.start).getTime() > nowMs);
   let inWindow;
   if (window === "weekend") {
     const wknd = comingWeekendDates(now);
