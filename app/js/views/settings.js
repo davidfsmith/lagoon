@@ -187,7 +187,7 @@ export function renderSettings(view, state, go) {
   const lo = view.querySelector("#logout");
   if (lo) lo.addEventListener("click", () => logout());
   const notifSignin = view.querySelector("#notif-signin");
-  if (notifSignin) notifSignin.addEventListener("click", () => signIn());
+  if (notifSignin) notifSignin.addEventListener("click", () => signIn("settings"));
   const ri = view.querySelector("#replay-intro");
   if (ri) ri.addEventListener("click", () => showIntro());
   const bt = view.querySelector("#beta-toggle");
