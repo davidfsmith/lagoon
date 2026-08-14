@@ -127,8 +127,7 @@ export function renderSettings(view, state, go) {
     <div class="t" style="margin-top:18px">Notifications</div>
     <div class="set-cap" style="margin:0 2px 6px">🏄 Wakeboarding sessions only.</div>
     ${isOn("guestMode") && !getToken()
-      ? `<div class="set-cap">Sign in to set up spot alerts.</div>
-         <button class="primary" id="notif-signin" style="margin-top:6px">Sign in</button>`
+      ? `<div class="set-cap">Sign in to set up spot alerts.</div>`
       : notifBodyHtml()}
 
     ${isOn("rum") ? `<div class="t" style="margin-top:18px">Privacy</div>
@@ -198,8 +197,6 @@ export function renderSettings(view, state, go) {
   if (lo) lo.addEventListener("click", () => logout());
   const si = view.querySelector("#settings-signin");
   if (si) si.addEventListener("click", () => signIn());
-  const notifSignin = view.querySelector("#notif-signin");
-  if (notifSignin) notifSignin.addEventListener("click", () => signIn("settings"));
   const ri = view.querySelector("#replay-intro");
   if (ri) ri.addEventListener("click", () => showIntro());
   const bt = view.querySelector("#beta-toggle");
