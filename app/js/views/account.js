@@ -10,7 +10,7 @@ import { suppressSlot } from "../push.js";
 import { BOOKING_LIMIT } from "../config.js";
 import { downloadIcsForBooking } from "../calendar.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
-import { logout } from "../app.js";
+import { logout, signIn } from "../app.js";
 import { renderHistory } from "./history.js";
 
 // Two tabs: Bookings (your upcoming sessions — the important bit) and Extras
@@ -21,6 +21,17 @@ const riderName = (p, me) =>
   (p.contact || {}).id === (me || {}).id ? "You" : ((p.contact || {}).firstName || "Rider");
 
 export function renderAccount(view, state, go) {
+  // Guest (logged-out) browsing: Bookings is a personal surface — prompt sign-in.
+  if (isOn("guestMode") && !getToken()) {
+    view.innerHTML = `<h2>Bookings</h2>
+      <div class="bkrow" style="flex-direction:column;align-items:flex-start;gap:10px">
+        <div class="muted">Sign in with your Lagoon account to see and manage your bookings, ride passes and alerts.</div>
+        <button class="primary" id="bk-signin">Sign in</button>
+      </div>`;
+    view.querySelector("#bk-signin").addEventListener("click", () => signIn("account"));
+    injectAccountStyles();
+    return;
+  }
   const me = state.me || {};
   // In SUP mode, wake-only account content is hidden: booking-limit caps and the Extras
   // (membership / ride passes / storage — all cable products). Bookings + History remain,
