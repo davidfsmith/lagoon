@@ -46,7 +46,8 @@ function injectLoginStyles() {
   s.textContent = `
     .signup{margin-top:18px;font-size:13px;color:var(--muted)}
     .signup a{color:var(--accent);text-decoration:none;font-weight:600}
-    .link{background:none;border:1px solid var(--border);color:var(--accent);font-size:14px;
+    #login-back{display:inline-flex;align-items:center;background:var(--surface);
+      border:1px solid var(--border);color:var(--accent);font-size:14px;
       padding:6px 14px;border-radius:20px;margin-bottom:10px;cursor:pointer}`;
   document.head.appendChild(s);
 }
