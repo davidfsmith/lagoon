@@ -158,7 +158,7 @@ export function renderSettings(view, state, go) {
       <span>Email support</span><span class="muted">dave@dave-smith.co.uk ›</span></a>
 
     <div class="t" style="margin-top:16px">Credits</div>
-    <p class="muted" style="font-size:12px;line-height:1.5;margin:0">📷 Splash photo © Rob Goldings.</p>
+    <p class="muted" style="font-size:12px;line-height:1.5;margin:0">📷 Splash photo © Rob Giddings.</p>
 
     ${shareSectionHtml()}`;
 
