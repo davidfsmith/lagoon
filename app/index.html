@@ -73,7 +73,7 @@
     .disc-seg.active { background:var(--accent); color:var(--accent-ink); opacity:1; }
     /* The only scroll container. min-height:0 lets the flex item shrink so it scrolls
        internally instead of growing the body; overscroll-behavior stops rubber-band chaining. */
-    main { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain;
+    main { flex:1; min-height:0; position:relative; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain;
       width:100%; max-width:560px; margin:0 auto; padding:14px 14px 24px; }
     h2 { margin:0 0 12px; }
     /* In-flow bottom bar (not position:fixed anymore — see the app-shell note above).
@@ -88,6 +88,21 @@
     .muted { color:var(--muted); } .err { color:var(--danger); }
     button.primary { background:var(--accent); color:var(--accent-ink); border:none; border-radius:8px; padding:10px 14px; font-weight:600; }
     input { width:100%; padding:11px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); margin-bottom:10px; }
+    /* Cold-open splash: photo band on a dusk backdrop, filling the content area below the
+       header. Lives in #view so the header/nav stay in place; splash.js fades it on load. */
+    #splash { position:absolute; inset:0; overflow:hidden; z-index:1;
+      background:linear-gradient(180deg,#45525f 0%,#5f5f5c 34%,#8a5f3c 64%,#b06f36 82%,#1a120b 100%);
+      transition:opacity .3s ease; }
+    #splash.leaving { opacity:0; }
+    .splash-band { position:absolute; left:0; width:100%; height:auto; top:50%; transform:translateY(-54%);
+      -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 14%,#000 86%,transparent 100%);
+      mask-image:linear-gradient(180deg,transparent 0,#000 14%,#000 86%,transparent 100%); }
+    .splash-dots { position:absolute; left:0; right:0; bottom:40px; display:flex; gap:9px; justify-content:center; }
+    .splash-dots i { width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.9);
+      animation:splash-pulse 1.2s ease-in-out infinite; }
+    .splash-dots i:nth-child(2){ animation-delay:.18s } .splash-dots i:nth-child(3){ animation-delay:.36s }
+    @keyframes splash-pulse { 0%,100%{ opacity:.25; transform:translateY(0) } 50%{ opacity:1; transform:translateY(-3px) } }
+    @media (prefers-reduced-motion:reduce){ .splash-dots i{ animation:none; opacity:.7 } }
   </style>
   <script>
     /* Apply saved theme before first paint (no flash). */
@@ -108,7 +123,12 @@
     </div>
     <button id="btn-settings" class="icon-btn" aria-label="Settings" title="Settings">⚙</button>
   </header>
-  <main id="view"></main>
+  <main id="view">
+    <div id="splash" aria-hidden="true">
+      <img class="splash-band" src="splash.webp" alt="" width="1290" height="850">
+      <div class="splash-dots"><i></i><i></i><i></i></div>
+    </div>
+  </main>
   <nav id="nav" hidden>
     <button data-route="lastminute" hidden><span class="nav-emoji">🔥</span> Last-minute</button>
     <button data-route="agenda" class="active">Availability</button>

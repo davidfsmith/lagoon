@@ -199,7 +199,7 @@ async function loadState() {
 // Reload data from the API and render `target`. `showLoading` shows the full-page
 // spinner (initial load); pull-to-refresh skips it since it has its own indicator.
 async function reload(target, showLoading) {
-  if (showLoading) view.innerHTML = `<p class="muted">Loading sessions…</p>`;
+  if (showLoading && !document.getElementById("splash")) view.innerHTML = `<p class="muted">Loading sessions…</p>`;
   try {
     await loadState();                              // success or cache-fallback both set state
     go(target ?? getDefaultLanding());              // null target -> configurable default page
