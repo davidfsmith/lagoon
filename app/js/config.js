@@ -41,6 +41,7 @@ export const SUP_COURSES = [
 export const FEATURES = {
   cancelSuppress: "internal", // don't self-notify about a slot you just cancelled (dev-only while built out)
   rum: "internal", // first-party cookieless usage analytics (dev-only while validated)
+  guestMode: "internal", // browse public availability without signing in (dev-only while built out)
 };
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
