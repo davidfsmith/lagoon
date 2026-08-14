@@ -40,6 +40,14 @@ export function inActiveDiscipline(courseId) {
   return getDiscipline() === "sup" ? isSupCourse(courseId) : !isSupCourse(courseId);
 }
 
+// Boot routing decision (pure): signed in → full personal+public load; else if guest mode
+// is enabled → public-only load; else the classic login wall. Kept pure for testing; the
+// caller passes getToken()-presence and isOn("guestMode").
+export function bootMode(hasToken, guestEnabled) {
+  if (hasToken) return "full";
+  return guestEnabled ? "public" : "login";
+}
+
 // Does this user have any beta access at all?
 export function isBetaUser() {
   return getBetaOptIn() || getInternalOptIn();

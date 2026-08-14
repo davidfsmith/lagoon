@@ -10,7 +10,7 @@ global.localStorage = {
   removeItem: (k) => mem.delete(k),
 };
 
-const { tierAllows, isOn, isBetaUser, accessTier } = await import("../js/features.js");
+const { tierAllows, isOn, isBetaUser, accessTier, bootMode } = await import("../js/features.js");
 const { setBetaOptIn, setInternalOptIn } = await import("../js/store.js");
 
 test("no opt-in: only 'on' is visible", () => {
@@ -52,4 +52,11 @@ test("internal wins the badge even when both flags are set", () => {
 test("isOn maps an undefined flag to off", () => {
   mem.clear();
   assert.equal(isOn("doesNotExist"), false);
+});
+
+test("bootMode: token → full; no token + guest on → public; no token + guest off → login", () => {
+  assert.equal(bootMode(true, false), "full");   // signed in → always full
+  assert.equal(bootMode(true, true), "full");
+  assert.equal(bootMode(false, true), "public"); // guest browsing
+  assert.equal(bootMode(false, false), "login"); // unchanged login wall
 });

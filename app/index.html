@@ -66,6 +66,10 @@
     header { flex:none; display:flex; justify-content:space-between; align-items:center; padding:14px 16px; font-weight:600; font-size:17px; border-bottom:1px solid var(--border); background:var(--bg); }
     header .accent { color:var(--accent); }
     .icon-btn { background:none; border:none; color:var(--muted); font-size:19px; line-height:1; cursor:pointer; padding:4px 6px; }
+    .hdr-right { display:flex; align-items:center; gap:8px; }
+    .auth-btn { background:none; border:1px solid var(--border); color:var(--accent);
+      font-size:12px; font-weight:600; padding:5px 11px; border-radius:8px; cursor:pointer; }
+    .auth-btn[hidden] { display:none; }
     .disc-toggle { display:flex; gap:2px; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:2px; }
     .disc-toggle[hidden] { display:none; }
     .disc-seg { display:flex; align-items:center; gap:4px; background:none; border:none; border-radius:7px; padding:4px 10px; font-size:13px; font-weight:600; line-height:1; color:var(--text); cursor:pointer; opacity:.5; }
@@ -121,7 +125,10 @@
       <button class="disc-seg" data-disc="wake" aria-label="Wakeboard" title="Wakeboard"><span class="disc-ico">🏄</span>Wake</button>
       <button class="disc-seg" data-disc="sup" aria-label="Paddle boarding" title="Paddle boarding"><span class="disc-ico">🛶</span>SUP</button>
     </div>
-    <button id="btn-settings" class="icon-btn" aria-label="Settings" title="Settings">⚙</button>
+    <div class="hdr-right">
+      <button id="auth-btn" class="auth-btn" hidden></button>
+      <button id="btn-settings" class="icon-btn" aria-label="Settings" title="Settings">⚙</button>
+    </div>
   </header>
   <main id="view">
     <div id="splash" aria-hidden="true">

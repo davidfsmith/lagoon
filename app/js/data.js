@@ -4,26 +4,39 @@ import { buildAgenda } from "./agendaModel.js";
 import { HOVE, HORIZON_DAYS } from "./config.js";
 import { activeCourses } from "./features.js";
 
+// Fetch course runs (public) for the active discipline + weather, degrading per-course so
+// one failing course doesn't blank the agenda. Shared by both the signed-in and guest paths.
+async function loadRunsAndWeather() {
+  const courses = activeCourses();
+  const [weather, results] = await Promise.all([
+    fetchForecast(HOVE.lat, HOVE.lon).catch(() => null), // best-effort
+    Promise.all(courses.map(async (c) => {
+      try { return { id: c.id, runs: await getCourseRuns(c.id), ok: true }; }
+      catch { return { id: c.id, runs: [], ok: false }; }
+    })),
+  ]);
+  if (results.every(r => !r.ok)) throw new Error("courseRuns unavailable");
+  const runsByCourse = {};
+  for (const r of results) runsByCourse[r.id] = r.runs;
+  return { courses, runsByCourse, weather };
+}
+
 export async function loadEverything(token, now = new Date()) {
-  const [me, bookingsRes, memberships, packages, weather] = await Promise.all([
+  // Guest (no token): public availability only — no personal calls.
+  if (!token) {
+    const { courses, runsByCourse, weather } = await loadRunsAndWeather();
+    const agenda = buildAgenda({ runsByCourse, courses, meBookings: [], meMemberships: [], weather, now, horizonDays: HORIZON_DAYS, meId: null });
+    return { me: null, meBookings: [], memberships: [], packages: [], agenda, weather };
+  }
+  // Signed in: personal data + public availability.
+  const [me, bookingsRes, memberships, packages] = await Promise.all([
     authedGet("me", token),
     authedGet("me/bookings", token),
     authedGet("me/memberships", token),
     authedGet("me/packages", token),
-    fetchForecast(HOVE.lat, HOVE.lon).catch(() => null), // weather best-effort
   ]);
   const meBookings = Array.isArray(bookingsRes) ? bookingsRes : (bookingsRes.data || []);
-  // Fetch each course independently so one course erroring (the Lagoon API 500s
-  // per-course at times) degrades to "that session type missing" rather than
-  // blanking the whole agenda. Only a total failure falls back to cached data.
-  const courses = activeCourses(); // wake or SUP, per the active discipline (dev-gated)
-  const runsByCourse = {};
-  const results = await Promise.all(courses.map(async (c) => {
-    try { return { id: c.id, runs: await getCourseRuns(c.id), ok: true }; }
-    catch { return { id: c.id, runs: [], ok: false }; }
-  }));
-  if (results.every(r => !r.ok)) throw new Error("courseRuns unavailable");
-  for (const r of results) runsByCourse[r.id] = r.runs;
+  const { courses, runsByCourse, weather } = await loadRunsAndWeather();
   const agenda = buildAgenda({ runsByCourse, courses, meBookings, meMemberships: memberships, weather, now, horizonDays: HORIZON_DAYS, meId: me && me.id });
   return { me, meBookings, memberships, packages, agenda, weather };
 }

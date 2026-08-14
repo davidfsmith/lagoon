@@ -1,10 +1,10 @@
 import { getTheme, setTheme } from "../theme.js";
 import { APP_VERSION, APP_RELEASE, COURSES } from "../config.js";
-import { logout, switchDiscipline } from "../app.js";
+import { logout, switchDiscipline, signIn } from "../app.js";
 import { agoText } from "./format.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
 import { showIntro } from "../intro.js";
-import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, TRAVEL_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs, getDiscipline, getRumOptOut, setRumOptOut } from "../store.js";
+import { getReminderMinutes, setReminderMinutes, REMINDER_OPTIONS, TRAVEL_OPTIONS, getDefaultLanding, setDefaultLanding, LANDING_OPTIONS, getBetaOptIn, setBetaOptIn, getInternalOptIn, setInternalOptIn, getNotifyPrefs, setNotifyPrefs, getDiscipline, getRumOptOut, setRumOptOut, getToken } from "../store.js";
 import { accessTier, isOn } from "../features.js";
 import { tabBarHtml, injectTabStyles } from "../tabs.js";
 import { notifState, subscribe, unsubscribe, syncPrefs, prefsEqual } from "../push.js";
@@ -114,7 +114,10 @@ export function renderSettings(view, state, go) {
 
     <div class="t" style="margin-top:18px">Notifications</div>
     <div class="set-cap" style="margin:0 2px 6px">🏄 Wakeboarding sessions only.</div>
-    ${notifBodyHtml()}
+    ${isOn("guestMode") && !getToken()
+      ? `<div class="set-cap">Sign in to set up spot alerts.</div>
+         <button class="primary" id="notif-signin" style="margin-top:6px">Sign in</button>`
+      : notifBodyHtml()}
 
     ${isOn("rum") ? `<div class="t" style="margin-top:18px">Privacy</div>
     <div class="set-row"><span>Anonymous usage analytics</span>${switchHtml("rum-optout", !getRumOptOut())}</div>
@@ -125,9 +128,9 @@ export function renderSettings(view, state, go) {
     <div class="set-cap">Unreleased, in-progress features. Expect breakage. Includes beta features.</div>` : ""}
 
     ${state ? `<div class="t" style="margin-top:18px">Data</div>
-    <div class="set-row"><span>Last refreshed</span><span class="muted" id="set-refreshed">${agoText(state.refreshedAt)}${state.stale ? " (saved)" : ""}</span></div>
+    <div class="set-row"><span>Last refreshed</span><span class="muted" id="set-refreshed">${agoText(state.refreshedAt)}${state.stale ? " (saved)" : ""}</span></div>` : ""}
 
-    <button class="primary" id="logout" style="margin-top:18px">Log out</button>` : ""}
+    ${getToken() ? `<button class="primary" id="logout" style="margin-top:18px">Log out</button>` : ""}
 
     <div class="t" style="margin-top:24px">Beta</div>
     <div class="set-row"><span>Beta features</span>${switchHtml("beta-toggle", getBetaOptIn())}</div>
@@ -183,6 +186,8 @@ export function renderSettings(view, state, go) {
   if (dz) dz.addEventListener("change", () => switchDiscipline(dz.value)); // sets + reloads in place
   const lo = view.querySelector("#logout");
   if (lo) lo.addEventListener("click", () => logout());
+  const notifSignin = view.querySelector("#notif-signin");
+  if (notifSignin) notifSignin.addEventListener("click", () => signIn("settings"));
   const ri = view.querySelector("#replay-intro");
   if (ri) ri.addEventListener("click", () => showIntro());
   const bt = view.querySelector("#beta-toggle");

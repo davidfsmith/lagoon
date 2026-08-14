@@ -7,6 +7,7 @@ import { renderAccount } from "./views/account.js";
 import { renderSettings } from "./views/settings.js";
 import { renderLastMinute } from "./views/lastminute.js";
 import { justOpenedKeys, sessionsInWindow } from "./model.js";
+import { isOn, bootMode } from "./features.js";
 import { apply as applyTheme } from "./theme.js";
 import { initPullToRefresh } from "./pullToRefresh.js";
 import { maybeShowIntro } from "./intro.js";
@@ -23,6 +24,7 @@ let lmRefreshing = false; // a background Last-minute refresh is in flight
 let lmAutoTimer = null;   // periodic refresh while the Last-minute tab is open
 let pendingBookingReturn = false; // user tapped "Book ↗"; refresh when they come back
 let pendingDay = null; // deep-link target from a notification, applied once state loads
+let postLoginRoute = null; // where to land after a successful sign-in (e.g. "account")
 const LM_REFRESH_AFTER_MS = 300000; // only re-fetch if data is older than this (5 min) — spare the Lagoon API
 
 function openDay(target) {
@@ -38,6 +40,7 @@ function setActiveNav(route) {
 // After each load, reveal the Last-minute tab only for gated users and set its icon.
 function afterLoad() {
   updateDisciplineToggle();
+  updateAuthButton();
   const btn = nav.querySelector('button[data-route="lastminute"]');
   if (!btn) return;
   // Last-minute is a wake-only spot-watching feature (like notifications) — hide it in SUP mode.
@@ -54,6 +57,15 @@ function updateDisciplineToggle() {
   if (!show) return;
   const d = getDiscipline();
   for (const b of discToggle.querySelectorAll(".disc-seg")) b.classList.toggle("active", b.dataset.disc === d);
+}
+
+// Header Sign in / Sign out button — only in guest mode; hidden on the login screen itself.
+function updateAuthButton() {
+  const b = document.getElementById("auth-btn");
+  if (!b) return;
+  if (!isOn("guestMode") || currentRoute === "login") { b.hidden = true; return; }
+  b.hidden = false;
+  b.textContent = getToken() ? "Sign out" : "Sign in";
 }
 
 // 🔥 when something's free in the user's SELECTED Last-minute window, 🌊 when not.
@@ -111,8 +123,9 @@ async function refreshAfterBooking() {
 export function go(route, arg) {
   if (route === "lastminute" && getDiscipline() === "sup") route = "agenda"; // Last-minute is wake-only
   currentRoute = route;
+  updateAuthButton();
   rum.route(route);
-  if (route === "login") { nav.hidden = true; if (discToggle) discToggle.hidden = true; renderLogin(view, onLoggedIn); return; }
+  if (route === "login") { nav.hidden = true; if (discToggle) discToggle.hidden = true; updateAuthButton(); renderLogin(view, onLoggedIn, go); return; }
   if (route === "settings") { renderSettings(view, state, go); return; } // works pre/post login
   if (!state) return;
   if (route === "lastminute") {
@@ -130,6 +143,9 @@ nav.addEventListener("click", (e) => {
   if (r === "lastminute" && currentRoute === "lastminute") refreshLastMinute(); // fresh data on entry
 });
 document.getElementById("btn-settings").addEventListener("click", () => go("settings"));
+document.getElementById("auth-btn").addEventListener("click", () => {
+  if (getToken()) logout(); else signIn();
+});
 if (discToggle) for (const b of discToggle.querySelectorAll(".disc-seg"))
   b.addEventListener("click", () => switchDiscipline(b.dataset.disc));
 
@@ -167,9 +183,21 @@ async function consumeDeeplink() {
   } catch { /* cache unavailable — ignore */ }
 }
 
-async function onLoggedIn() { await loadAndRender(); rum.event("login_success"); }
+async function onLoggedIn() {
+  const target = postLoginRoute; postLoginRoute = null;
+  await loadAndRender(target); // target null → default landing
+  rum.event("login_success");
+}
 
-export function logout() { clearToken(); state = null; go("login"); }
+// Begin sign-in, remembering where to return afterwards (null → default landing).
+export function signIn(returnRoute = null) { postLoginRoute = returnRoute; go("login"); }
+
+export function logout() {
+  clearToken();
+  state = null;
+  if (isOn("guestMode")) { loadAndRender(); return; } // drop to public browsing, not a wall
+  go("login");
+}
 
 // Fetch fresh data into `state`. Returns true on a live load, false if it fell back
 // to the cache (stale). Throws on a hard failure (no cache, or 401 after logout).
@@ -229,8 +257,8 @@ export async function switchDiscipline(disc) {
   await reload(t, t !== "settings");
 }
 
-async function loadAndRender() {
-  await reload(null, true); // null -> getDefaultLanding (Availability unless the user chose otherwise)
+async function loadAndRender(target = null) {
+  await reload(target, true);
   if (state && pendingDay) { go("day", pendingDay); pendingDay = null; return; } // deep-link wins over intro
   if (state) maybeShowIntro();
 }
@@ -247,4 +275,6 @@ rum.init();
 initPullToRefresh({ onRefresh: refresh, canPull: () => !!state && currentRoute !== "login" });
 const bootDay = parseDayHash(location.hash);
 if (bootDay) { pendingDay = bootDay; history.replaceState(null, "", location.pathname + location.search); }
-if (getToken()) { armSplash(Date.now(), () => { view.innerHTML = `<p class="muted">Loading sessions…</p>`; }); loadAndRender(); } else { removeSplash(); go("login"); }
+const mode = bootMode(!!getToken(), isOn("guestMode"));
+if (mode === "login") { removeSplash(); go("login"); }
+else { armSplash(Date.now(), () => { view.innerHTML = `<p class="muted">Loading sessions…</p>`; }); loadAndRender(); }
