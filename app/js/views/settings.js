@@ -157,6 +157,9 @@ export function renderSettings(view, state, go) {
     <a class="set-row support" href="mailto:dave@dave-smith.co.uk?subject=Lagoon%20App%20Support">
       <span>Email support</span><span class="muted">dave@dave-smith.co.uk ›</span></a>
 
+    <div class="t" style="margin-top:16px">Credits</div>
+    <p class="muted" style="font-size:12px;line-height:1.5;margin:0">📷 Splash photo © Rob Goldings.</p>
+
     ${shareSectionHtml()}`;
 
   view.innerHTML = `

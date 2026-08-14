@@ -12,6 +12,7 @@ import { initPullToRefresh } from "./pullToRefresh.js";
 import { maybeShowIntro } from "./intro.js";
 import { parseDayHash } from "./deeplink.js";
 import * as rum from "./rum.js";
+import { splashEl, armSplash, leaveSplash, removeSplash } from "./splash.js";
 
 const view = document.getElementById("view");
 const nav = document.getElementById("nav");
@@ -199,11 +200,14 @@ async function loadState() {
 // Reload data from the API and render `target`. `showLoading` shows the full-page
 // spinner (initial load); pull-to-refresh skips it since it has its own indicator.
 async function reload(target, showLoading) {
-  if (showLoading) view.innerHTML = `<p class="muted">Loading sessions…</p>`;
+  const splash = splashEl();
+  if (showLoading && !splash) view.innerHTML = `<p class="muted">Loading sessions…</p>`;
   try {
     await loadState();                              // success or cache-fallback both set state
+    if (splash) await leaveSplash();                // held for min-visible time, then faded
     go(target ?? getDefaultLanding());              // null target -> configurable default page
   } catch (e) {
+    if (splash) removeSplash();                     // never trap the user behind the splash
     if (e.code === 401) return;                     // logout() already navigated to login
     if (showLoading) view.innerHTML = `<p class="err">Couldn't load: ${e.message}</p>`;
     // on a pull-to-refresh failure with no cache + existing state, keep what's on screen
@@ -243,4 +247,4 @@ rum.init();
 initPullToRefresh({ onRefresh: refresh, canPull: () => !!state && currentRoute !== "login" });
 const bootDay = parseDayHash(location.hash);
 if (bootDay) { pendingDay = bootDay; history.replaceState(null, "", location.pathname + location.search); }
-if (getToken()) loadAndRender(); else go("login");
+if (getToken()) { armSplash(Date.now(), () => { view.innerHTML = `<p class="muted">Loading sessions…</p>`; }); loadAndRender(); } else { removeSplash(); go("login"); }
