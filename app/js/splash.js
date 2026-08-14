@@ -18,10 +18,10 @@ export function remainingHold(bootTime, now, minMs = MIN_VISIBLE_MS) {
 }
 
 // Record the start time and arm the safety removal. Call once at boot, only on the load path.
-export function armSplash(now = Date.now()) {
+export function armSplash(now = Date.now(), onTimeout) {
   if (!splashEl()) return;
   bootAt = now;
-  safetyTimer = setTimeout(removeSplash, SAFETY_MS);
+  safetyTimer = setTimeout(() => { removeSplash(); if (onTimeout) onTimeout(); }, SAFETY_MS);
 }
 
 // Fade out (after the minimum-visible time) and resolve when gone. Idempotent.

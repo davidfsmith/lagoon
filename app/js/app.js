@@ -247,4 +247,4 @@ rum.init();
 initPullToRefresh({ onRefresh: refresh, canPull: () => !!state && currentRoute !== "login" });
 const bootDay = parseDayHash(location.hash);
 if (bootDay) { pendingDay = bootDay; history.replaceState(null, "", location.pathname + location.search); }
-if (getToken()) { armSplash(); loadAndRender(); } else { removeSplash(); go("login"); }
+if (getToken()) { armSplash(Date.now(), () => { view.innerHTML = `<p class="muted">Loading sessions…</p>`; }); loadAndRender(); } else { removeSplash(); go("login"); }
