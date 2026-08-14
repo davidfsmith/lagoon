@@ -13,7 +13,7 @@
 - **No dependencies, no build, no framework.** Plain `.js`/`.html` the browser runs as-is.
 - **Golden rule — additive gating:** with `guestMode` off, boot, header, Bookings, and Settings behave EXACTLY as today. All new behaviour is behind `isOn("guestMode")`.
 - **"Signed in" = `getToken()` truthy.** Use this (not `!!state`) to distinguish a guest (has `state`, no token) from a signed-in user.
-- **Version bump v97 → v98** at the end: `sw.js` `CACHE` + `config.js` `APP_RELEASE`, together. No new files → `ASSETS` unchanged.
+- **Version bump v98 → v99** at the end: `sw.js` `CACHE` + `config.js` `APP_RELEASE`, together. No new files → `ASSETS` unchanged. (v98 was taken by the Rob-Giddings credit hotfix.)
 - **No new API endpoints**; the public course-runs endpoint already exists.
 - Match surrounding style; terse *why* comments.
 - Design reference: `docs/superpowers/specs/2026-08-14-guest-availability-mode-design.md`.
@@ -460,7 +460,7 @@ git commit -m "feat: Settings notifications sign-in prompt; gate Log out on sign
 
 ---
 
-### Task 5: Version bump v97 → v98
+### Task 5: Version bump v98 → v99
 
 **Files:**
 - Modify: `app/sw.js:1`
@@ -468,18 +468,18 @@ git commit -m "feat: Settings notifications sign-in prompt; gate Log out on sign
 
 - [ ] **Step 1: Bump the cache name**
 
-`app/sw.js` line 1 → `const CACHE = "lagoon-v98";` (no `ASSETS` change — no new files).
+`app/sw.js` line 1 → `const CACHE = "lagoon-v99";` (no `ASSETS` change — no new files).
 
 - [ ] **Step 2: Bump the app release**
 
-`app/js/config.js` → `export const APP_RELEASE = "v98"; // release/version — bump together with sw.js CACHE`
+`app/js/config.js` → `export const APP_RELEASE = "v99"; // release/version — bump together with sw.js CACHE`
 
 - [ ] **Step 3: Verify + full suite**
 
 Run:
 ```sh
-grep -n "lagoon-v98" app/sw.js
-grep -n 'APP_RELEASE = "v98"' app/js/config.js
+grep -n "lagoon-v99" app/sw.js
+grep -n 'APP_RELEASE = "v99"' app/js/config.js
 node --test app/test/*.test.js
 ```
 Expected: both match; all tests pass.
@@ -488,7 +488,7 @@ Expected: both match; all tests pass.
 
 ```bash
 git add app/sw.js app/js/config.js
-git commit -m "chore: bump app to v98 (guest availability mode)"
+git commit -m "chore: bump app to v99 (guest availability mode)"
 ```
 
 ---
@@ -505,7 +505,7 @@ git commit -m "chore: bump app to v98 (guest availability mode)"
 - Login ‹ back → Task 2 (`login.js`). ✓
 - Settings notifications prompt; Log out gated on signed-in → Task 4. ✓
 - Flag internal, additive gating → Task 1 (flag) + `isOn("guestMode")` guards throughout. ✓
-- Version bump v97→v98 → Task 5. ✓
+- Version bump v98→v99 → Task 5. ✓
 - In-app booking parked (out of scope) → not implemented (correct). ✓
 
 **Placeholder scan:** none — every step carries real code. The one conditional note (login `.link` fallback style) is a verify-during-manual item, not a placeholder.
