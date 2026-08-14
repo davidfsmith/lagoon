@@ -14,20 +14,17 @@ the app a real sense of place during that window.
 
 Show it as a splash while availability loads, then fade to the list.
 
-## Consent gate (blocking, non-negotiable)
+## Consent — CLEARED
 
-The photo is used **only** after the photographer confirms. Rob has been asked; until he
-says yes:
+Both permissions are in hand, so there is **no hold** on the image:
 
-- **The image file is NOT committed** to the repo and **not pushed** to any branch — the
-  repo is public, so committing/pushing = publishing it. During the build the asset is
-  kept locally and git-ignored (see plan) so it can be tested but never leaves the machine.
-- The mechanism is built and can run without the image — with no image it simply shows the
-  dusk backdrop + loading dots (a fine splash on its own). The photo and its credit line
-  land in a **single final commit gated on Rob's OK**, which also removes the git-ignore.
-- The subject is a **silhouette against the sun — no identifiable features** — and consent
-  to publish has been given by the rider; this gate is specifically the photographer's
-  sign-off plus the attribution.
+- **Photographer:** Rob Goldings has given the OK to use the photo (his view: there's
+  nothing of his son visible — it's a silhouette against the sun, no identifiable features).
+- **Rider:** consent to publish was already given.
+
+The image and its "Photo © Rob Goldings" credit are therefore built and committed as normal
+build steps. (Only the **raw** original `54474.jpg` stays git-ignored — we commit the
+optimised `app/splash.*`, not the 1.4 MB source.)
 
 ## Decisions (agreed)
 
@@ -118,8 +115,7 @@ cold launch/page-load only — **not** on background→foreground resume (which 
 ### About-page credit
 
 A small muted line "Photo © Rob Goldings" in the **About** tab of `settings.js` (the
-section that renders the app version row, ~`settings.js:149`). Committed **with** the image
-in the consent-gated final step, not before.
+section that renders the app version row, ~`settings.js:149`).
 
 ## Testing
 
