@@ -40,7 +40,6 @@ function setActiveNav(route) {
 // After each load, reveal the Last-minute tab only for gated users and set its icon.
 function afterLoad() {
   updateDisciplineToggle();
-  updateAuthButton();
   const btn = nav.querySelector('button[data-route="lastminute"]');
   if (!btn) return;
   // Last-minute is a wake-only spot-watching feature (like notifications) — hide it in SUP mode.
@@ -57,15 +56,6 @@ function updateDisciplineToggle() {
   if (!show) return;
   const d = getDiscipline();
   for (const b of discToggle.querySelectorAll(".disc-seg")) b.classList.toggle("active", b.dataset.disc === d);
-}
-
-// Header Sign in / Sign out button — only in guest mode; hidden on the login screen itself.
-function updateAuthButton() {
-  const b = document.getElementById("auth-btn");
-  if (!b) return;
-  if (!isOn("guestMode") || currentRoute === "login") { b.hidden = true; return; }
-  b.hidden = false;
-  b.textContent = getToken() ? "Sign out" : "Sign in";
 }
 
 // 🔥 when something's free in the user's SELECTED Last-minute window, 🌊 when not.
@@ -123,9 +113,8 @@ async function refreshAfterBooking() {
 export function go(route, arg) {
   if (route === "lastminute" && getDiscipline() === "sup") route = "agenda"; // Last-minute is wake-only
   currentRoute = route;
-  updateAuthButton();
   rum.route(route);
-  if (route === "login") { nav.hidden = true; if (discToggle) discToggle.hidden = true; updateAuthButton(); renderLogin(view, onLoggedIn, go); return; }
+  if (route === "login") { nav.hidden = true; if (discToggle) discToggle.hidden = true; renderLogin(view, onLoggedIn, go); return; }
   if (route === "settings") { renderSettings(view, state, go); return; } // works pre/post login
   if (!state) return;
   if (route === "lastminute") {
@@ -143,9 +132,6 @@ nav.addEventListener("click", (e) => {
   if (r === "lastminute" && currentRoute === "lastminute") refreshLastMinute(); // fresh data on entry
 });
 document.getElementById("btn-settings").addEventListener("click", () => go("settings"));
-document.getElementById("auth-btn").addEventListener("click", () => {
-  if (getToken()) logout(); else signIn();
-});
 if (discToggle) for (const b of discToggle.querySelectorAll(".disc-seg"))
   b.addEventListener("click", () => switchDiscipline(b.dataset.disc));
 
