@@ -41,7 +41,7 @@ export const SUP_COURSES = [
 export const FEATURES = {
   cancelSuppress: "internal", // don't self-notify about a slot you just cancelled (dev-only while built out)
   rum: "internal", // first-party cookieless usage analytics (dev-only while validated)
-  guestMode: "internal", // browse public availability without signing in (dev-only while built out)
+  guestMode: "on", // browse public availability without signing in (GA — live for everyone)
 };
 
 export const BOOKING_LIMIT = 4; // max upcoming booked sessions per rider (approx — unconfirmed)
@@ -61,5 +61,5 @@ export const CAFE_WIFI = { ssid: "HoveLagoonGuest", password: "topsecretgoonies"
 // *.lambda-url.on.aws host) so content blockers don't kill the fetch and CORS is moot.
 export const VAPID_PUBLIC_KEY = "BIpePuebyYxvD7WotLtp1RWVFAFv8FjwMFyhEsngulnRaKnN0Fbi0H90rXpxs7CxUrOeFKLgFEZobzTK6d9L8js";
 export const PUSH_REGISTER_URL = "/lagoon/push";
-export const APP_RELEASE = "v100"; // release/version — bump together with sw.js CACHE
+export const APP_RELEASE = "v101"; // release/version — bump together with sw.js CACHE
 export const APP_VERSION = "dev"; // overwritten at deploy with "build <sha> · <date>"
