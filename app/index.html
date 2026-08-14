@@ -17,41 +17,46 @@
   </script>
   <title>Hove Lagoon</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0d0d0d">
+  <meta name="theme-color" content="#100e0b">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-180.png">
   <style>
     /* Dark is the default; .light forces light; with no class we follow the OS. */
     :root {
       color-scheme: dark;
-      --bg:#0d0d0d; --surface:#16181c; --surface-2:#111418; --border:#2a2d33;
-      --text:#e8eaed; --muted:#9aa0a6;
-      --accent:#2dd4bf; --accent-ink:#06251f;
+      /* Warm-dusk canvas: teal stays the interactive accent, neutrals are tinted warm to
+         harmonise with the sunset splash/icon, --sun is the amber "moment" highlight. */
+      --bg:#100e0b; --surface:#1a1712; --surface-2:#14110c; --border:#2f2921;
+      --text:#eae6df; --muted:#a49c8f;
+      --accent:#2dd4bf; --accent-ink:#06251f; --sun:#f6b24a;
       --chip-bg:#13241f; --chip-border:#2dd4bf44; --chip-text:#cfeee7;
       --good:#34d399; --warn:#fbbf24; --danger:#f87171; --danger-border:#5a2f2f;
       --stale-bg:#3a2a12; --stale-text:#fbbf24;
-      --selected-bg:#16302b; --shadow:rgba(0,0,0,.35);
+      --selected-bg:#16302b; --shadow:rgba(0,0,0,.4);
+      --hdr:linear-gradient(120deg,#2a1f12,#14100b 60%);
     }
     :root.light {
       color-scheme: light;
-      --bg:#f2f2f7; --surface:#ffffff; --surface-2:#e9e9ee; --border:#d0d3d8;
-      --text:#1c1c1e; --muted:#6b7280;
-      --accent:#0d9488; --accent-ink:#ffffff;
+      --bg:#f5f2ec; --surface:#ffffff; --surface-2:#efeae1; --border:#dbd4c8;
+      --text:#201d18; --muted:#6f685d;
+      --accent:#0d9488; --accent-ink:#ffffff; --sun:#cf7d15;
       --chip-bg:#e6faf6; --chip-border:#99e6dc; --chip-text:#0f766e;
       --good:#059669; --warn:#b45309; --danger:#dc2626; --danger-border:#f3c2c2;
       --stale-bg:#fef3c7; --stale-text:#92400e;
       --selected-bg:#d3f5ee; --shadow:rgba(0,0,0,.12);
+      --hdr:linear-gradient(120deg,#f7e6cf,#f5f2ec 60%);
     }
     @media (prefers-color-scheme: light) {
       :root:not(.dark) {
         color-scheme: light;
-        --bg:#f2f2f7; --surface:#ffffff; --surface-2:#e9e9ee; --border:#d0d3d8;
-        --text:#1c1c1e; --muted:#6b7280;
-        --accent:#0d9488; --accent-ink:#ffffff;
+        --bg:#f5f2ec; --surface:#ffffff; --surface-2:#efeae1; --border:#dbd4c8;
+        --text:#201d18; --muted:#6f685d;
+        --accent:#0d9488; --accent-ink:#ffffff; --sun:#cf7d15;
         --chip-bg:#e6faf6; --chip-border:#99e6dc; --chip-text:#0f766e;
         --good:#059669; --warn:#b45309; --danger:#dc2626; --danger-border:#f3c2c2;
         --stale-bg:#fef3c7; --stale-text:#92400e;
         --selected-bg:#d3f5ee; --shadow:rgba(0,0,0,.12);
+        --hdr:linear-gradient(120deg,#f7e6cf,#f5f2ec 60%);
       }
     }
 
@@ -63,7 +68,7 @@
        scroll there's no momentum surface for an in-flow nav to be left behind by. */
     body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,Roboto,system-ui,sans-serif;
       height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
-    header { flex:none; display:flex; justify-content:space-between; align-items:center; padding:14px 16px; font-weight:600; font-size:17px; border-bottom:1px solid var(--border); background:var(--bg); }
+    header { flex:none; display:flex; justify-content:space-between; align-items:center; padding:14px 16px; font-weight:600; font-size:17px; border-bottom:1px solid var(--border); background:var(--hdr); }
     header .accent { color:var(--accent); }
     .icon-btn { background:none; border:none; color:var(--muted); font-size:19px; line-height:1; cursor:pointer; padding:4px 6px; }
     .disc-toggle { display:flex; gap:2px; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:2px; }
