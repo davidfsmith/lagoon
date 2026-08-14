@@ -7,12 +7,14 @@ import { activeCourses } from "./features.js";
 // Fetch course runs (public) for the active discipline + weather, degrading per-course so
 // one failing course doesn't blank the agenda. Shared by both the signed-in and guest paths.
 async function loadRunsAndWeather() {
-  const weather = await fetchForecast(HOVE.lat, HOVE.lon).catch(() => null); // best-effort
   const courses = activeCourses();
-  const results = await Promise.all(courses.map(async (c) => {
-    try { return { id: c.id, runs: await getCourseRuns(c.id), ok: true }; }
-    catch { return { id: c.id, runs: [], ok: false }; }
-  }));
+  const [weather, results] = await Promise.all([
+    fetchForecast(HOVE.lat, HOVE.lon).catch(() => null), // best-effort
+    Promise.all(courses.map(async (c) => {
+      try { return { id: c.id, runs: await getCourseRuns(c.id), ok: true }; }
+      catch { return { id: c.id, runs: [], ok: false }; }
+    })),
+  ]);
   if (results.every(r => !r.ok)) throw new Error("courseRuns unavailable");
   const runsByCourse = {};
   for (const r of results) runsByCourse[r.id] = r.runs;
