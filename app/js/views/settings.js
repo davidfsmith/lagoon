@@ -130,7 +130,15 @@ export function renderSettings(view, state, go) {
     ${state ? `<div class="t" style="margin-top:18px">Data</div>
     <div class="set-row"><span>Last refreshed</span><span class="muted" id="set-refreshed">${agoText(state.refreshedAt)}${state.stale ? " (saved)" : ""}</span></div>` : ""}
 
-    ${getToken() ? `<button class="primary" id="logout" style="margin-top:18px">Log out</button>` : ""}
+    ${getToken()
+      ? `<div class="t" style="margin-top:18px">Account</div>
+    <button class="primary" id="logout" style="margin-top:6px">Sign out</button>
+    <div class="set-cap" style="margin:8px 2px 0">Signs you out of the app on this device only — your Lagoon website login isn't affected.</div>`
+      : (isOn("guestMode")
+        ? `<div class="t" style="margin-top:18px">Account</div>
+    <button class="primary" id="settings-signin" style="margin-top:6px">Sign in</button>
+    <div class="set-cap" style="margin:8px 2px 0">Sign in with your Lagoon account to see your bookings and set up alerts.</div>`
+        : "")}
 
     <div class="t" style="margin-top:24px">Beta</div>
     <div class="set-row"><span>Beta features</span>${switchHtml("beta-toggle", getBetaOptIn())}</div>
@@ -186,6 +194,8 @@ export function renderSettings(view, state, go) {
   if (dz) dz.addEventListener("change", () => switchDiscipline(dz.value)); // sets + reloads in place
   const lo = view.querySelector("#logout");
   if (lo) lo.addEventListener("click", () => logout());
+  const si = view.querySelector("#settings-signin");
+  if (si) si.addEventListener("click", () => signIn());
   const notifSignin = view.querySelector("#notif-signin");
   if (notifSignin) notifSignin.addEventListener("click", () => signIn("settings"));
   const ri = view.querySelector("#replay-intro");
