@@ -91,8 +91,20 @@ export function renderSettings(view, state, go) {
   const landingOptions = LANDING_OPTIONS
     .map(o => `<option value="${o.id}"${o.id === landing ? " selected" : ""}>${o.label}</option>`).join("");
 
+  // Account card (top of Settings): Sign out when signed in; Sign in for guests (guest mode).
+  const acctCard = getToken()
+    ? `<div class="t">Account</div>
+    <div class="set-row"><span>Signed in</span><button class="set-action" id="logout">Sign out</button></div>
+    <div class="set-cap">Signs you out of the app on this device only — your Lagoon website login isn't affected.</div>`
+    : (isOn("guestMode")
+      ? `<div class="t">Account</div>
+    <div class="set-row"><span>Not signed in</span><button class="set-action" id="settings-signin">Sign in</button></div>
+    <div class="set-cap">Sign in with your Lagoon account to see your bookings and set up alerts.</div>`
+      : "");
+
   const settingsTab = `
-    <div class="t">Appearance</div>
+    ${acctCard}
+    <div class="t"${acctCard ? ' style="margin-top:18px"' : ""}>Appearance</div>
     <div class="segbar">${seg("system", "System")}${seg("light", "Light")}${seg("dark", "Dark")}</div>
 
     <div class="t" style="margin-top:18px">Default activity</div>
@@ -129,16 +141,6 @@ export function renderSettings(view, state, go) {
 
     ${state ? `<div class="t" style="margin-top:18px">Data</div>
     <div class="set-row"><span>Last refreshed</span><span class="muted" id="set-refreshed">${agoText(state.refreshedAt)}${state.stale ? " (saved)" : ""}</span></div>` : ""}
-
-    ${getToken()
-      ? `<div class="t" style="margin-top:18px">Account</div>
-    <button class="primary" id="logout" style="margin-top:6px">Sign out</button>
-    <div class="set-cap" style="margin:8px 2px 0">Signs you out of the app on this device only — your Lagoon website login isn't affected.</div>`
-      : (isOn("guestMode")
-        ? `<div class="t" style="margin-top:18px">Account</div>
-    <button class="primary" id="settings-signin" style="margin-top:6px">Sign in</button>
-    <div class="set-cap" style="margin:8px 2px 0">Sign in with your Lagoon account to see your bookings and set up alerts.</div>`
-        : "")}
 
     <div class="t" style="margin-top:24px">Beta</div>
     <div class="set-row"><span>Beta features</span>${switchHtml("beta-toggle", getBetaOptIn())}</div>
@@ -287,6 +289,8 @@ function injectSettingsStyles() {
       border-radius:12px;padding:12px;font-size:14px}
     .set-select{background:var(--surface-2);color:var(--text);border:1px solid var(--border);
       border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer}
+    .set-action{background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;
+      padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
     .about-ver{display:flex;flex-direction:column;align-items:flex-end;gap:1px;
       color:var(--muted);font-size:12px;text-align:right;line-height:1.5}
     .about-box{background:var(--surface);border-radius:12px;padding:12px;
