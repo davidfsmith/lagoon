@@ -58,3 +58,14 @@ test("isFreeOrder: a money field inside an array-only structure is still found",
   assert.equal(isFreeOrder({ items: [{ price: 0 }, { price: 0 }] }), true);
   assert.equal(isFreeOrder({ items: [{ price: 0 }, { price: 10 }] }), false);
 });
+
+// Depth-cap truncation must fail SAFE. If the walk hits the depth cap while structure
+// is still unexplored below it, that's "can't confirm £0" — never "found nothing, so
+// free" — even when every money field seen ON THE WAY DOWN was zero.
+test("isFreeOrder: hitting the depth cap with more structure below is NOT free, even if everything found so far is zero", () => {
+  // 20 levels deep, every "total" along the way is 0 — well past MAX_DEPTH (12), so the
+  // walk must truncate and report "can't confirm" rather than "all zero -> free".
+  let order = { total: 0 };
+  for (let i = 0; i < 20; i++) order = { total: 0, next: order };
+  assert.equal(isFreeOrder(order), false);
+});

@@ -26,27 +26,34 @@ import { londonParts } from "../tz.js";
 const MONEY_RE = /total|amount|due|price|balance|cost|net|gross/i;
 const MAX_DEPTH = 12; // the order is plain JSON — this is a generous, defensive cap
 
-function collectMoneyFields(node, out, depth, seen) {
-  if (depth > MAX_DEPTH || !node || typeof node !== "object") return;
+// Depth-capped, cycle-guarded walk collecting every numeric money-shaped field into
+// `state.money`. If the cap is hit while there's still unexplored structure below it
+// (an object/array we didn't get to look inside), that's recorded as `state.truncated`
+// — the cap is the ONE place this walk could miss a nonzero total, so isFreeOrder must
+// treat a truncated walk as "can't confirm", never as "found none, must be £0".
+function collectMoneyFields(node, depth, seen, state) {
+  if (!node || typeof node !== "object") return;
+  if (depth > MAX_DEPTH) { state.truncated = true; return; } // structure remains beyond the cap
   if (seen.has(node)) return; // cycle guard (defensive — JSON.parse can't cycle, but be safe)
   seen.add(node);
   if (Array.isArray(node)) {
-    for (const item of node) collectMoneyFields(item, out, depth + 1, seen);
+    for (const item of node) collectMoneyFields(item, depth + 1, seen, state);
     return;
   }
   for (const key of Object.keys(node)) {
     const v = node[key];
-    if (MONEY_RE.test(key) && typeof v === "number") out.push(v);
-    else if (v && typeof v === "object") collectMoneyFields(v, out, depth + 1, seen);
+    if (MONEY_RE.test(key) && typeof v === "number") state.money.push(v);
+    else if (v && typeof v === "object") collectMoneyFields(v, depth + 1, seen, state);
   }
 }
 
 export function isFreeOrder(order) {
   if (!order || typeof order !== "object") return false;
-  const money = [];
-  collectMoneyFields(order, money, 0, new Set());
-  if (money.length === 0) return false;      // can't confirm £0 anywhere → NOT free (safe: abort to web)
-  return money.every(v => v === 0);          // every money field, at any depth, is zero → free
+  const state = { money: [], truncated: false };
+  collectMoneyFields(order, 0, new Set(), state);
+  if (state.truncated) return false;          // hit the depth cap with structure left unexplored → can't confirm (safe: false)
+  if (state.money.length === 0) return false;  // can't confirm £0 anywhere → NOT free (safe: abort to web)
+  return state.money.every(v => v === 0);      // every money field, at any depth, is zero → free
 }
 
 function webBookLink(session) {
