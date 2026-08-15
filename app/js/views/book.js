@@ -163,6 +163,8 @@ export function openBookSheet(session, state, go, onBooked) {
       saveCache(state);
       close();
       onBooked(); // immediate optimistic re-render
+      const names = selectedRiders.map(r => r.name).join(" & ");
+      toast(`✓ Booked ${time} ${session.label} for ${names}`);
       // Then background-refresh so the synthetic "pending-…" entry is replaced by the real
       // booking (with real numeric ids) before the user reaches Bookings to cancel it —
       // same path the web-return flow uses. Fire-and-forget; failures fall back to cache.
@@ -198,7 +200,8 @@ function injectStyles() {
     .book-title{margin:0 0 14px;font-size:17px}
     .book-riders{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
     .book-rider{display:flex;align-items:center;gap:8px;font-size:14px}
-    .book-terms{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--muted);margin-bottom:8px}
+    .book-terms{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:8px;
+      border-top:1px solid var(--border);padding-top:12px;margin-top:4px}
     .book-terms a{color:var(--accent)}
     /* index.html has a global input{width:100%;padding;margin;border} for the login fields —
        reset it for our checkboxes so they stay small and the label sits next to them. */
@@ -213,6 +216,23 @@ function injectStyles() {
       padding:9px 16px;font-size:14px;cursor:pointer}
     .book-confirm{background:var(--accent);color:var(--accent-ink);border:none;border-radius:10px;
       padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer}
-    .book-confirm:disabled{opacity:.5;cursor:default}`;
+    .book-confirm:disabled{opacity:.5;cursor:default}
+    #book-toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%) translateY(8px);
+      z-index:60;max-width:88%;background:var(--accent);color:var(--accent-ink);font-size:14px;
+      font-weight:600;padding:11px 16px;border-radius:12px;box-shadow:0 8px 30px var(--shadow);
+      opacity:0;transition:opacity .18s ease,transform .18s ease;pointer-events:none;text-align:center}
+    #book-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}`;
   document.head.appendChild(s);
+}
+
+// Brief success confirmation, auto-dismissed. Sits above the bottom nav; replaces any
+// previous toast so rapid bookings don't stack.
+function toast(text) {
+  injectStyles();
+  document.getElementById("book-toast")?.remove();
+  const t = document.createElement("div");
+  t.id = "book-toast"; t.setAttribute("role", "status"); t.textContent = text;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add("show"));
+  setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 250); }, 2800);
 }
