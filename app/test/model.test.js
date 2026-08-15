@@ -351,6 +351,16 @@ test("eligibleRidersFor: excludes a rider at the per-rider cap", () => {
   assert.deepEqual(eligibleRidersFor(s, [m], capped, 9720, 4), []);
 });
 
+test("eligibleRidersFor: a rider in two covering memberships appears once (first membership)", () => {
+  const m1 = membership(1125, [{id:9720,name:"Dave"}], [51]);
+  const m2 = membership(2200, [{id:9720,name:"Dave"}], [51]);
+  const s = sessionFor(51, "2026-08-20T17:00:00+00:00");
+  const out = eligibleRidersFor(s, [m1, m2], [], 9720, 4);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].contactId, 9720);
+  assert.equal(out[0].membershipId, 1125); // first-encountered membership wins
+});
+
 test("buildParticipants shapes the API payload", () => {
   assert.deepEqual(buildParticipants([{contactId:9720, membershipId:1125}]),
     [{ contact:{ id:9720 }, membership:{ id:1125 } }]);
