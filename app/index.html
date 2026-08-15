@@ -19,11 +19,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7e6cf">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#2a1f12">
-  <!-- Standalone iOS PWA: black-translucent lets the web view extend under the status bar so
-       we can paint it (the #statusbar backdrop). Note: it forces WHITE status-bar text, hence
-       the warm-DARK backdrop in both themes so the clock/battery stay readable. -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-180.png">
   <style>
@@ -72,19 +67,9 @@
        stale-paint bug that plagued a position:fixed nav (v29/v36 tried translateZ + will-change
        + backface-visibility compositor hints; they rotted across iOS updates). With no document
        scroll there's no momentum surface for an in-flow nav to be left behind by. */
-    /* iOS standalone full-screen (black-translucent) mis-reports 100vh/100dvh, leaving a gap
-       under the bottom nav. -webkit-fill-available fills the ACTUAL available height on iOS;
-       100dvh is the fallback for everything else. html must be sized for it to resolve. */
-    html { height:-webkit-fill-available; }
     body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,Roboto,system-ui,sans-serif;
-      height:100dvh; height:-webkit-fill-available; display:flex; flex-direction:column; overflow:hidden; }
-    /* Warm-dark backdrop behind the white-text iOS status bar (black-translucent). Fixed over
-       the safe-area strip; zero height (invisible) where there's no inset. #2a1f12 = the dark
-       header's start, so it's seamless in dark mode and a deliberate warm sliver in light. */
-    #statusbar { position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top);
-      background:#2a1f12; z-index:10; }
-    /* padding-top clears the status bar (content sits below it, viewport-fit=cover). */
-    header { flex:none; display:flex; justify-content:space-between; align-items:center; padding:calc(14px + env(safe-area-inset-top)) 16px 14px; font-weight:600; font-size:17px; border-bottom:1px solid var(--border); background:var(--hdr); }
+      height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
+    header { flex:none; display:flex; justify-content:space-between; align-items:center; padding:14px 16px; font-weight:600; font-size:17px; border-bottom:1px solid var(--border); background:var(--hdr); }
     header .accent { color:var(--accent); }
     .icon-btn { background:none; border:none; color:var(--muted); font-size:19px; line-height:1; cursor:pointer; padding:4px 6px; }
     .disc-toggle { display:flex; gap:2px; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:2px; }
@@ -134,9 +119,6 @@
   </script>
 </head>
 <body>
-  <!-- Warm-dark backdrop behind the (white-text) iOS status bar. Height is the safe-area inset,
-       so it's invisible where there's no inset (Android/desktop use theme-color instead). -->
-  <div id="statusbar"></div>
   <header>
     <span>🏄 <span class="accent">Hove Lagoon</span></span>
     <!-- Discipline switch (wake ⇄ SUP). Hidden by default; app.js reveals + wires it for
