@@ -162,7 +162,11 @@ export function openBookSheet(session, state, go, onBooked) {
       state.meBookings = [...(state.meBookings || []), booking];
       saveCache(state);
       close();
-      onBooked(); // re-render; caller (task 5 wiring) may also kick a real background refresh
+      onBooked(); // immediate optimistic re-render
+      // Then background-refresh so the synthetic "pending-…" entry is replaced by the real
+      // booking (with real numeric ids) before the user reaches Bookings to cancel it —
+      // same path the web-return flow uses. Fire-and-forget; failures fall back to cache.
+      import("../app.js").then(m => m.refreshAfterBooking()).catch(() => {});
     } catch (e) {
       if (e && e.code === 401) { close(); const { logout } = await import("../app.js"); logout(); return; }
       // NEVER treat a thrown error as success — no optimistic update, no onBooked().
