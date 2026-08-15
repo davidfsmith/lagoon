@@ -104,7 +104,7 @@ function armLastMinuteAutoRefresh() {
 // After the user returns from the Lagoon booking site, background-refresh so a just-made
 // booking shows without a manual pull. Re-fetches data, then re-renders the current data
 // view in place (leaves day/settings navigation alone).
-async function refreshAfterBooking() {
+export async function refreshAfterBooking() {
   if (!state) return;
   try { await loadState(); } catch { return; } // logout / no-cache handled in loadState
   if (["agenda", "account", "lastminute"].includes(currentRoute)) go(currentRoute);

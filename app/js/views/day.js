@@ -1,7 +1,11 @@
 import { fmtDate, sessionWx, dayWx, bookedLabel } from "./format.js";
 import { londonParts } from "../tz.js";
-import { BOOKING_SITE } from "../config.js";
+import { BOOKING_SITE, BOOKING_LIMIT } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
+import { isOn } from "../features.js";
+import { getToken } from "../store.js";
+import { eligibleRidersFor } from "../model.js";
+import { openBookSheet } from "./book.js";
 
 export function renderDay(view, state, arg, go) {
   // arg is either a date string (e.g. nav within the app) or { date, key }
@@ -22,9 +26,16 @@ export function renderDay(view, state, arg, go) {
 
   const rows = slots.length ? slots.map(s => {
     const wx = sessionWx(s.weather);
+    // Additive gate: in-app Book only when the flag's on, we're signed in, and this
+    // rider is actually eligible (membership-covered) — else fall through to the
+    // untouched web link (the golden rule: current path stays exactly as-is).
+    const canInApp = isOn("inAppBooking") && getToken() &&
+      eligibleRidersFor(s, state.memberships, state.meBookings, (state.me || {}).id, BOOKING_LIMIT).length > 0;
     const right = s.booked
       ? `<span class="tag">${bookedLabel(s.riders)}</span>`
-      : `<span class="free">${s.free} free</span>${s.freeWithMembership ? '<span class="mem">free w/ membership</span>' : ''}<a class="bk" target="_blank" rel="noopener" href="${s.runId ? `${BOOKING_SITE}/book?courseRunId=${s.runId}` : BOOKING_SITE}">Book ↗</a>`;
+      : `<span class="free">${s.free} free</span>${s.freeWithMembership ? '<span class="mem">free w/ membership</span>' : ''}${canInApp
+          ? `<button class="bk" data-inapp data-key="${s.key}">Book</button>`
+          : `<a class="bk" target="_blank" rel="noopener" href="${s.runId ? `${BOOKING_SITE}/book?courseRunId=${s.runId}` : BOOKING_SITE}">Book ↗</a>`}`;
     return `<div class="srow${s.booked ? " booked" : ""}" data-key="${s.key}">
       <div><div class="tm">${londonParts(s.start).time} <b>${s.label}</b></div><div class="muted small">${wx}</div></div>
       <div class="r">${right}</div></div>`;
@@ -38,6 +49,14 @@ export function renderDay(view, state, arg, go) {
     ${filterBar}
     <div class="lbl">Sessions</div>${rows}`;
   view.querySelector("#back").addEventListener("click", () => go("agenda"));
+  // In-app Book buttons (canInApp rows only) — the web anchors need no listener,
+  // they're plain links.
+  for (const b of view.querySelectorAll(".bk[data-inapp]")) {
+    b.addEventListener("click", () => {
+      const s = slots.find(x => x.key === b.dataset.key);
+      if (s) openBookSheet(s, state, go, () => renderDay(view, state, date, go));
+    });
+  }
   // Re-render on filter change. Pass the date only (drop the jump key) so toggling
   // a chip doesn't re-scroll to the originally-tapped session.
   wireFilterChips(view, active, () => renderDay(view, state, date, go));
@@ -67,7 +86,7 @@ function injectDayStyles() {
     .srow.booked{opacity:.7}.tm{font-weight:600}.tm b{color:var(--accent)}
     .r{text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
     .free{color:var(--good);font-size:12px}.mem{color:var(--muted);font-size:10px}.tag{color:var(--warn);font-size:12px}
-    .bk{background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none}
+    .bk{background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none;border:none;cursor:pointer;font-family:inherit;line-height:inherit}
     .small{font-size:11px}
     .srow.selected{outline:2px solid var(--accent);background:var(--selected-bg)}
     .wknd-tag{background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:6px;vertical-align:middle;margin-left:8px}`;

@@ -235,3 +235,42 @@ export function sessionsInWindow(agenda, window, now) {
   }
   return soon.filter(inWindow).sort((a, b) => (a.start < b.start ? -1 : 1));
 }
+
+// Does this membership make the given course £0? (freeCourses lists covered course ids.)
+export function coveringMembership(membership, courseId) {
+  const free = (membership && membership.membershipType && membership.membershipType.freeCourses) || [];
+  return free.some(c => c && c.id === courseId);
+}
+
+// Riders a membership makes £0 for this session, excluding anyone already booked on it or at the
+// per-rider cap. Returns [{contactId, name, membershipId}] — empty means "not in-app bookable".
+export function eligibleRidersFor(session, memberships, meBookings, meId, cap) {
+  // per-rider count of active upcoming session bookings (for the cap)
+  const counts = {};
+  for (const b of meBookings || []) {
+    if (!bookingIsHeld(b) || !countsTowardLimit(b)) continue;
+    for (const p of activeParticipants(b)) { const c = (p.contact||{}).id; if (c!=null) counts[c] = (counts[c]||0)+1; }
+  }
+  const out = []; const seen = new Set();
+  for (const m of memberships || []) {
+    if ((m.status||"").toLowerCase() !== "active") continue;
+    if (!coveringMembership(m, session.courseId)) continue;
+    for (const mem of m.members || []) {
+      const id = mem.id;
+      if (id == null || seen.has(id)) continue;
+      // already booked on THIS session? (courseId@startDate key)
+      const onThis = (meBookings||[]).some(b => bookingIsHeld(b)
+        && slotKey(((b.courseRun||{}).course||{}).id, (b.courseRun||{}).startDate) === session.key
+        && activeParticipants(b).some(p => (p.contact||{}).id === id));
+      if (onThis) continue;
+      if ((counts[id] || 0) >= cap) continue;
+      seen.add(id);
+      out.push({ contactId: id, name: id === meId ? "You" : (mem.firstName || "Rider"), membershipId: m.id });
+    }
+  }
+  return out;
+}
+
+export function buildParticipants(riders) {
+  return (riders || []).map(r => ({ contact: { id: r.contactId }, membership: { id: r.membershipId } }));
+}

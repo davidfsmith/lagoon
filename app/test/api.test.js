@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { login, authedGet, getCourseRuns, cancelParticipant } from "../js/api.js";
+import { login, authedGet, getCourseRuns, cancelParticipant,
+  createPendingBookings, getPendingOrder, completeFreeOrder } from "../js/api.js";
 
 test("cancelParticipant POSTs to the api2 endpoint with bearer; 401 throws coded", async () => {
   let url, opts;
@@ -46,4 +47,56 @@ test("getCourseRuns fetches ALL pages (runs are runId-ordered, not date-ordered)
   assert.equal(pagesFetched, 2);      // did NOT stop after page 1
   assert.equal(runs.length, 4);       // all runs returned; caller filters by horizon
   assert.deepEqual(runs.map(r => r.id), [1, 2, 3, 4]);
+});
+
+test("createPendingBookings POSTs the courseRun + participants payload", async () => {
+  let captured;
+  const fake = async (url, opts) => { captured = { url, opts }; return { ok: true, status: 200, json: async () => ({ id: 1 }) }; };
+  await createPendingBookings(99001, [{ contact: { id: 9720 }, membership: { id: 1125 } }], "TOK", fake);
+  assert.equal(captured.url, "https://api.lagoon.co.uk/me/orders/pending/bookings");
+  assert.equal(captured.opts.method, "POST");
+  assert.equal(captured.opts.headers.Authorization, "Bearer TOK");
+  assert.deepEqual(JSON.parse(captured.opts.body),
+    { courseRun: { id: 99001 }, groupParticipantsCount: 0, participants: [{ contact: { id: 9720 }, membership: { id: 1125 } }] });
+});
+
+test("createPendingBookings throws code 401 on unauthorized", async () => {
+  const fake = async () => ({ ok: false, status: 401 });
+  await assert.rejects(() => createPendingBookings(1, [], "T", fake), e => e.code === 401);
+});
+
+test("getPendingOrder GETs the pending order with auth", async () => {
+  let u, h;
+  const fake = async (url, opts) => { u = url; h = opts.headers; return { ok: true, status: 200, json: async () => ({ total: 0 }) }; };
+  const r = await getPendingOrder("TOK", fake);
+  assert.equal(u, "https://api.lagoon.co.uk/me/orders/pending");
+  assert.equal(h.Authorization, "Bearer TOK");
+  assert.equal(r.total, 0);
+});
+
+test("getPendingOrder throws code 401 on unauthorized", async () => {
+  const fake = async () => ({ ok: false, status: 401 });
+  await assert.rejects(() => getPendingOrder("T", fake), e => e.code === 401);
+});
+
+test("completeFreeOrder POSTs {} to the giftVoucherPayment endpoint", async () => {
+  let captured;
+  const fake = async (url, opts) => { captured = { url, opts }; return { ok: true, status: 200, json: async () => ({ status: "ok" }) }; };
+  const r = await completeFreeOrder("TOK", fake);
+  assert.equal(captured.url, "https://api.lagoon.co.uk/me/cart/giftVoucherPayment");
+  assert.equal(captured.opts.method, "POST");
+  assert.equal(captured.opts.headers.Authorization, "Bearer TOK");
+  assert.equal(captured.opts.body, "{}");
+  assert.deepEqual(r, { status: "ok" });
+});
+
+test("completeFreeOrder returns true when the response body is empty/unparseable", async () => {
+  const fake = async () => ({ ok: true, status: 200, json: async () => { throw new Error("no body"); } });
+  const r = await completeFreeOrder("TOK", fake);
+  assert.equal(r, true);
+});
+
+test("completeFreeOrder throws code 401 on unauthorized", async () => {
+  const fake = async () => ({ ok: false, status: 401 });
+  await assert.rejects(() => completeFreeOrder("T", fake), e => e.code === 401);
 });
