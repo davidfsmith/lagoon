@@ -32,6 +32,40 @@ export async function cancelParticipant(participantId, token, fetchImpl = fetch)
   return true;
 }
 
+// Create pending booking(s) for a course run — one participant per rider, each under the
+// membership that makes it £0. WRITE. Returns the pending-order/booking response.
+export async function createPendingBookings(courseRunId, participants, token, fetchImpl = fetch) {
+  const res = await fetchImpl(`${API_BASE}/me/orders/pending/bookings`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ courseRun: { id: courseRunId }, groupParticipantsCount: 0, participants }),
+  });
+  if (res.status === 401) { const e = new Error("unauthorized"); e.code = 401; throw e; }
+  if (!res.ok) throw new Error(`createBooking ${res.status}`);
+  return res.json();
+}
+
+// The pending order ("cart") including its total — read to assert £0 before completing.
+export async function getPendingOrder(token, fetchImpl = fetch) {
+  const res = await fetchImpl(`${API_BASE}/me/orders/pending`, { headers: { Authorization: `Bearer ${token}` } });
+  if (res.status === 401) { const e = new Error("unauthorized"); e.code = 401; throw e; }
+  if (!res.ok) throw new Error(`pendingOrder ${res.status}`);
+  return res.json();
+}
+
+// Complete a £0 (membership-covered) checkout. WRITE — real booking confirmation.
+// The API sometimes returns an empty body on success, so a JSON-parse failure still counts as ok.
+export async function completeFreeOrder(token, fetchImpl = fetch) {
+  const res = await fetchImpl(`${API_BASE}/me/cart/giftVoucherPayment`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (res.status === 401) { const e = new Error("unauthorized"); e.code = 401; throw e; }
+  if (!res.ok) throw new Error(`completeFreeOrder ${res.status}`);
+  return res.json().catch(() => true);
+}
+
 // Paginate ascending runs until we pass horizonISO or exhaust results.
 export async function getCourseRuns(courseId, fetchImpl = fetch) {
   // The API orders runs by runId (creation order), NOT startDate — dates are
