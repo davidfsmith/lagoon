@@ -17,14 +17,36 @@ import { londonParts } from "../tz.js";
 // that's missing, non-numeric, or nonzero means we can't confirm £0, so this returns
 // false (NOT free) and the caller must abort to the web checkout rather than complete
 // in-app. Missing/unknown data must never be treated as "probably free".
+//
+// The real /me/orders/pending shape was never captured live, so this must NOT assume
+// it's flat — a nested payable total (e.g. { total: 0, cart: { grandTotal: 25 } })
+// would wrongly read as £0 if only top-level keys were scanned. So it recurses through
+// the whole object graph (objects and arrays), collecting every numeric money-shaped
+// field at any depth: free only if at least one was found AND every one of them is 0.
+const MONEY_RE = /total|amount|due|price|balance|cost|net|gross/i;
+const MAX_DEPTH = 12; // the order is plain JSON — this is a generous, defensive cap
+
+function collectMoneyFields(node, out, depth, seen) {
+  if (depth > MAX_DEPTH || !node || typeof node !== "object") return;
+  if (seen.has(node)) return; // cycle guard (defensive — JSON.parse can't cycle, but be safe)
+  seen.add(node);
+  if (Array.isArray(node)) {
+    for (const item of node) collectMoneyFields(item, out, depth + 1, seen);
+    return;
+  }
+  for (const key of Object.keys(node)) {
+    const v = node[key];
+    if (MONEY_RE.test(key) && typeof v === "number") out.push(v);
+    else if (v && typeof v === "object") collectMoneyFields(v, out, depth + 1, seen);
+  }
+}
+
 export function isFreeOrder(order) {
   if (!order || typeof order !== "object") return false;
-  const money = Object.keys(order)
-    .filter(k => /total|amount|due|price|balance|cost|net|gross/i.test(k))
-    .map(k => order[k])
-    .filter(v => typeof v === "number");
-  if (money.length === 0) return false;      // can't confirm £0 → NOT free (safe: abort to web)
-  return money.every(v => v === 0);          // all money fields zero → free
+  const money = [];
+  collectMoneyFields(order, money, 0, new Set());
+  if (money.length === 0) return false;      // can't confirm £0 anywhere → NOT free (safe: abort to web)
+  return money.every(v => v === 0);          // every money field, at any depth, is zero → free
 }
 
 function webBookLink(session) {

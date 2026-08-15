@@ -38,3 +38,23 @@ test("isFreeOrder: non-numeric money-shaped fields don't count as a confirmed £
 test("isFreeOrder: unrelated numeric fields don't fool the gate", () => {
   assert.equal(isFreeOrder({ id: 12345, courseRunId: 99001 }), false); // no money field at all
 });
+
+// The real /me/orders/pending shape was never captured live — the gate must NOT assume
+// it's flat. A nested payable total must be caught, not masked by a zeroed top-level field.
+test("isFreeOrder: recurses — a nested non-zero total is NOT free, even with a zeroed top-level field", () => {
+  assert.equal(isFreeOrder({ total: 0, cart: { grandTotal: 25 } }), false);
+});
+
+test("isFreeOrder: recurses — a fully-zeroed nested order IS free", () => {
+  assert.equal(isFreeOrder({ total: 0, cart: { grandTotal: 0, items: [{ price: 0 }, { cost: 0 }] } }), true);
+});
+
+test("isFreeOrder: recurses — a money field found only deep inside still confirms/denies £0", () => {
+  assert.equal(isFreeOrder({ meta: { breakdown: { fees: { due: 5 } } } }), false); // deep nonzero
+  assert.equal(isFreeOrder({ meta: { breakdown: { fees: { due: 0 } } } }), true);  // deep zero, nothing else
+});
+
+test("isFreeOrder: a money field inside an array-only structure is still found", () => {
+  assert.equal(isFreeOrder({ items: [{ price: 0 }, { price: 0 }] }), true);
+  assert.equal(isFreeOrder({ items: [{ price: 0 }, { price: 10 }] }), false);
+});
