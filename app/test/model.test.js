@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { runsToSlots, slotKey, bookingKeys, activeParticipants, bookingIsHeld, countsTowardLimit, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay, justOpenedKeys, sessionsInWindow, mergeBookings, pruneDefunctBookedSlots } from "../js/model.js";
+import { runsToSlots, slotKey, bookingKeys, activeParticipants, bookingIsHeld, countsTowardLimit, markBooked, membershipFreeCourseIds, applyMembershipFree, groupByDay, justOpenedKeys, sessionsInWindow, mergeBookings, pruneDefunctBookedSlots, coveringMembership, eligibleRidersFor, buildParticipants } from "../js/model.js";
 
 test("countsTowardLimit excludes equipment add-ons (board store), counts real sessions", () => {
   const session = { courseRun: { course: { name: "2026 Wakeboard -Tech - Ride Session 30" } } };
@@ -308,4 +308,50 @@ test("pruneDefunctBookedSlots drops free:0 unbooked rows, keeps the rest", () =>
   ] }];
   pruneDefunctBookedSlots(agenda);
   assert.deepEqual(agenda[0].slots.map(s => s.key), ["still", "free"]);
+});
+
+// ---- in-app booking eligibility ----
+const membership = (id, memberIds, freeCourseIds) => ({
+  id, status: "active",
+  membershipType: { freeCourses: freeCourseIds.map(c => ({ id: c })) },
+  members: memberIds.map(m => ({ id: m.id, firstName: m.name })),
+});
+const sessionFor = (courseId, start) => ({ courseId, start, key: slotKey(courseId, start) });
+
+test("coveringMembership: true only when the course is in freeCourses", () => {
+  const m = membership(1125, [{id:9720,name:"You"}], [51, 50]);
+  assert.equal(coveringMembership(m, 51), true);
+  assert.equal(coveringMembership(m, 66), false);
+});
+
+test("eligibleRidersFor: members covered for the course, not already booked, under cap", () => {
+  const m = membership(1125, [{id:9720,name:"Dave"},{id:48114,name:"Hamish"}], [51]);
+  const s = sessionFor(51, "2026-08-20T17:00:00+00:00");
+  // Hamish already booked on this exact session
+  const meBookings = [{ status:"confirmed",
+    participants:[{ id:1, status:"confirmed", contact:{ id:48114 } }],
+    courseRun:{ course:{ id:51 }, startDate:"2026-08-20T17:00:00+00:00" } }];
+  const out = eligibleRidersFor(s, [m], meBookings, 9720, 4);
+  assert.deepEqual(out.map(r=>r.contactId), [9720]);          // Hamish excluded (already on it)
+  assert.equal(out[0].membershipId, 1125);
+});
+
+test("eligibleRidersFor: empty when the membership doesn't cover the course", () => {
+  const m = membership(1125, [{id:9720,name:"Dave"}], [50]); // covers 50, not 51
+  const s = sessionFor(51, "2026-08-20T17:00:00+00:00");
+  assert.deepEqual(eligibleRidersFor(s, [m], [], 9720, 4), []);
+});
+
+test("eligibleRidersFor: excludes a rider at the per-rider cap", () => {
+  const m = membership(1125, [{id:9720,name:"Dave"}], [51]);
+  const s = sessionFor(51, "2026-08-20T17:00:00+00:00");
+  const capped = Array.from({length:4}, (_,i) => ({ status:"confirmed",
+    participants:[{ id:i+1, status:"confirmed", contact:{ id:9720 } }],
+    courseRun:{ course:{ id:51 }, startDate:`2026-08-21T${10+i}:00:00+00:00` } }));
+  assert.deepEqual(eligibleRidersFor(s, [m], capped, 9720, 4), []);
+});
+
+test("buildParticipants shapes the API payload", () => {
+  assert.deepEqual(buildParticipants([{contactId:9720, membershipId:1125}]),
+    [{ contact:{ id:9720 }, membership:{ id:1125 } }]);
 });

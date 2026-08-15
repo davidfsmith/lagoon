@@ -113,3 +113,13 @@ export function getRumOptOut() {
 export function setRumOptOut(v) {
   try { if (v) localStorage.setItem(RUM_OPTOUT_KEY, "1"); else localStorage.removeItem(RUM_OPTOUT_KEY); } catch {}
 }
+
+// In-app booking terms agreement (one-time, per device). Stored "1"/absent — any
+// non-"1" reads as not agreed.
+const BOOKING_TERMS_KEY = "lagoon.bookingTermsAgreed";
+export function getBookingTermsAgreed() {
+  try { return localStorage.getItem(BOOKING_TERMS_KEY) === "1"; } catch { return false; }
+}
+export function setBookingTermsAgreed(v) {
+  try { if (v) localStorage.setItem(BOOKING_TERMS_KEY, "1"); else localStorage.removeItem(BOOKING_TERMS_KEY); } catch {}
+}

@@ -19,6 +19,7 @@ const {
   getBetaOptIn, setBetaOptIn,
   getInternalOptIn, setInternalOptIn,
   getNotifyPrefs, setNotifyPrefs,
+  getBookingTermsAgreed, setBookingTermsAgreed,
 } = await import("../js/store.js");
 
 // --- token / cache (existing) ---
@@ -123,4 +124,15 @@ test("notify prefs days come back in weekday order regardless of stored order", 
   mem.clear();
   setNotifyPrefs({ days: ["Sun", "Sat", "Tue", "Thu"], types: ["Tech 30"], travelMins: 60 });
   assert.deepEqual(getNotifyPrefs().days, ["Tue", "Thu", "Sat", "Sun"]);
+});
+
+// --- in-app booking terms agreement ---
+
+test("booking terms agreement round-trips (default false)", () => {
+  mem.clear();
+  assert.equal(getBookingTermsAgreed(), false);
+  setBookingTermsAgreed(true);
+  assert.equal(getBookingTermsAgreed(), true);
+  setBookingTermsAgreed(false);
+  assert.equal(getBookingTermsAgreed(), false);
 });
