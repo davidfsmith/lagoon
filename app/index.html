@@ -72,11 +72,12 @@
        stale-paint bug that plagued a position:fixed nav (v29/v36 tried translateZ + will-change
        + backface-visibility compositor hints; they rotted across iOS updates). With no document
        scroll there's no momentum surface for an in-flow nav to be left behind by. */
-    /* Pin the shell to the real viewport with position:fixed;inset:0 rather than height:100dvh —
-       in the iOS standalone full-screen mode (black-translucent) 100dvh reports short of the
-       physical screen, which left a gap under the bottom nav. inset:0 fills it exactly. */
+    /* iOS standalone full-screen (black-translucent) mis-reports 100vh/100dvh, leaving a gap
+       under the bottom nav. -webkit-fill-available fills the ACTUAL available height on iOS;
+       100dvh is the fallback for everything else. html must be sized for it to resolve. */
+    html { height:-webkit-fill-available; }
     body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,Roboto,system-ui,sans-serif;
-      position:fixed; inset:0; display:flex; flex-direction:column; overflow:hidden; }
+      height:100dvh; height:-webkit-fill-available; display:flex; flex-direction:column; overflow:hidden; }
     /* Warm-dark backdrop behind the white-text iOS status bar (black-translucent). Fixed over
        the safe-area strip; zero height (invisible) where there's no inset. #2a1f12 = the dark
        header's start, so it's seamless in dark mode and a deliberate warm sliver in light. */
