@@ -6,7 +6,6 @@ import { getLastMinuteWindow, setLastMinuteWindow, getToken } from "../store.js"
 import { sessionsInWindow, eligibleRidersFor } from "../model.js";
 import { setLastMinuteIcon, isRefreshing } from "../app.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
-import { isOn } from "../features.js";
 import { openBookSheet } from "./book.js";
 
 const WINDOWS = [
@@ -42,7 +41,7 @@ export function renderLastMinute(view, state, go) {
     // Additive gate: in-app Book only when the flag's on, we're signed in, and this
     // rider is actually eligible (membership-covered) — else fall through to the
     // untouched web link (the golden rule: current path stays exactly as-is).
-    const canInApp = isOn("inAppBooking") && getToken() &&
+    const canInApp = getToken() &&
       eligibleRidersFor(s, state.memberships, state.meBookings, (state.me || {}).id, BOOKING_LIMIT).length > 0;
     const right = s.booked
       ? `<span class="tag">${bookedLabel(s.riders)}</span>`

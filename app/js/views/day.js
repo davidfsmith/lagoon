@@ -2,7 +2,6 @@ import { fmtDate, sessionWx, dayWx, bookedLabel } from "./format.js";
 import { londonParts } from "../tz.js";
 import { BOOKING_SITE, BOOKING_LIMIT } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
-import { isOn } from "../features.js";
 import { getToken } from "../store.js";
 import { eligibleRidersFor } from "../model.js";
 import { openBookSheet } from "./book.js";
@@ -29,7 +28,7 @@ export function renderDay(view, state, arg, go) {
     // Additive gate: in-app Book only when the flag's on, we're signed in, and this
     // rider is actually eligible (membership-covered) — else fall through to the
     // untouched web link (the golden rule: current path stays exactly as-is).
-    const canInApp = isOn("inAppBooking") && getToken() &&
+    const canInApp = getToken() &&
       eligibleRidersFor(s, state.memberships, state.meBookings, (state.me || {}).id, BOOKING_LIMIT).length > 0;
     const right = s.booked
       ? `<span class="tag">${bookedLabel(s.riders)}</span>`
