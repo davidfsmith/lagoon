@@ -102,11 +102,14 @@ function injectStyles() {
   if (document.getElementById("intro-css")) return;
   const s = document.createElement("style"); s.id = "intro-css";
   s.textContent = `
+    /* Warm-dusk scrim (a soft amber glow behind the card, darkening to the edges) so the
+       overlay matches the sunset splash/icon instead of a plain black dim. */
     #intro{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
-      background:rgba(0,0,0,.6);padding:20px;animation:intro-fade .15s ease}
+      background:radial-gradient(135% 100% at 50% 42%, rgba(74,52,26,.5), rgba(14,10,6,.74));
+      padding:20px;animation:intro-fade .15s ease}
     .intro-card{position:relative;width:100%;max-width:340px;background:var(--surface);
       border:1px solid var(--border);border-radius:18px;padding:26px 22px 18px;text-align:center;
-      box-shadow:0 12px 40px var(--shadow);animation:intro-pop .18s ease}
+      box-shadow:0 18px 55px rgba(20,12,4,.55);animation:intro-pop .18s ease}
     .intro-skip{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--muted);
       font-size:13px;cursor:pointer;padding:4px 6px}
     .intro-emoji{font-size:46px;line-height:1;margin:6px 0 12px}
