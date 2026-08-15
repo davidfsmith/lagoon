@@ -13,3 +13,5 @@ aws/cdk/cdk.out/
 # splash build scratch (raw source + local preview — never commit)
 54474.jpg
 .splash-preview/
+.icon-preview/
+.palette-preview/
