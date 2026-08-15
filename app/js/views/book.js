@@ -72,7 +72,7 @@ export function openBookSheet(session, state, go, onBooked) {
 
   const me = state.me || {};
   const riders = eligibleRidersFor(session, state.memberships, state.meBookings, me.id, BOOKING_LIMIT);
-  const showTerms = !getBookingTermsAgreed(); // one-time, per device
+  const termsAgreed = getBookingTermsAgreed(); // remembered per device → shown pre-checked
   const time = londonParts(session.start).time;
 
   const el = document.createElement("div");
@@ -89,12 +89,10 @@ export function openBookSheet(session, state, go, onBooked) {
               <span>${r.name}</span>
             </label>`).join("")}</div>`
         : `<p class="muted small">No eligible riders for this session — try the website.</p>`}
-      ${showTerms
-        ? `<label class="book-terms">
-            <input type="checkbox" id="book-terms-chk">
-            <span>I agree to the <a href="${BOOKING_SITE}" target="_blank" rel="noopener">Lagoon terms</a></span>
-          </label>`
-        : ""}
+      <label class="book-terms">
+        <input type="checkbox" id="book-terms-chk" ${termsAgreed ? "checked" : ""}>
+        <span>I agree to the <a href="${BOOKING_SITE}" target="_blank" rel="noopener">Lagoon terms</a></span>
+      </label>
       <p class="book-msg" id="book-msg"></p>
       <div class="book-actions">
         <button class="book-cancel">Cancel</button>
@@ -127,11 +125,11 @@ export function openBookSheet(session, state, go, onBooked) {
   //   6. optimistic local reflect + re-render
   //   7. any failure -> never treated as success; 401 -> logout, else message + web fallback
   async function submitBooking(selectedRiders) {
-    if (showTerms && !(termsChk && termsChk.checked)) {
-      nudge("Please agree to the terms to continue.");   // keep required — do not submit
+    if (!(termsChk && termsChk.checked)) {
+      nudge("Please agree to the terms to continue.");   // always required — do not submit
       return;
     }
-    if (showTerms) setBookingTermsAgreed(true);
+    setBookingTermsAgreed(true); // remember so it's pre-checked next time
     msg.textContent = ""; msg.classList.remove("err");
     setBusy(true);
     try {
