@@ -244,11 +244,16 @@ export function coveringMembership(membership, courseId) {
 
 // Riders a membership makes £0 for this session, excluding anyone already booked on it or at the
 // per-rider cap. Returns [{contactId, name, membershipId}] — empty means "not in-app bookable".
-export function eligibleRidersFor(session, memberships, meBookings, meId, cap) {
-  // per-rider count of active upcoming session bookings (for the cap)
+export function eligibleRidersFor(session, memberships, meBookings, meId, cap, now = Date.now()) {
+  const nowMs = now instanceof Date ? now.getTime() : now;
+  // per-rider count of active UPCOMING session bookings (for the cap). Only future
+  // bookings count — same as the Bookings tab (account.js). Without this, a rider's
+  // whole booking history exhausts the cap and they're never in-app bookable.
   const counts = {};
   for (const b of meBookings || []) {
     if (!bookingIsHeld(b) || !countsTowardLimit(b)) continue;
+    const st = (b.courseRun || {}).startDate;
+    if (!st || new Date(st).getTime() < nowMs) continue; // upcoming only
     for (const p of activeParticipants(b)) { const c = (p.contact||{}).id; if (c!=null) counts[c] = (counts[c]||0)+1; }
   }
   const out = []; const seen = new Set();

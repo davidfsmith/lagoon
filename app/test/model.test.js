@@ -342,13 +342,27 @@ test("eligibleRidersFor: empty when the membership doesn't cover the course", ()
   assert.deepEqual(eligibleRidersFor(s, [m], [], 9720, 4), []);
 });
 
-test("eligibleRidersFor: excludes a rider at the per-rider cap", () => {
+test("eligibleRidersFor: excludes a rider at the per-rider cap (upcoming)", () => {
   const m = membership(1125, [{id:9720,name:"Dave"}], [51]);
   const s = sessionFor(51, "2026-08-20T17:00:00+00:00");
+  const now = new Date("2026-08-15T00:00:00Z");
   const capped = Array.from({length:4}, (_,i) => ({ status:"confirmed",
     participants:[{ id:i+1, status:"confirmed", contact:{ id:9720 } }],
     courseRun:{ course:{ id:51 }, startDate:`2026-08-21T${10+i}:00:00+00:00` } }));
-  assert.deepEqual(eligibleRidersFor(s, [m], capped, 9720, 4), []);
+  assert.deepEqual(eligibleRidersFor(s, [m], capped, 9720, 4, now), []);
+});
+
+test("eligibleRidersFor: past bookings don't count toward the cap (only upcoming)", () => {
+  // Regression: a rider with a long booking history (many PAST held bookings) must still
+  // be eligible — otherwise every session falls back to the web link. Only upcoming
+  // bookings count toward BOOKING_LIMIT.
+  const m = membership(1125, [{id:9720,name:"Dave"}], [51]);
+  const s = sessionFor(51, "2026-08-20T17:00:00+00:00");
+  const now = new Date("2026-08-15T00:00:00Z");
+  const past = Array.from({length:6}, (_,i) => ({ status:"confirmed",
+    participants:[{ id:i+1, status:"confirmed", contact:{ id:9720 } }],
+    courseRun:{ course:{ id:51 }, startDate:`2023-06-1${i}T15:00:00+00:00` } }));
+  assert.deepEqual(eligibleRidersFor(s, [m], past, 9720, 4, now).map(r=>r.contactId), [9720]);
 });
 
 test("eligibleRidersFor: a rider in two covering memberships appears once (first membership)", () => {
