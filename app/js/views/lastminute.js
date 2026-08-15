@@ -1,11 +1,13 @@
 import { fmtWhen, fmtDate, agoText, sessionWx, bookedLabel } from "./format.js";
 import { londonParts } from "../tz.js";
-import { BOOKING_SITE } from "../config.js";
+import { BOOKING_SITE, BOOKING_LIMIT } from "../config.js";
 import { presentTypes, getActiveTypes, filterBarHtml, wireFilterChips, injectFilterStyles } from "../filters.js";
-import { getLastMinuteWindow, setLastMinuteWindow } from "../store.js";
-import { sessionsInWindow } from "../model.js";
+import { getLastMinuteWindow, setLastMinuteWindow, getToken } from "../store.js";
+import { sessionsInWindow, eligibleRidersFor } from "../model.js";
 import { setLastMinuteIcon, isRefreshing } from "../app.js";
 import { startRefreshedTicker } from "../refreshedTicker.js";
+import { isOn } from "../features.js";
+import { openBookSheet } from "./book.js";
 
 const WINDOWS = [
   { id: "today", label: "Today", prose: "today" },
@@ -37,9 +39,16 @@ export function renderLastMinute(view, state, go) {
     const lp = londonParts(s.start);
     const wx = sessionWx(s.weather);
     const opened = justOpened.has(s.key) ? `<span class="lmnew">just opened ↑</span>` : "";
+    // Additive gate: in-app Book only when the flag's on, we're signed in, and this
+    // rider is actually eligible (membership-covered) — else fall through to the
+    // untouched web link (the golden rule: current path stays exactly as-is).
+    const canInApp = isOn("inAppBooking") && getToken() &&
+      eligibleRidersFor(s, state.memberships, state.meBookings, (state.me || {}).id, BOOKING_LIMIT).length > 0;
     const right = s.booked
       ? `<span class="tag">${bookedLabel(s.riders)}</span>`
-      : `<span class="free">${s.free} free</span><a class="bk" target="_blank" rel="noopener" href="${s.runId ? `${BOOKING_SITE}/book?courseRunId=${s.runId}` : BOOKING_SITE}">Book ↗</a>`;
+      : `<span class="free">${s.free} free</span>${canInApp
+          ? `<button class="bk" data-inapp data-key="${s.key}">Book</button>`
+          : `<a class="bk" target="_blank" rel="noopener" href="${s.runId ? `${BOOKING_SITE}/book?courseRunId=${s.runId}` : BOOKING_SITE}">Book ↗</a>`}`;
     return `<div class="srow${s.booked ? " booked" : ""}">
       <div><div class="tm">${fmtDate(lp.date)} ${lp.time} <b>${s.label}</b> ${opened}</div>
         <div class="muted small">${wx}</div></div>
@@ -55,6 +64,12 @@ export function renderLastMinute(view, state, go) {
 
   for (const b of view.querySelectorAll(".lmseg")) {
     b.addEventListener("click", () => { setLastMinuteWindow(b.dataset.win); renderLastMinute(view, state, go); setLastMinuteIcon(); });
+  }
+  for (const b of view.querySelectorAll(".bk[data-inapp]")) {
+    b.addEventListener("click", () => {
+      const s = slots.find(x => x.key === b.dataset.key);
+      if (s) openBookSheet(s, state, go, () => renderLastMinute(view, state, go));
+    });
   }
   const toAgenda = view.querySelector("#lm-toagenda");
   if (toAgenda) toAgenda.addEventListener("click", () => go("agenda"));
@@ -77,7 +92,7 @@ function injectLastMinuteStyles() {
     .tm{font-weight:600}.tm b{color:var(--accent)}
     .r{text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
     .free{color:var(--good);font-size:12px}.tag{color:var(--warn);font-size:12px}
-    .bk{background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap}
+    .bk{background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:4px 12px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;border:none;cursor:pointer;font-family:inherit;line-height:inherit}
     .small{font-size:11px}
     .lmnew{background:var(--sun);color:#1a1205;font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 7px;border-radius:6px;margin-left:4px;white-space:nowrap}
     .linkish{background:none;border:none;color:var(--accent);font:inherit;cursor:pointer;padding:0;text-decoration:underline}`;
