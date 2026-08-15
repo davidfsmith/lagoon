@@ -200,6 +200,12 @@ function injectStyles() {
     .book-rider{display:flex;align-items:center;gap:8px;font-size:14px}
     .book-terms{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--muted);margin-bottom:8px}
     .book-terms a{color:var(--accent)}
+    /* index.html has a global input{width:100%;padding;margin;border} for the login fields —
+       reset it for our checkboxes so they stay small and the label sits next to them. */
+    .book-rider input[type=checkbox],.book-terms input[type=checkbox]{
+      width:auto;flex:none;margin:0;padding:0;border:0;background:none;
+      -webkit-appearance:checkbox;appearance:checkbox}
+    .book-rider span,.book-terms span{flex:1;min-width:0}
     .book-msg{min-height:16px;font-size:12px;margin:0 0 8px}
     .book-msg.err{color:var(--danger)}
     .book-actions{display:flex;justify-content:flex-end;gap:10px}
