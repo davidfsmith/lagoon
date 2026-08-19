@@ -8,6 +8,7 @@ import { createPendingBookings, getPendingOrder, completeFreeOrder } from "../ap
 import { getToken, saveCache, getBookingTermsAgreed, setBookingTermsAgreed } from "../store.js";
 import { BOOKING_SITE, BOOKING_LIMIT } from "../config.js";
 import { londonParts } from "../tz.js";
+import * as rum from "../rum.js";
 // app.js is imported lazily (only on an actual 401), not statically — its top level
 // touches `document` at module load, which would break importing isFreeOrder in the
 // (DOM-less) node --test runner. Same runtime behaviour in the browser either way.
@@ -161,6 +162,7 @@ export function openBookSheet(session, state, go, onBooked) {
       saveCache(state);
       close();
       onBooked(); // immediate optimistic re-render
+      rum.event("inapp_book", { riders: selectedRiders.length }); // analytics: a completed in-app booking (cf. web-link "book_click")
       const names = selectedRiders.map(r => r.name).join(" & ");
       toast(`✓ Booked ${time} ${session.label} for ${names}`);
       // Then background-refresh so the synthetic "pending-…" entry is replaced by the real
